@@ -25,6 +25,8 @@ async function makeUser(email: string, ctx: { ip: string; userAgent: string }) {
     signUpSchema.parse({
       email,
       password: 'a sufficiently long passphrase',
+      dateOfBirth: '1995-04-12',
+      acceptedTerms: true,
       displayName: email.split('@')[0]!,
     }),
     ctx,

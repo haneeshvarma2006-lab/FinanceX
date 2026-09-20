@@ -163,7 +163,7 @@ Answered by the project owner. These supersede the corresponding defaults above.
 
 `TRUST_PROXY_HEADERS` defaults to off, so the client IP is null and every
 anonymous caller shares one bucket. Under a strict per-IP rule that turns
-"5 sign-ups per IP per hour" into a *global* ceiling — a trivial denial of
+"5 sign-ups per IP per hour" into a _global_ ceiling — a trivial denial of
 service against registration itself.
 
 **Resolved:** attributable and unattributable traffic now use separate keys and

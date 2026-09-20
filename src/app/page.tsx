@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { Button } from '@/components/button';
+import { Button } from '@/components/ui/button';
 
 export default async function LandingPage() {
   if (await getCurrentUser()) redirect('/today');

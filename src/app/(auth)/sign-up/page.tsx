@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { isGoogleConfigured } from '@/modules/identity/oauth';
 import { SignUpForm } from './form';
 
 export const metadata: Metadata = { title: 'Create an account' };
@@ -12,7 +13,7 @@ export default function SignUpPage() {
         One place for your tasks, your money and your trades.
       </p>
 
-      <SignUpForm />
+      <SignUpForm googleEnabled={isGoogleConfigured()} />
 
       <p className="mt-6 text-center text-sm text-text-secondary">
         Already have one?{' '}

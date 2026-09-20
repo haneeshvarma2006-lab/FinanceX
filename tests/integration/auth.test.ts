@@ -13,6 +13,8 @@ function signUpInput(overrides: Partial<Record<string, unknown>> = {}) {
     email: 'alice@example.com',
     password: 'a sufficiently long passphrase',
     displayName: 'Alice',
+    dateOfBirth: '1995-04-12',
+    acceptedTerms: true,
     ...overrides,
   });
 }
@@ -330,5 +332,108 @@ describe('unattributed traffic', () => {
     expect(blocked.ok).toBe(false);
     if (blocked.ok) return;
     expect(blocked.error.kind).toBe('rate_limited');
+  });
+});
+
+describe('age gate at signup', () => {
+  /**
+   * The gate must live on the server. These call the service directly, which
+   * is exactly what bypassing the form looks like.
+   */
+  it('refuses an underage applicant', async () => {
+    const result = await identity.signUp(
+      signUpInput({ email: 'child@example.com', dateOfBirth: '2015-01-01' }),
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe('age_restricted');
+
+    // No account was created.
+    const { rows } = await pool.query('select id from users where email = $1', [
+      'child@example.com',
+    ]);
+    expect(rows).toHaveLength(0);
+  });
+
+  it('records the refusal without storing the date of birth', async () => {
+    await identity.signUp(
+      signUpInput({ email: 'child@example.com', dateOfBirth: '2015-01-01' }),
+      ctx,
+    );
+
+    const { rows } = await pool.query<{ metadata: { reason: string } }>(
+      "select metadata from audit_log where action = 'auth.signup.age_restricted'",
+    );
+    expect(rows[0]?.metadata.reason).toBe('underage');
+    // The rejected date itself is not retained — there is no account to attach
+    // it to, and keeping a child's data after refusing them is the opposite of
+    // what the refusal is for.
+    expect(JSON.stringify(rows[0]?.metadata)).not.toContain('2015-01-01');
+  });
+
+  it('accepts an eligible applicant and stores the date', async () => {
+    const result = await identity.signUp(
+      signUpInput({ email: 'adult@example.com', dateOfBirth: '1990-06-15' }),
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.user.dateOfBirth).toBe('1990-06-15');
+    expect(result.user.ageVerifiedAt).not.toBeNull();
+  });
+});
+
+describe('consent at signup', () => {
+  it('records terms acceptance with a version', async () => {
+    const result = await identity.signUp(signUpInput(), ctx);
+    if (!result.ok) throw new Error('setup failed');
+
+    const consents = await repo.listConsents(result.user.id);
+    const terms = consents.find((c) => c.kind === 'terms_and_privacy');
+
+    expect(terms).toBeDefined();
+    expect(terms?.documentVersion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(terms?.revokedAt).toBeNull();
+  });
+
+  it('does not record marketing consent that was not given', async () => {
+    const result = await identity.signUp(signUpInput(), ctx);
+    if (!result.ok) throw new Error('setup failed');
+
+    const consents = await repo.listConsents(result.user.id);
+    expect(consents.find((c) => c.kind === 'marketing_email')).toBeUndefined();
+  });
+
+  it('records marketing consent when explicitly opted in', async () => {
+    const result = await identity.signUp(signUpInput({ marketingOptIn: true }), ctx);
+    if (!result.ok) throw new Error('setup failed');
+
+    const consents = await repo.listConsents(result.user.id);
+    expect(consents.find((c) => c.kind === 'marketing_email')).toBeDefined();
+  });
+
+  it('rejects a signup that did not accept the terms', () => {
+    // The schema refuses to parse, so the service is never reached.
+    expect(() =>
+      signUpSchema.parse({
+        email: 'noconsent@example.com',
+        password: 'a sufficiently long passphrase',
+        displayName: 'No Consent',
+        dateOfBirth: '1990-01-01',
+        acceptedTerms: false,
+      }),
+    ).toThrow();
+
+    expect(() =>
+      signUpSchema.parse({
+        email: 'noconsent@example.com',
+        password: 'a sufficiently long passphrase',
+        displayName: 'No Consent',
+        dateOfBirth: '1990-01-01',
+      }),
+    ).toThrow();
   });
 });

@@ -26,6 +26,8 @@ test('signs up, lands in the app, and signs out again', async ({ page }) => {
   await page.getByLabel('Name').fill('E2E Tester');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
 
   await expect(page).toHaveURL(/\/today$/);
@@ -46,6 +48,8 @@ test('signs back in with the same credentials', async ({ page }) => {
   await page.getByLabel('Name').fill('Returning User');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
 
@@ -66,6 +70,8 @@ test('gives nothing away when the password is wrong', async ({ page }) => {
   await page.getByLabel('Name').fill('Someone');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
   await page.getByRole('button', { name: /sign out/i }).click();
@@ -96,6 +102,8 @@ test('refuses a duplicate registration', async ({ page }) => {
     await page.getByLabel('Name').fill('Duplicate');
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Date of birth').fill('1990-01-01');
+    await page.getByLabel(/accept the terms/i).check();
     await page.getByRole('button', { name: /create account/i }).click();
 
     if (attempt === 1) {
@@ -112,6 +120,8 @@ test('rejects a password below the minimum length', async ({ page }) => {
   await page.getByLabel('Name').fill('Short Password');
   await page.getByLabel('Email').fill(uniqueEmail());
   await page.getByLabel('Password').fill('short');
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
 
   await expect(page.getByText(/at least 12 characters/i)).toBeVisible();

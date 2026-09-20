@@ -47,6 +47,8 @@ test('issues an httpOnly, sameSite session cookie', async ({ page, context }) =>
   await page.getByLabel('Name').fill('Cookie Check');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('a sufficiently long passphrase');
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
 
@@ -68,6 +70,8 @@ test('does not leak the session token into the HTML', async ({ page, context }) 
   await page.getByLabel('Name').fill('Leak Check');
   await page.getByLabel('Email').fill(`e2e-leak-${Date.now()}@example.com`);
   await page.getByLabel('Password').fill('a sufficiently long passphrase');
+  await page.getByLabel('Date of birth').fill('1990-01-01');
+  await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
 

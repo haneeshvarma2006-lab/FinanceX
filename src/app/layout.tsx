@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+// Self-hosted Inter (SIL OFL-1.1). Bundled as local woff2 by the build — no
+// request ever leaves the origin for a font. See docs/LICENSES.md.
+import '@fontsource-variable/inter';
 import './globals.css';
 
 export const metadata: Metadata = {
