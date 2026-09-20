@@ -128,3 +128,16 @@ unless it is actually performed and its output shown:
 - No payment provider relationship or approval exists.
 - No bank, broker, or market-data integration is available.
 - No production deployment exists.
+
+---
+
+## Resolved — 2026-09-20
+
+Answered by the project owner. These supersede the corresponding defaults above.
+
+| ID | Decision | Consequence |
+|---|---|---|
+| **D-01** | **Working name only.** "KyliX" stays in internal docs and trivially renameable UI copy | No logo, no domain, no PWA manifest branding until availability is cleared by the owner. Still unchecked — no trademark or domain search has been performed |
+| **D-02** | **Multi-user with self-registration**, full per-user isolation | Open sign-up in M1; cross-user horizontal access tests are a hard M1 gate |
+| **D-03** | **Single base currency, INR.** Stored per row | `base_currency` defaults to `INR`; amounts in paise. FX conversion remains a designed-for later extension |
+| **Scope** | **Build M0 + M1, then pause for review** | Foundation plus identity and the security baseline. Feature modules M2–M4 do not start until auth and tenancy isolation are reviewed |
