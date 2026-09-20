@@ -13,6 +13,7 @@ code merely exists. "Tests written" is not "tests passing"; only actual runs cou
 Scaffold, tooling, CI, database connection, design tokens, app shell. No features.
 
 **Acceptance criteria**
+
 - `pnpm install && pnpm build` succeeds from a clean clone.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` all pass with zero warnings.
 - Drizzle connects to Postgres; a baseline migration applies and rolls back.
@@ -25,6 +26,7 @@ Scaffold, tooling, CI, database connection, design tokens, app shell. No feature
 Sign-up, sign-in, sign-out, session lifecycle, ownership enforcement, security headers.
 
 **Acceptance criteria**
+
 - Password hashed with argon2id; hash never appears in any response or log.
 - Session cookie is `httpOnly` + `Secure` + `SameSite=Lax`, rotates on sign-in, and is
   invalidated server-side on sign-out.
@@ -40,6 +42,7 @@ Sign-up, sign-in, sign-out, session lifecycle, ownership enforcement, security h
 Task CRUD, projects, subtasks, recurrence, Today view, focus timer, habit tracking, goals.
 
 **Acceptance criteria**
+
 - Recurring task completion generates exactly one next occurrence, correct across a DST
   boundary and across the user's timezone — asserted by test, not by inspection.
 - Today view composes due, scheduled, and overdue items in one ordered list.
@@ -53,6 +56,7 @@ Task CRUD, projects, subtasks, recurrence, Today view, focus timer, habit tracki
 Accounts, categories, transactions, transfers, budgets, subscriptions, net worth, CSV import.
 
 **Acceptance criteria**
+
 - Money arithmetic is integer-only; a test asserts no float path exists in money code.
 - A transfer produces two balanced rows and is **excluded** from both income and expense
   totals — asserted by test.
@@ -66,6 +70,7 @@ Accounts, categories, transactions, transfers, budgets, subscriptions, net worth
 Trading accounts, strategies, trades, executions, notes, P&L and risk analytics.
 
 **Acceptance criteria**
+
 - Partial fills: a trade with multiple executions reports correct average entry, average
   exit, and realised P&L — asserted against hand-computed fixtures for long **and** short.
 - Fees are included in realised P&L; a test asserts the sign convention for shorts.
@@ -79,8 +84,9 @@ Trading accounts, strategies, trades, executions, notes, P&L and risk analytics.
 `links` graph, event dispatcher, rule builder, the five shipping rules, notifications.
 
 **Acceptance criteria**
+
 - Each of the five shipping rules fires under test from a simulated domain event.
-- Every evaluation writes an `automation_runs` row — a user can see *why* something fired.
+- Every evaluation writes an `automation_runs` row — a user can see _why_ something fired.
 - Rules are data-driven; **no user-supplied code or expression is ever executed**.
 - A disabled rule never fires. A rule cannot act on another user's entities.
 - Deleting a linked entity does not orphan a rule into a crash.
@@ -90,6 +96,7 @@ Trading accounts, strategies, trades, executions, notes, P&L and risk analytics.
 Cross-module Today/Insights surfaces, rollups, onboarding, empty states, PWA, responsive pass.
 
 **Acceptance criteria**
+
 - Rollups are idempotent: recomputation produces identical rows.
 - Insights surface at least three genuinely cross-module observations.
 - Every list has a designed empty state and a loading skeleton.
@@ -102,6 +109,7 @@ Cross-module Today/Insights surfaces, rollups, onboarding, empty states, PWA, re
 Security review, performance pass, backup/restore, data export, documentation.
 
 **Acceptance criteria**
+
 - Dependency audit clean or every finding triaged in writing.
 - Automated security review run and findings resolved or accepted with rationale.
 - `EXPLAIN` reviewed for the ten hottest queries; indexes justified.

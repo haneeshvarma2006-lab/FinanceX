@@ -11,12 +11,12 @@ checked and must not be assumed.
 
 ## Documents
 
-| Document | Contents |
-|---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Product thesis, verified environment, technology choices with rationale, module structure, security posture, design system |
-| [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) | Entities, money and precision conventions, correctness invariants |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones M0–M7, each with acceptance criteria |
-| [`docs/OPEN-DECISIONS.md`](docs/OPEN-DECISIONS.md) | Blocking questions, reversible defaults, risk register, and what is explicitly **not** claimed |
+| Document                                           | Contents                                                                                                                   |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)     | Product thesis, verified environment, technology choices with rationale, module structure, security posture, design system |
+| [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md)         | Entities, money and precision conventions, correctness invariants                                                          |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md)               | Milestones M0–M7, each with acceptance criteria                                                                            |
+| [`docs/OPEN-DECISIONS.md`](docs/OPEN-DECISIONS.md) | Blocking questions, reversible defaults, risk register, and what is explicitly **not** claimed                             |
 
 ## The idea in one paragraph
 

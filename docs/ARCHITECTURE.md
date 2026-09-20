@@ -17,16 +17,16 @@ The differentiator is the **Signals & Rules engine** (§6), not the charts.
 
 Measured in this session, not assumed:
 
-| Capability | State |
-|---|---|
-| Repository | Empty — `.git` only, zero commits, remote `haneeshvarma2006-lab/FinanceX` also empty |
-| Node / npm / pnpm / bun | 22.22.2 / 10.9.7 / 10.33.0 / 1.3.11 |
-| PostgreSQL 16.13 | Installed; server started and accepting connections on :5432 |
-| Docker | 29.3.1 available |
-| Python | 3.11.15 |
-| npm registry | Reachable through the agent proxy |
-| Chromium + Playwright | Pre-installed at `/opt/pw-browsers` |
-| Disk / RAM | ~30 GB free / 15 GB |
+| Capability              | State                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Repository              | Empty — `.git` only, zero commits, remote `haneeshvarma2006-lab/FinanceX` also empty |
+| Node / npm / pnpm / bun | 22.22.2 / 10.9.7 / 10.33.0 / 1.3.11                                                  |
+| PostgreSQL 16.13        | Installed; server started and accepting connections on :5432                         |
+| Docker                  | 29.3.1 available                                                                     |
+| Python                  | 3.11.15                                                                              |
+| npm registry            | Reachable through the agent proxy                                                    |
+| Chromium + Playwright   | Pre-installed at `/opt/pw-browsers`                                                  |
+| Disk / RAM              | ~30 GB free / 15 GB                                                                  |
 
 Note the name mismatch: the **repository** is `FinanceX`, the **product** is `KyliX`.
 Resolve before any public artifact is produced (D-01).
@@ -36,25 +36,25 @@ Resolve before any public artifact is produced (D-01).
 All versions below were resolved from the registry during discovery. Where the newest
 release is a beta or a risky major, the proposal pins the conservative option and says why.
 
-| Layer | Choice | Version | Rationale |
-|---|---|---|---|
-| Framework | Next.js App Router | 16.3.5 | Server Components keep financial data server-side by default; Server Actions remove a hand-written API tier |
-| UI runtime | React | 19.3.0 | Required by Next 16 |
-| Language | TypeScript | **5.9.3**, not 7.0.2 | 7.x is the new native compiler; ecosystem tooling compatibility is unproven. Reversible — upgrade once ESLint/Next toolchains confirm support |
-| Styling | Tailwind CSS | 4.3.3 | CSS-first token layer maps cleanly onto the design system in §7 |
-| Primitives | Radix UI via shadcn-style vendored components | — | Accessibility (focus traps, ARIA, keyboard) without inheriting someone's visual identity. We own every styled file |
-| ORM | Drizzle ORM + drizzle-kit | 0.45.2 / 0.31.10 | SQL-first, typed, real migration files, no shadow-database step |
-| Database | PostgreSQL | 16 | Correct numeric types, constraints, partial indexes, `jsonb` for rule configs |
-| Driver | pg | 8.23.0 | Works against local Postgres and any hosted Postgres |
-| Validation | Zod | 4.6.5 | One schema shared by client form, Server Action, and DB write |
-| Auth | **First-party session auth** (see §5) | — | Auth.js v5 is still `5.0.0-beta.32`. A production auth claim should not rest on a perpetual beta, and OAuth needs credentials we do not have |
-| Hashing | @node-rs/argon2 | 2.2.1 | argon2id, native speed |
-| Charts (general) | Recharts | 3.10.1 | Donut / bar / area for finance and habits |
-| Charts (price) | lightweight-charts | 5.2.1 | Apache-2.0, purpose-built for candlesticks and equity curves |
-| Client cache | TanStack Query | 5.103.1 | Only for genuinely interactive views; most reads stay server-rendered |
-| Dates | date-fns 4.4.0 + rrule 2.8.1 | — | Recurrence needs RFC 5545, not hand-rolled arithmetic |
-| Unit tests | Vitest | 5.0.1 | |
-| E2E | Playwright | 1.63.0 | Browser already provisioned |
+| Layer            | Choice                                        | Version              | Rationale                                                                                                                                     |
+| ---------------- | --------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | Next.js App Router                            | 16.3.5               | Server Components keep financial data server-side by default; Server Actions remove a hand-written API tier                                   |
+| UI runtime       | React                                         | 19.3.0               | Required by Next 16                                                                                                                           |
+| Language         | TypeScript                                    | **5.9.3**, not 7.0.2 | 7.x is the new native compiler; ecosystem tooling compatibility is unproven. Reversible — upgrade once ESLint/Next toolchains confirm support |
+| Styling          | Tailwind CSS                                  | 4.3.3                | CSS-first token layer maps cleanly onto the design system in §7                                                                               |
+| Primitives       | Radix UI via shadcn-style vendored components | —                    | Accessibility (focus traps, ARIA, keyboard) without inheriting someone's visual identity. We own every styled file                            |
+| ORM              | Drizzle ORM + drizzle-kit                     | 0.45.2 / 0.31.10     | SQL-first, typed, real migration files, no shadow-database step                                                                               |
+| Database         | PostgreSQL                                    | 16                   | Correct numeric types, constraints, partial indexes, `jsonb` for rule configs                                                                 |
+| Driver           | pg                                            | 8.23.0               | Works against local Postgres and any hosted Postgres                                                                                          |
+| Validation       | Zod                                           | 4.6.5                | One schema shared by client form, Server Action, and DB write                                                                                 |
+| Auth             | **First-party session auth** (see §5)         | —                    | Auth.js v5 is still `5.0.0-beta.32`. A production auth claim should not rest on a perpetual beta, and OAuth needs credentials we do not have  |
+| Hashing          | @node-rs/argon2                               | 2.2.1                | argon2id, native speed                                                                                                                        |
+| Charts (general) | Recharts                                      | 3.10.1               | Donut / bar / area for finance and habits                                                                                                     |
+| Charts (price)   | lightweight-charts                            | 5.2.1                | Apache-2.0, purpose-built for candlesticks and equity curves                                                                                  |
+| Client cache     | TanStack Query                                | 5.103.1              | Only for genuinely interactive views; most reads stay server-rendered                                                                         |
+| Dates            | date-fns 4.4.0 + rrule 2.8.1                  | —                    | Recurrence needs RFC 5545, not hand-rolled arithmetic                                                                                         |
+| Unit tests       | Vitest                                        | 5.0.1                |                                                                                                                                               |
+| E2E              | Playwright                                    | 1.63.0               | Browser already provisioned                                                                                                                   |
 
 Package manager: **pnpm**. Rejected alternatives are recorded in `OPEN-DECISIONS.md`.
 
@@ -109,7 +109,7 @@ Financial and trading data is sensitive. Non-negotiables for M1:
 - **Money** — integers in minor units. Floats are banned by lint rule and test.
 
 Deliberately **not** claimed: no penetration test, no SOC 2 / PCI / GDPR certification, no
-third-party audit. A security *review* is a milestone (M7); a security *certification* is
+third-party audit. A security _review_ is a milestone (M7); a security _certification_ is
 not something this work can produce.
 
 ## 6. The connection layer
@@ -137,12 +137,12 @@ expressions.
 
 ## 7. Design system
 
-Visual *direction* is taken from the reference — dark, calm, high-contrast, domain-coloured.
+Visual _direction_ is taken from the reference — dark, calm, high-contrast, domain-coloured.
 Its branding, wordmark, illustrations, icon set, and layout compositions are **not** copied.
 
 - **Surface** — near-black base (`#0A0E1A`) with layered elevation, not flat grey cards.
 - **Domain accents** — Tasks = azure, Finance = emerald, Trading = violet. Accent signals
-  *which part of your life this is*; it is never the only carrier of meaning.
+  _which part of your life this is_; it is never the only carrier of meaning.
 - **Semantics** — profit/loss and over/under-budget always pair colour with a sign, arrow,
   or label, so the UI survives colour-blindness and greyscale printing.
 - **Type** — one variable sans for UI, tabular figures for every number. Money and P&L

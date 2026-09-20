@@ -19,50 +19,50 @@
 
 ## Identity
 
-| Table | Key columns |
-|---|---|
-| `users` | `id`, `email` (citext unique), `password_hash`, `display_name`, `timezone`, `locale`, `base_currency`, `created_at`, `deleted_at` |
-| `sessions` | `id`, `user_id`, `token_hash` (unique), `expires_at`, `idle_expires_at`, `ip`, `user_agent`, `created_at` |
-| `audit_log` | `id`, `user_id`, `action`, `entity_type`, `entity_id`, `metadata` jsonb, `ip`, `created_at` — append-only |
+| Table       | Key columns                                                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `users`     | `id`, `email` (citext unique), `password_hash`, `display_name`, `timezone`, `locale`, `base_currency`, `created_at`, `deleted_at` |
+| `sessions`  | `id`, `user_id`, `token_hash` (unique), `expires_at`, `idle_expires_at`, `ip`, `user_agent`, `created_at`                         |
+| `audit_log` | `id`, `user_id`, `action`, `entity_type`, `entity_id`, `metadata` jsonb, `ip`, `created_at` — append-only                         |
 
 ## Tasks & focus
 
-| Table | Key columns |
-|---|---|
-| `projects` | `id`, `user_id`, `name`, `color`, `archived_at` |
-| `tasks` | `id`, `user_id`, `project_id?`, `parent_task_id?`, `title`, `notes`, `status` (todo/doing/done/cancelled), `priority`, `due_at`, `scheduled_for` date, `estimate_minutes`, `completed_at`, `rrule` text, `recurrence_parent_id?`, `sort_key`, `created_at` |
-| `focus_sessions` | `id`, `user_id`, `task_id?`, `started_at`, `ended_at`, `planned_minutes`, `interrupted` |
+| Table            | Key columns                                                                                                                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projects`       | `id`, `user_id`, `name`, `color`, `archived_at`                                                                                                                                                                                                            |
+| `tasks`          | `id`, `user_id`, `project_id?`, `parent_task_id?`, `title`, `notes`, `status` (todo/doing/done/cancelled), `priority`, `due_at`, `scheduled_for` date, `estimate_minutes`, `completed_at`, `rrule` text, `recurrence_parent_id?`, `sort_key`, `created_at` |
+| `focus_sessions` | `id`, `user_id`, `task_id?`, `started_at`, `ended_at`, `planned_minutes`, `interrupted`                                                                                                                                                                    |
 
 Recurrence stores an RFC 5545 `RRULE` and **materialises only the next occurrence** on
 completion. Infinite series are never expanded into rows.
 
 ## Habits
 
-| Table | Key columns |
-|---|---|
-| `habits` | `id`, `user_id`, `name`, `cadence` (daily/weekly/custom), `target_per_period`, `color`, `archived_at` |
-| `habit_entries` | `id`, `habit_id`, `on_date`, `count`, `note` — unique `(habit_id, on_date)` |
+| Table           | Key columns                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| `habits`        | `id`, `user_id`, `name`, `cadence` (daily/weekly/custom), `target_per_period`, `color`, `archived_at` |
+| `habit_entries` | `id`, `habit_id`, `on_date`, `count`, `note` — unique `(habit_id, on_date)`                           |
 
 Streaks are computed, never stored — a stored streak is a cache that silently goes wrong
 after a backfill or a timezone change.
 
 ## Goals
 
-| Table | Key columns |
-|---|---|
-| `goals` | `id`, `user_id`, `title`, `type` (numeric/habit/financial/milestone), `target_value`, `current_value`, `unit`, `target_date`, `status` |
-| `goal_checkpoints` | `id`, `goal_id`, `at`, `value`, `note` |
+| Table              | Key columns                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `goals`            | `id`, `user_id`, `title`, `type` (numeric/habit/financial/milestone), `target_value`, `current_value`, `unit`, `target_date`, `status` |
+| `goal_checkpoints` | `id`, `goal_id`, `at`, `value`, `note`                                                                                                 |
 
 ## Finance
 
-| Table | Key columns |
-|---|---|
-| `accounts` | `id`, `user_id`, `name`, `kind` (cash/bank/card/investment/broker/loan), `currency`, `opening_balance_minor`, `archived_at` |
-| `categories` | `id`, `user_id`, `name`, `kind` (income/expense/transfer), `parent_id?`, `color`, `icon` |
-| `transactions` | `id`, `user_id`, `account_id`, `category_id?`, `occurred_on` date, `amount_minor` (signed), `currency`, `description`, `merchant`, `kind`, `transfer_group_id?`, `external_id?`, `created_at` |
-| `budgets` | `id`, `user_id`, `category_id`, `period` (monthly/weekly), `amount_minor`, `starts_on`, `ends_on?` |
-| `subscriptions` | `id`, `user_id`, `name`, `account_id?`, `category_id?`, `amount_minor`, `currency`, `cadence`, `next_due_on`, `last_charged_on`, `status`, `cancel_by?` |
-| `net_worth_snapshots` | `id`, `user_id`, `on_date`, `assets_minor`, `liabilities_minor` — unique `(user_id, on_date)` |
+| Table                 | Key columns                                                                                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accounts`            | `id`, `user_id`, `name`, `kind` (cash/bank/card/investment/broker/loan), `currency`, `opening_balance_minor`, `archived_at`                                                                   |
+| `categories`          | `id`, `user_id`, `name`, `kind` (income/expense/transfer), `parent_id?`, `color`, `icon`                                                                                                      |
+| `transactions`        | `id`, `user_id`, `account_id`, `category_id?`, `occurred_on` date, `amount_minor` (signed), `currency`, `description`, `merchant`, `kind`, `transfer_group_id?`, `external_id?`, `created_at` |
+| `budgets`             | `id`, `user_id`, `category_id`, `period` (monthly/weekly), `amount_minor`, `starts_on`, `ends_on?`                                                                                            |
+| `subscriptions`       | `id`, `user_id`, `name`, `account_id?`, `category_id?`, `amount_minor`, `currency`, `cadence`, `next_due_on`, `last_charged_on`, `status`, `cancel_by?`                                       |
+| `net_worth_snapshots` | `id`, `user_id`, `on_date`, `assets_minor`, `liabilities_minor` — unique `(user_id, on_date)`                                                                                                 |
 
 **Transfers** are two rows sharing a `transfer_group_id`, signs opposite. A transfer is
 therefore never double-counted as income or expense, which is the single most common
@@ -76,14 +76,14 @@ idempotent rather than duplicating history.
 
 ## Trading
 
-| Table | Key columns |
-|---|---|
-| `trading_accounts` | `id`, `user_id`, `name`, `broker`, `currency`, `starting_balance_minor`, `risk_per_trade_pct` |
-| `strategies` | `id`, `user_id`, `name`, `description`, `rules` md, `archived_at` |
-| `trades` | `id`, `user_id`, `trading_account_id`, `strategy_id?`, `symbol`, `asset_class`, `direction` (long/short), `status` (planned/open/closed/cancelled), `opened_at`, `closed_at`, `quantity`, `entry_price`, `exit_price`, `stop_price`, `target_price`, `fees_minor`, `realized_pnl_minor`, `r_multiple`, `planned_risk_minor`, `tags` text[] |
-| `trade_executions` | `id`, `trade_id`, `side` (buy/sell), `quantity`, `price`, `fee_minor`, `executed_at` |
-| `trade_notes` | `id`, `trade_id`, `kind` (thesis/review/psychology), `body`, `emotion_tag`, `confidence`, `created_at` |
-| `trade_attachments` | `id`, `trade_id`, `storage_key`, `mime`, `bytes` |
+| Table               | Key columns                                                                                                                                                                                                                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `trading_accounts`  | `id`, `user_id`, `name`, `broker`, `currency`, `starting_balance_minor`, `risk_per_trade_pct`                                                                                                                                                                                                                                              |
+| `strategies`        | `id`, `user_id`, `name`, `description`, `rules` md, `archived_at`                                                                                                                                                                                                                                                                          |
+| `trades`            | `id`, `user_id`, `trading_account_id`, `strategy_id?`, `symbol`, `asset_class`, `direction` (long/short), `status` (planned/open/closed/cancelled), `opened_at`, `closed_at`, `quantity`, `entry_price`, `exit_price`, `stop_price`, `target_price`, `fees_minor`, `realized_pnl_minor`, `r_multiple`, `planned_risk_minor`, `tags` text[] |
+| `trade_executions`  | `id`, `trade_id`, `side` (buy/sell), `quantity`, `price`, `fee_minor`, `executed_at`                                                                                                                                                                                                                                                       |
+| `trade_notes`       | `id`, `trade_id`, `kind` (thesis/review/psychology), `body`, `emotion_tag`, `confidence`, `created_at`                                                                                                                                                                                                                                     |
+| `trade_attachments` | `id`, `trade_id`, `storage_key`, `mime`, `bytes`                                                                                                                                                                                                                                                                                           |
 
 `trade_executions` is the source of truth. Entry price, exit price, quantity, and realised
 P&L on `trades` are **derived aggregates**, recomputed on every execution write. This is
@@ -95,12 +95,12 @@ than self-reported.
 
 ## Connections
 
-| Table | Key columns |
-|---|---|
-| `links` | `id`, `user_id`, `source_type`, `source_id`, `target_type`, `target_id`, `relation` — unique on the whole tuple |
+| Table              | Key columns                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `links`            | `id`, `user_id`, `source_type`, `source_id`, `target_type`, `target_id`, `relation` — unique on the whole tuple                   |
 | `automation_rules` | `id`, `user_id`, `name`, `trigger_type`, `trigger_config` jsonb, `action_type`, `action_config` jsonb, `enabled`, `last_fired_at` |
-| `automation_runs` | `id`, `rule_id`, `fired_at`, `status`, `payload` jsonb, `error?` |
-| `notifications` | `id`, `user_id`, `kind`, `title`, `body`, `entity_type?`, `entity_id?`, `read_at?`, `created_at` |
+| `automation_runs`  | `id`, `rule_id`, `fired_at`, `status`, `payload` jsonb, `error?`                                                                  |
+| `notifications`    | `id`, `user_id`, `kind`, `title`, `body`, `entity_type?`, `entity_id?`, `read_at?`, `created_at`                                  |
 
 `links` is intentionally polymorphic and therefore cannot carry FK constraints to targets.
 Referential integrity is enforced in the service layer and swept by a scheduled integrity
@@ -109,8 +109,8 @@ which does not scale as modules are added.
 
 ## Insights
 
-| Table | Key columns |
-|---|---|
+| Table           | Key columns                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `daily_rollups` | `user_id`, `on_date`, `tasks_completed`, `focus_minutes`, `habits_hit`, `net_cashflow_minor`, `trades_closed`, `realized_pnl_minor` — PK `(user_id, on_date)` |
 
 Recomputed idempotently from source tables, so a rebuild is always safe.

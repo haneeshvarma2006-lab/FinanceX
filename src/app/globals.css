@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+
+/**
+ * KyliX design tokens.
+ *
+ * Dark is the primary theme, not an inversion bolted on afterwards, so both
+ * themes are defined here from the start. Every colour is a token; no component
+ * hard-codes a hex value.
+ */
+
+@theme {
+  --font-sans: 'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+
+  /* Domain accents. Each area of life gets an identity, but colour is never
+     the only thing carrying meaning — see the semantic pairs below. */
+  --color-tasks: oklch(0.68 0.16 250);
+  --color-finance: oklch(0.74 0.16 165);
+  --color-trading: oklch(0.7 0.18 300);
+
+  --radius-card: 0.875rem;
+  --radius-control: 0.5rem;
+
+  /* Motion is short and eases out; anything slower feels like latency. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+}
+
+:root {
+  color-scheme: dark;
+
+  --surface-base: oklch(0.16 0.018 265);
+  --surface-raised: oklch(0.2 0.02 265);
+  --surface-overlay: oklch(0.24 0.022 265);
+  --surface-inset: oklch(0.13 0.016 265);
+
+  --border-subtle: oklch(0.3 0.02 265);
+  --border-strong: oklch(0.4 0.024 265);
+
+  --text-primary: oklch(0.97 0.004 265);
+  --text-secondary: oklch(0.78 0.014 265);
+  --text-muted: oklch(0.62 0.016 265);
+
+  --accent: var(--color-tasks);
+  --accent-contrast: oklch(0.16 0.018 265);
+
+  --positive: oklch(0.76 0.16 160);
+  --negative: oklch(0.68 0.19 25);
+  --warning: oklch(0.8 0.15 85);
+
+  --focus-ring: oklch(0.8 0.14 250);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --surface-base: oklch(0.99 0.003 265);
+  --surface-raised: oklch(0.97 0.005 265);
+  --surface-overlay: oklch(1 0 0);
+  --surface-inset: oklch(0.95 0.006 265);
+
+  --border-subtle: oklch(0.9 0.008 265);
+  --border-strong: oklch(0.8 0.012 265);
+
+  --text-primary: oklch(0.22 0.02 265);
+  --text-secondary: oklch(0.42 0.018 265);
+  --text-muted: oklch(0.55 0.016 265);
+
+  --accent-contrast: oklch(0.99 0.003 265);
+
+  --positive: oklch(0.52 0.15 160);
+  --negative: oklch(0.54 0.2 25);
+  --warning: oklch(0.58 0.14 85);
+
+  --focus-ring: oklch(0.55 0.16 250);
+}
+
+@theme inline {
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-inset: var(--surface-inset);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+}
+
+* {
+  border-color: var(--border-subtle);
+}
+
+body {
+  background-color: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * Every number in this product is money, a count, or a time. Tabular figures
+ * stop columns from twitching as digits change, which is the difference
+ * between a ledger and a novelty.
+ */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* A single visible focus treatment, so keyboard users are never lost. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+/* Respect the system setting rather than animating regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
