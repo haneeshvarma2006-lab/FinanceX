@@ -324,9 +324,41 @@ retrofitted.
    scroll container, and items clipped mid-word. Active state is a soft pill,
    and the trailing edge fades to signal scrollability.
 
+## Native mobile — planned, not started
+
+`docs/MOBILE-PLAN.md` evaluates the options and defines the sync model, conflict
+handling, auth lifecycle and privacy requirements, as required before any
+mobile code is written.
+
+**Three blocking findings from the audit**, all web-side and all verifiable
+here:
+
+1. **No API a native client can call.** 38 Server Actions carry every mutation;
+   only 3 HTTP routes exist and none serves app data. Server Actions are bound
+   to React's rendering protocol and are not a wire format. The fix is thin —
+   the `service.ts` layer is already transport-agnostic — but it does not exist.
+2. **The session model is browser-shaped.** The store is reusable; the
+   `__Host-` cookie presentation is not. Mobile needs Bearer presentation over
+   the same session table.
+3. **The schema cannot express offline sync.** 12 of 18 syncable tables lack
+   `updatedAt`, and 13 hard-delete — so a deleted row would resurrect on an
+   offline client's next push.
+
+**Framework recommendation: Expo / React Native**, decided by one criterion —
+81+ tests of financial arithmetic (`money`, `pnl`, `decimal`, `streaks`,
+`recurrence`, `goal-math`) must run on the phone as the _same code_, not a Dart
+or Swift re-derivation. A trading journal that signs a short's P&L differently
+on two clients is worse than one with no mobile app.
+
+**Not claimed:** no mobile code exists, no iOS or Android build has been
+produced or tested, no device testing, no push credentials. This host is Linux
+with no Xcode, no Android SDK, no `adb` and no emulator — verified, not
+assumed.
+
 ## Next
 
-1. **Decide the product name** — blocking for anything public.
+1. **Decide the product name** — blocking for anything public, and the point at
+   which a store listing makes the conflict expensive.
 2. The focus timer — `focus_sessions` exists and the dashboard reads it, but
    there is no UI to start one.
 3. CSV import for transactions. The schema is idempotent-import-ready via
