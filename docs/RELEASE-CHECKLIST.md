@@ -19,7 +19,7 @@ pnpm test:e2e        # production build, real browser
 
 `pnpm verify` chains lint → typecheck → test → build.
 
-## Current status — 2026-09-20
+## Current status — 2026-09-21
 
 | Gate                | Result                                                    |
 | ------------------- | --------------------------------------------------------- |
@@ -27,11 +27,14 @@ pnpm test:e2e        # production build, real browser
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ no known vulnerabilities                               |
-| `pnpm test`         | ✅ **204 passing**, 14 files                              |
-| `pnpm test:e2e`     | ✅ **23 passing**, Chromium, production build             |
-| `pnpm build`        | ✅ 18 routes                                              |
-| Migrations          | ✅ 4 applied to a clean database                          |
+| `pnpm test`         | ✅ **348 passing** (258 app + 81 domain + 9 tokens)       |
+| `pnpm test:e2e`     | ✅ **58 passing**, Chromium, production build             |
+| `pnpm build`        | ✅ 24 routes                                              |
+| Migrations          | ✅ 9 applied to a clean database                          |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
+
+Every gate above passes **locally, in a development environment**. None of it
+says anything about a deployed origin, because nothing has been deployed.
 
 ## Before a first public deployment
 
@@ -120,11 +123,14 @@ by users:
 4. **Single base currency.** Foreign-currency rows are stored faithfully but not
    converted; cross-currency transfers are refused rather than guessed at.
 5. **No bank, broker, or market-data connection.** Every figure is user-entered.
-6. **No tasks, habits, or goals yet** (M2), and **no rules engine** (M5).
-7. **No CSV import yet** — the schema supports idempotent import via
+6. **No CSV import yet** — the schema supports idempotent import via
    `externalId`, but no importer is built.
-8. **Web only.** No native mobile or desktop application, despite the reference
-   image advertising them.
+7. **Web only.** No native mobile or desktop application. Milestones W1–W5
+   removed the architectural blockers (a JSON API, bearer sessions, sync
+   primitives, a shared domain package and shared design tokens), but no
+   mobile client exists and neither iOS nor Android has been built or tested.
+8. **No automated backups, monitoring or alerting**, because nothing is
+   deployed to attach them to.
 9. **No MFA.**
 10. **CI has never run.**
 
