@@ -2,15 +2,17 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth/current-user';
 import { countUnreadNotifications } from '@/modules/productivity/repository';
 import { NotificationBell } from '@/components/ui/notification-bell';
+import { MainNav, type NavItem } from '@/components/ui/nav';
 import { signOutAction } from '../(auth)/actions';
 
-const NAV = [
-  { href: '/today', label: 'Today' },
-  { href: '/tasks', label: 'Tasks' },
-  { href: '/habits', label: 'Habits' },
-  { href: '/goals', label: 'Goals' },
-  { href: '/finance', label: 'Finance' },
-  { href: '/trading', label: 'Trading' },
+const NAV: readonly NavItem[] = [
+  { href: '/today', label: 'Today', accent: 'accent' },
+  { href: '/tasks', label: 'Tasks', accent: 'tasks' },
+  { href: '/habits', label: 'Habits', accent: 'habits' },
+  { href: '/goals', label: 'Goals', accent: 'habits' },
+  { href: '/finance', label: 'Finance', accent: 'finance' },
+  { href: '/trading', label: 'Trading', accent: 'trading' },
+  { href: '/rules', label: 'Rules', accent: 'accent' },
 ] as const;
 
 /**
@@ -25,49 +27,42 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-dvh flex-col">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:bg-surface-overlay focus:px-3 focus:py-2 focus:text-sm"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-[var(--radius-control)] focus:bg-surface-overlay focus:px-3 focus:py-2 focus:text-sm focus:shadow-(--shadow-overlay)"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-base/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-          <div className="flex min-w-0 items-center gap-5">
-            <Link href="/today" className="text-sm font-semibold tracking-tight">
-              Kyli<span className="text-accent">X</span>
-            </Link>
+      <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-base/85 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
+          <Link
+            href="/today"
+            className="shrink-0 text-sm font-semibold tracking-tight text-text-primary"
+          >
+            Kyli<span className="text-accent">X</span>
+          </Link>
 
-            <nav aria-label="Main" className="min-w-0 overflow-x-auto">
-              <ul className="flex items-center gap-1">
-                {NAV.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="rounded-[var(--radius-control)] px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </div>
+          <MainNav items={NAV} />
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <NotificationBell count={unread} />
 
             <Link
               href="/settings"
-              className="rounded-[var(--radius-control)] px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+              className="inline-flex h-8 items-center rounded-[var(--radius-control)] px-2.5 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
             >
               Settings
             </Link>
 
-            <span className="hidden text-sm text-text-secondary sm:inline">{user.displayName}</span>
+            <span aria-hidden className="mx-1 hidden h-4 w-px bg-border-subtle sm:block" />
+
+            <span className="hidden max-w-32 truncate text-sm text-text-secondary sm:inline">
+              {user.displayName}
+            </span>
+
             <form action={signOutAction}>
               <button
                 type="submit"
-                className="rounded-[var(--radius-control)] px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+                className="inline-flex h-8 items-center rounded-[var(--radius-control)] px-2.5 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
               >
                 Sign out
               </button>
@@ -76,7 +71,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {children}
       </main>
     </div>

@@ -44,16 +44,61 @@ describe('invariant: SQL lives only in the data layer', () => {
   });
 
   it('builds no SQL by string concatenation', async () => {
-    const files = await sourceFiles('src/**/*.{ts,tsx}');
+    // Only .ts — SQL never belongs in a component, and a UI string like
+    // `Delete ${name}` in an aria-label is not SQL. An over-broad guard that
+    // cries wolf gets disabled, which is worse than no guard at all.
+    const files = await sourceFiles('src/**/*.ts');
+
+    /**
+     * A template literal carrying a real SQL statement shape — the keyword
+     * plus the clause that must follow it — together with an interpolation,
+     * and NOT wrapped in drizzle's sql`` tag, which parameterises its values.
+     */
+    const statementShapes = [
+      /(?<!sql)`[^`]*\bselect\b[^`]*\bfrom\b[^`]*\$\{/is,
+      /(?<!sql)`[^`]*\binsert\s+into\b[^`]*\$\{/is,
+      /(?<!sql)`[^`]*\bupdate\b[^`]*\bset\b[^`]*\$\{/is,
+      /(?<!sql)`[^`]*\bdelete\s+from\b[^`]*\$\{/is,
+    ];
 
     const offenders = files.filter((file) => {
       const source = readFileSync(join(ROOT, file), 'utf8');
-      // A template literal containing a SQL keyword and an interpolation, not
-      // wrapped in drizzle's sql`` tag, is an injection waiting to happen.
-      return /(?<!sql)`[^`]*\b(select|insert|update|delete)\b[^`]*\$\{/i.test(source);
+      return statementShapes.some((pattern) => pattern.test(source));
     });
 
     expect(offenders, `Possible SQL string building in: ${offenders.join(', ')}`).toEqual([]);
+  });
+
+  it('still catches SQL actually built by concatenation', () => {
+    // Guarding the guard: these are what it must reject.
+    const shapes = [
+      /(?<!sql)`[^`]*\bselect\b[^`]*\bfrom\b[^`]*\$\{/is,
+      /(?<!sql)`[^`]*\bdelete\s+from\b[^`]*\$\{/is,
+    ];
+
+    const hostile = [
+      'const q = `select * from users where id = ${id}`;',
+      'await raw(`delete from sessions where token = ${token}`);',
+    ];
+    for (const sample of hostile) {
+      expect(
+        shapes.some((p) => p.test(sample)),
+        sample,
+      ).toBe(true);
+    }
+
+    // And these are what it must NOT reject.
+    const benign = [
+      'aria-label={`Delete ${rule.name}`}',
+      'const msg = `Update ${count} items`;',
+      'sql`delete from ${table} where id = ${id}`',
+    ];
+    for (const sample of benign) {
+      expect(
+        shapes.some((p) => p.test(sample)),
+        sample,
+      ).toBe(false);
+    }
   });
 });
 

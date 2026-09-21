@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useClearingField } from '@/components/ui/use-clearing-field';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
@@ -45,10 +46,16 @@ const KIND_LABELS: Record<string, string> = {
 
 export function AddGoalForm({ habits }: { habits: { id: string; name: string }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createGoalAction, {});
+  const titleField = useClearingField(state);
   const [kind, setKind] = useState('numeric');
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <form
+      action={action}
+      onSubmit={titleField.markSubmitted}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
@@ -58,6 +65,8 @@ export function AddGoalForm({ habits }: { habits: { id: string; name: string }[]
         name="title"
         required
         maxLength={200}
+        value={titleField.value}
+        onChange={titleField.onChange}
         error={state.fieldErrors?.title}
       />
 

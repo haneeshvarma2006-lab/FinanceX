@@ -43,6 +43,13 @@
       "when": 1789919352045,
       "tag": "0005_naive_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789966663518,
+      "tag": "0006_gifted_meggan",
+      "breakpoints": true
     }
   ]
 }

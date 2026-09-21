@@ -4,9 +4,9 @@ import { formatMoney, type Currency } from '@/lib/money';
 /**
  * Money on screen.
  *
- * Sign is carried by a symbol and by the accessible label, not by colour alone
- * — a red number is invisible information to a colour-blind user and to anyone
- * printing in greyscale.
+ * Direction is carried by a sign and by the accessible label, never by colour
+ * alone — a red number is invisible information to a colour-blind reader and
+ * to anyone printing in greyscale.
  */
 export function Money({
   minor,
@@ -32,7 +32,6 @@ export function Money({
   return (
     <span
       className={cn('numeric', tone, className)}
-      // Without this, a screen reader can read "-1,234" ambiguously.
       aria-label={
         signed && minor !== 0n
           ? `${minor > 0n ? 'gain' : 'loss'} of ${formatMoney(minor < 0n ? -minor : minor, currency, { locale })}`
@@ -44,6 +43,13 @@ export function Money({
   );
 }
 
+/**
+ * A progress bar.
+ *
+ * Two pixels of track, a rounded fill, and a width transition. Nothing else —
+ * a progress bar that animates its colour or pulses is competing with the
+ * number beside it.
+ */
 export function Progress({
   value,
   max = 100,
@@ -74,7 +80,8 @@ export function Progress({
     >
       <div
         className={cn(
-          'h-full rounded-full transition-[width] duration-[var(--duration-base)]',
+          'h-full rounded-full transition-[width]',
+          'duration-[var(--duration-base)] ease-(--ease-out-soft)',
           bar,
         )}
         style={{ width: `${pct}%` }}
@@ -83,6 +90,12 @@ export function Progress({
   );
 }
 
+/**
+ * A badge.
+ *
+ * Tinted background plus matching text, never a saturated fill — a row of
+ * solid pills fights the content it is annotating.
+ */
 export function Badge({
   children,
   tone = 'neutral',
@@ -91,15 +104,21 @@ export function Badge({
   tone?: 'neutral' | 'positive' | 'negative' | 'warning' | 'accent';
 }) {
   const tones = {
-    neutral: 'border-border-subtle text-text-muted',
-    positive: 'border-positive/40 text-positive',
-    negative: 'border-negative/40 text-negative',
-    warning: 'border-warning/40 text-warning',
-    accent: 'border-accent/40 text-accent',
+    neutral: 'border-border-subtle bg-surface-inset text-text-muted',
+    positive: 'border-positive/30 bg-positive-soft text-positive',
+    negative: 'border-negative/30 bg-negative-soft text-negative',
+    warning: 'border-warning/30 bg-warning-soft text-warning',
+    accent: 'border-accent/30 bg-accent-soft text-accent',
   }[tone];
 
   return (
-    <span className={cn('rounded-full border px-2 py-0.5 text-xs whitespace-nowrap', tones)}>
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border px-2 py-0.5',
+        'text-2xs leading-4 font-medium whitespace-nowrap',
+        tones,
+      )}
+    >
       {children}
     </span>
   );
@@ -115,14 +134,45 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-pretty text-text-secondary">{description}</p>
+          <p className="mt-1.5 max-w-prose text-sm text-text-secondary">{description}</p>
         )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
+    </header>
+  );
+}
+
+/**
+ * A 30-day activity strip.
+ *
+ * Small, honest data visualisation: one cell per day, filled when the habit
+ * was logged. No axis, no tooltip, no library — the shape is the message.
+ */
+export function ActivityStrip({
+  days,
+  label,
+}: {
+  /** Oldest first, one boolean per day. */
+  days: boolean[];
+  label: string;
+}) {
+  return (
+    <div
+      role="img"
+      aria-label={`${label}: ${days.filter(Boolean).length} of the last ${days.length} days`}
+      className="flex items-end gap-0.5"
+    >
+      {days.map((done, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={cn('h-3.5 w-1 rounded-[1px]', done ? 'bg-accent' : 'bg-surface-inset')}
+        />
+      ))}
     </div>
   );
 }

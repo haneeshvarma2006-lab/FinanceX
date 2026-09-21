@@ -4,9 +4,10 @@ import { getEnv } from '@/lib/env';
 import * as finance from '@/modules/finance/schema';
 import * as identity from '@/modules/identity/schema';
 import * as productivity from '@/modules/productivity/schema';
+import * as rules from '@/modules/rules/schema';
 import * as trading from '@/modules/trading/schema';
 
-const schema = { ...identity, ...finance, ...trading, ...productivity };
+const schema = { ...identity, ...finance, ...trading, ...productivity, ...rules };
 
 declare global {
   // Reuse the pool across hot reloads in development, otherwise every edit

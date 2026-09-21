@@ -11,36 +11,46 @@ command named, in this environment. Nothing is asserted from inspection alone.
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ **no known vulnerabilities**                           |
-| `pnpm test`         | ✅ **298 passing**, 19 files                              |
-| `pnpm test:e2e`     | ✅ **36 passing**, Chromium, production build             |
-| `pnpm build`        | ✅ 23 routes                                              |
-| Migrations          | ✅ 6 applied to clean databases                           |
+| `pnpm test`         | ✅ **320 passing**, 20 files                              |
+| `pnpm test:e2e`     | ✅ **46 passing**, Chromium, production build             |
+| `pnpm build`        | ✅ 24 routes                                              |
+| Migrations          | ✅ 7 applied to clean databases                           |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
 
 Integration and E2E tests run against real PostgreSQL databases, not mocks.
 
-## Test inventory — 298 unit/integration + 36 E2E
+## Test inventory — 320 unit/integration + 46 E2E
 
-| Suite                                 | Count | Covers                                                |
-| ------------------------------------- | ----- | ----------------------------------------------------- |
-| `src/lib/money`                       | 22    | Integer arithmetic, parsing, allocation, precision    |
-| `src/lib/security`                    | 13    | argon2id, session tokens, constant-time compare       |
-| `src/modules/identity/age`            | 12    | Age policy, boundaries, leap day                      |
-| `src/modules/identity/oauth`          | 5     | Open-redirect defence, state hashing                  |
-| `src/modules/trading/pnl`             | 27    | P&L for long/short, fees, partial fills, statistics   |
-| `tests/unit/env`                      | 17    | Boot-time environment contract                        |
-| `tests/unit/architecture`             | 10    | Invariants — verified to fail when violated           |
-| `tests/integration/auth`              | 32    | Sign-up, sign-in, sessions, rate limits, age, consent |
-| `tests/integration/tenancy`           | 7     | Cross-account isolation (identity)                    |
-| `tests/integration/oauth-linking`     | 13    | Account-linking takeover, pending registration        |
-| `tests/integration/email`             | 23    | Preferences, suppression, unsubscribe, replay         |
-| `tests/integration/finance`           | 14    | Transfers, balances, budgets, revisions               |
-| `tests/integration/finance-isolation` | 12    | IDOR across every finance operation                   |
-| `tests/integration/trading`           | 12    | Lifecycle, derived aggregates, isolation              |
-| `tests/e2e`                           | 23    | Full journeys, security headers, real browser         |
+Counts below are read from an actual `--reporter=verbose` run, not maintained
+by hand. An earlier revision of this table drifted out of step with the totals;
+it is regenerated from the runner now.
 
-**19 dedicated cross-account isolation tests** span read, write, update, delete,
-archive, bulk operations and cascade behaviour.
+| Suite                                 | Count | Covers                                                     |
+| ------------------------------------- | ----- | ---------------------------------------------------------- |
+| `tests/integration/productivity`      | 31    | Tasks, recurrence, habits, goals, notifications, isolation |
+| `tests/integration/auth`              | 30    | Sign-up, sign-in, sessions, rate limits, age, consent      |
+| `src/modules/trading/pnl`             | 27    | P&L for long/short, fees, partial fills, statistics        |
+| `tests/integration/email`             | 23    | Preferences, suppression, unsubscribe, replay              |
+| `src/lib/money`                       | 22    | Integer arithmetic, parsing, allocation, precision         |
+| `tests/integration/rules`             | 21    | Rules engine: firing, dedupe, thresholds, isolation        |
+| `src/lib/query`                       | 18    | Pagination bounds, sort allow-list, LIKE escaping          |
+| `tests/unit/env`                      | 17    | Boot-time environment contract                             |
+| `src/modules/productivity/recurrence` | 17    | RRULE, DST, leap day, month-end, exhausted series          |
+| `src/modules/productivity/streaks`    | 15    | Streaks across backfill, deletion, timezone, leap year     |
+| `tests/integration/finance`           | 14    | Transfers, balances, budgets, revisions                    |
+| `tests/integration/oauth-linking`     | 13    | Account-linking takeover, pending registration             |
+| `tests/integration/trading`           | 12    | Lifecycle, derived aggregates, isolation                   |
+| `tests/integration/finance-isolation` | 12    | IDOR across every finance operation                        |
+| `src/modules/identity/age`            | 12    | Age policy, boundaries, leap day                           |
+| `tests/unit/architecture`             | 11    | Invariants — verified to fail when violated                |
+| `tests/integration/tenancy`           | 7     | Cross-account isolation (identity)                         |
+| `src/lib/security/tokens`             | 7     | Session tokens, constant-time compare                      |
+| `src/lib/security/password`           | 6     | argon2id                                                   |
+| `src/modules/identity/oauth`          | 5     | Open-redirect defence, state hashing                       |
+| `tests/e2e`                           | 46    | Full journeys, security headers, real browser              |
+
+**23 dedicated cross-account isolation tests** span read, write, update,
+delete, archive, bulk operations and cascade behaviour.
 
 ---
 
@@ -243,14 +253,84 @@ throughout, or clearing synchronously at submit time, which would discard the
 user's text whenever validation fails. Left as-is and recorded here rather than
 papered over.
 
+---
+
+## Rules engine and design system — 2026-09-21
+
+### The rules engine
+
+The five hardcoded dashboard conditions are now **rows the user owns**. Each is
+a trigger and an action chosen from fixed catalogues, plus a Zod-validated
+config. Seeded at sign-up, visible at `/rules`, and fully editable — retune the
+threshold, pause it, or delete it.
+
+**Nothing user-supplied is executed.** There is no expression language and no
+template interpolation, so there is nothing to escape. A rules engine that
+evaluates user-supplied expressions is a remote-code-execution feature wearing
+a friendly hat; this one cannot become that.
+
+Seven triggers (overdue tasks, streak at risk, goal behind pace, budget
+exceeded, consecutive losing trades, monthly spend above an amount, nothing
+completed today) and two actions (notify, create a task).
+
+Three properties, each tested:
+
+- **Every evaluation is recorded, including the misses.** A rule that quietly
+  does nothing is otherwise indistinguishable from a broken one, so `/rules`
+  shows why each rule did or did not fire.
+- **Firing is idempotent per occurrence.** The dashboard evaluates on every
+  load; re-checking the same condition on the same day shows as _already
+  handled_ rather than acting twice. Creating a task checks the run log first,
+  since tasks have no unique constraint to absorb a duplicate.
+- **Money thresholds compare in exact minor units.** A test asserts that ₹1000.00
+  exactly does not fire a "more than ₹1000" rule and ₹1000.01 does — the
+  boundary a float comparison would get wrong.
+
+### Design system
+
+Tokens defined first, then applied: colour (OKLCH, so equal-lightness accents
+do not shout over each other), an eight-step type scale, radii, three elevation
+levels, motion curves and durations, and four named breakpoints. Components
+reference tokens only — no component defines a raw hex, a one-off pixel value,
+or its own easing curve.
+
+Dark is a cinematic navy (hue 265) rather than neutral grey, so the foundation
+has depth without a gradient doing the work. Light is defined alongside it, not
+retrofitted.
+
+### Errors fixed in this pass
+
+1. **Form input loss — now actually fixed.** React 19 auto-resets an
+   _uncontrolled_ form once its action resolves, wiping anything typed in the
+   gap. My earlier "fix" reset from an effect, which made it worse by adding a
+   second, later wipe. The real fix is to stop the automatic reset happening at
+   all: the primary field is controlled, and the deliberate clear only fires
+   when the field still holds exactly what was submitted. Two E2E tests cover
+   it, including typing during an in-flight submit.
+2. **Stale test inventory.** This document's per-suite table summed to 217 while
+   its own header said 298. It is now generated from a verbose runner pass.
+3. **Over-broad SQL guard.** The architecture invariant flagged
+   `` `Delete ${rule.name}` `` in an aria-label as SQL string-building. A guard
+   that cries wolf gets disabled, which is worse than no guard — it now requires
+   a real statement shape and has tests asserting it accepts the benign cases
+   and still rejects hostile ones.
+4. **Collapsed notification switches — a regression I introduced.** Routing
+   every rule's alert through one `rule_fired` kind silently broke the granular
+   per-kind switches in Settings. Alerts are now filed under the kind their
+   trigger belongs to. Caught by an existing E2E test.
+5. **Truncated money on mobile.** Stat tiles elided figures to `₹80,77…` at
+   390px. Numbers are never truncated now; the grid stacks instead.
+6. **Clipped navigation.** The active-item underline was cut off by the nav's
+   scroll container, and items clipped mid-word. Active state is a soft pill,
+   and the trailing edge fades to signal scrollability.
+
 ## Next
 
 1. **Decide the product name** — blocking for anything public.
-2. A user-editable rules engine. The notification pipeline (kinds, dedupe keys,
-   per-kind preferences) already exists; what is missing is letting the user
-   define the conditions rather than shipping five fixed ones.
-3. The focus timer — `focus_sessions` exists and the dashboard reads it, but
+2. The focus timer — `focus_sessions` exists and the dashboard reads it, but
    there is no UI to start one.
-4. CSV import for transactions. The schema is idempotent-import-ready via
+3. CSV import for transactions. The schema is idempotent-import-ready via
    `external_id`; no importer is built.
+4. Editing an existing rule. Rules can be created, paused and deleted, but not
+   edited in place — changing a threshold means deleting and recreating.
 5. Legal review of the drafted terms and privacy notice.

@@ -33,6 +33,10 @@ export const NOTIFICATION_KINDS = {
     label: 'Trading review due',
     description: 'After a run of losing trades, as a prompt to review rather than continue.',
   },
+  rule_fired: {
+    label: 'Your own rules',
+    description: 'When an automation rule you created matches its condition.',
+  },
 } as const;
 
 export type NotificationKind = keyof typeof NOTIFICATION_KINDS;

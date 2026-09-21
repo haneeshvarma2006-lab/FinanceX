@@ -212,16 +212,26 @@ test('overdue work is surfaced on the dashboard and notified', async ({ page }) 
   await expect(page.getByText(/worth your attention/i)).toBeVisible();
   await expect(page.getByText(/1 overdue task/i)).toBeVisible();
 
-  // The same condition raises a notification, deduplicated per day.
+  /**
+   * The same condition raises a notification, deduplicated per day. The copy
+   * now comes from the "Overdue work" starter rule rather than a hardcoded
+   * string — see modules/rules/defaults.ts.
+   */
   await page.goto('/notifications');
-  await expect(page.getByText(/1 task overdue/i)).toBeVisible();
+  await expect(page.getByText('You have overdue tasks')).toBeVisible();
 
   await page.goto('/today');
   await page.goto('/notifications');
-  await expect(page.getByText(/1 task overdue/i)).toHaveCount(1);
+  await expect(page.getByText('You have overdue tasks')).toHaveCount(1);
 });
 
 test('notification preferences suppress a kind entirely', async ({ page }) => {
+  /**
+   * A rule's alerts are filed under the notification kind its *trigger*
+   * belongs to, not under one generic "rules" kind — so the granular switches
+   * in Settings still govern rule-driven alerts. Collapsing them into a single
+   * switch was a regression this test caught.
+   */
   await register(page, 'notifpref');
 
   await page.goto('/settings/notifications');
@@ -278,17 +288,12 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
 
 test('adding several in a row creates all of them', async ({ page }) => {
   /**
-   * The add form is uncontrolled and clears when `revalidatePath` re-renders
-   * the tree, which happens shortly after the submit resolves rather than at a
-   * defined moment. Typing inside that window is wiped.
-   *
-   * At human typing speed the window is unreachable; an automated driver can
-   * hit it, so this test waits for the field to settle before typing the next
-   * entry. An explicit reset in an effect was tried and made it worse — it
-   * adds a *second*, later wipe. Removing the window entirely means either
-   * controlled inputs or clearing synchronously at submit time, and the
-   * latter would discard the user's text whenever validation fails. Noted in
-   * docs/STATUS.md as a known limitation rather than papered over here.
+   * No settling wait between entries. React 19 auto-resets an uncontrolled
+   * form once its action resolves, which used to wipe whatever had been typed
+   * in the gap — the third entry submitted empty and showed a validation error
+   * the user never caused. The primary field is now controlled, so React never
+   * auto-resets it, and the deliberate clear only fires when the field still
+   * holds exactly what was submitted.
    */
   await register(page, 'rapid');
   await page.goto('/habits');
@@ -296,20 +301,41 @@ test('adding several in a row creates all of them', async ({ page }) => {
   const field = page.getByLabel('Habit', { exact: true });
 
   for (const name of ['Morning walk', 'Read before bed', 'No phone after 10pm']) {
-    // Wait for the previous submit to have fully settled the form.
-    await expect(field).toHaveValue('');
     await field.fill(name);
     await page.getByRole('button', { name: /add habit/i }).click();
-    await expect(page.getByText('Habit added')).toBeVisible();
-    await expect(field).toHaveValue('');
+    // Wait on a per-iteration signal. The "Habit added" alert persists from the
+    // first submit, so asserting it would let the loop run ahead of the work.
+    await expect(
+      page.getByRole('button', { name: new RegExp(`log ${name} for today`, 'i') }),
+    ).toBeVisible();
   }
 
-  // All three exist, and none of them errored.
+  // All three created, none errored.
   await expect(page.getByText('Name the habit')).toHaveCount(0);
   for (const name of ['Morning walk', 'Read before bed', 'No phone after 10pm']) {
     await expect(page.getByText(name)).toBeVisible();
   }
+  await expect(field).toHaveValue('');
+});
 
-  // And the field is empty afterwards, deterministically.
-  await expect(page.getByLabel('Habit', { exact: true })).toHaveValue('');
+test('text typed during a submit is not discarded', async ({ page }) => {
+  /**
+   * The precise case the controlled field exists for: start typing the next
+   * entry while the previous submit is still in flight. The old behaviour
+   * wiped it; the new clear is conditional on the field being unchanged.
+   */
+  await register(page, 'typing');
+  await page.goto('/habits');
+
+  const field = page.getByLabel('Habit', { exact: true });
+
+  await field.fill('First habit');
+  // Do not await the click's settlement — type immediately afterwards.
+  await page.getByRole('button', { name: /add habit/i }).click({ noWaitAfter: true });
+  await field.fill('Second habit');
+
+  await expect(page.getByText('Habit added')).toBeVisible();
+
+  // What was typed during the round trip survived.
+  await expect(field).toHaveValue('Second habit');
 });

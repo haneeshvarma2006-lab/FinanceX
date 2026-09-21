@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertTriangle, CheckSquare, Flame, LineChart, Target, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
+import { Card, CardBody, CardHeader, Stat } from '@/components/ui/card';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
-import { buildTodaySnapshot, raiseDashboardNotifications } from '@/modules/dashboard/service';
+import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -25,9 +25,9 @@ export default async function TodayPage() {
   // time-relative state without reading a clock during render.
   const { renderedAt } = snapshot;
 
-  // Derived from the same read the page renders, so what the user is told
-  // always matches what they can see.
-  await raiseDashboardNotifications(user.id, snapshot);
+  // The user's own rules, evaluated against the same read the page renders,
+  // so what they are told always matches what they can see.
+  await runAutomationRules(user.id, snapshot);
 
   const nothingYet =
     !snapshot.tasks.hasData &&
@@ -37,7 +37,7 @@ export default async function TodayPage() {
     !snapshot.trading.hasData;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title={`Good to see you, ${user.displayName}`}
         description={`${snapshot.today} · everything below is from your own records.`}
@@ -50,7 +50,7 @@ export default async function TodayPage() {
         snapshot.goals.offTrack.length > 0 ||
         snapshot.finance.overBudget.length > 0 ||
         snapshot.trading.consecutiveLosses >= 3) && (
-        <Card className="border-warning/30">
+        <Card tone="warning">
           <CardHeader
             title="Worth your attention"
             description="Things that changed state and are waiting on a decision."
@@ -108,7 +108,7 @@ export default async function TodayPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         {/* ---------------------------------------------------------- tasks */}
         <Card>
           <CardHeader
@@ -232,29 +232,36 @@ export default async function TodayPage() {
                 cta="Add an account"
               />
             ) : (
-              <dl className="grid grid-cols-3 gap-3">
-                <Stat label="Balance">
-                  <Money
-                    minor={snapshot.finance.balanceMinor}
-                    currency={snapshot.finance.currency}
-                  />
-                </Stat>
-                <Stat label="In">
-                  <span className="text-positive">
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Stat
+                  label="Balance"
+                  value={
+                    <Money
+                      minor={snapshot.finance.balanceMinor}
+                      currency={snapshot.finance.currency}
+                    />
+                  }
+                />
+                <Stat
+                  label="In"
+                  tone="positive"
+                  value={
                     <Money
                       minor={snapshot.finance.incomeMinor}
                       currency={snapshot.finance.currency}
                     />
-                  </span>
-                </Stat>
-                <Stat label="Out">
-                  <span className="text-negative">
+                  }
+                />
+                <Stat
+                  label="Out"
+                  tone="negative"
+                  value={
                     <Money
                       minor={snapshot.finance.expenseMinor}
                       currency={snapshot.finance.currency}
                     />
-                  </span>
-                </Stat>
+                  }
+                />
               </dl>
             )}
           </CardBody>
@@ -287,20 +294,19 @@ export default async function TodayPage() {
                   : 'No trades recorded yet. Log one to start building a history.'}
               </p>
             ) : (
-              <dl className="grid grid-cols-3 gap-3">
-                <Stat label="Closed">
-                  <span className="numeric">{snapshot.trading.closedTrades}</span>
-                </Stat>
-                <Stat label="Win rate">
-                  <span className="numeric">{snapshot.trading.winRatePercent}%</span>
-                </Stat>
-                <Stat label="Realised">
-                  <Money
-                    minor={snapshot.trading.netPnlMinor}
-                    currency={snapshot.trading.currency}
-                    signed
-                  />
-                </Stat>
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Stat label="Closed" value={snapshot.trading.closedTrades} />
+                <Stat label="Win rate" value={`${snapshot.trading.winRatePercent}%`} />
+                <Stat
+                  label="Realised"
+                  value={
+                    <Money
+                      minor={snapshot.trading.netPnlMinor}
+                      currency={snapshot.trading.currency}
+                      signed
+                    />
+                  }
+                />
               </dl>
             )}
           </CardBody>
@@ -335,15 +341,6 @@ export default async function TodayPage() {
           </CardBody>
         </Card>
       )}
-    </div>
-  );
-}
-
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs tracking-wide text-text-muted uppercase">{label}</dt>
-      <dd className="mt-1 text-lg">{children}</dd>
     </div>
   );
 }

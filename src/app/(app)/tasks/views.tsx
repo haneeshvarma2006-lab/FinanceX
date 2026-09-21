@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useClearingField } from '@/components/ui/use-clearing-field';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Check, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,9 +41,15 @@ const PRIORITY_TONE = {
 
 export function AddTaskForm({ projects }: { projects: Project[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createTaskAction, {});
+  const titleField = useClearingField(state);
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <form
+      action={action}
+      onSubmit={titleField.markSubmitted}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
@@ -52,6 +59,8 @@ export function AddTaskForm({ projects }: { projects: Project[] }) {
         name="title"
         required
         maxLength={240}
+        value={titleField.value}
+        onChange={titleField.onChange}
         error={state.fieldErrors?.title}
       />
 

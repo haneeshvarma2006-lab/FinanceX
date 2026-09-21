@@ -221,75 +221,14 @@ export async function buildTodaySnapshot(
 }
 
 /**
- * Raise notifications for conditions the snapshot reveals.
+ * Evaluate the user's automation rules against this snapshot.
  *
- * Deliberately derived from the same read the dashboard does, so what the user
- * is told matches what they can see. Every raise is deduplicated per day.
+ * This replaced five hardcoded conditions. They are now seeded rows the user
+ * can see, retune, disable or delete — see modules/rules/defaults.ts. The
+ * engine records every evaluation, including the misses, so "why didn't that
+ * fire?" has an answer.
  */
-export async function raiseDashboardNotifications(
-  userId: string,
-  snapshot: TodaySnapshot,
-): Promise<void> {
-  const { notify } = await import('@/modules/productivity/notifications');
-
-  if (snapshot.tasks.overdue > 0) {
-    await notify(userId, {
-      kind: 'task_overdue',
-      title: `${snapshot.tasks.overdue} task${snapshot.tasks.overdue === 1 ? '' : 's'} overdue`,
-      body: 'Past their due time and still open.',
-      href: '/tasks',
-      dedupeKey: `task_overdue:${snapshot.today}`,
-    });
-  }
-
-  for (const habit of snapshot.habits.atRisk) {
-    if (habit.streak.current < 3) continue; // Not worth interrupting for.
-    await notify(userId, {
-      kind: 'habit_streak_risk',
-      title: `${habit.name}: ${habit.streak.current}-day streak at risk`,
-      body: 'Not logged yet today.',
-      href: '/habits',
-      entityType: 'habit',
-      entityId: habit.id,
-      dedupeKey: `habit_streak_risk:${habit.id}:${snapshot.today}`,
-    });
-  }
-
-  for (const goal of snapshot.goals.offTrack) {
-    await notify(userId, {
-      kind: 'goal_off_track',
-      title: `${goal.title} is behind pace`,
-      body: `At ${goal.percent}% with less time remaining than that.`,
-      href: '/goals',
-      entityType: 'goal',
-      entityId: goal.id,
-      dedupeKey: `goal_off_track:${goal.id}:${snapshot.today}`,
-    });
-  }
-
-  for (const budget of snapshot.finance.overBudget) {
-    await notify(userId, {
-      kind: 'budget_exceeded',
-      title: 'A budget has been exceeded',
-      body: 'Spending in one of your categories has passed its limit this month.',
-      href: '/finance',
-      entityType: 'budget',
-      entityId: budget.categoryId,
-      dedupeKey: `budget_exceeded:${budget.categoryId}:${snapshot.today}`,
-    });
-  }
-
-  /**
-   * The product thesis in one rule: a run of losses books a review rather than
-   * leaving the next trade to be taken on tilt.
-   */
-  if (snapshot.trading.consecutiveLosses >= 3) {
-    await notify(userId, {
-      kind: 'trading_review_due',
-      title: `${snapshot.trading.consecutiveLosses} losing trades in a row`,
-      body: 'Worth reviewing what they had in common before the next one.',
-      href: '/trading',
-      dedupeKey: `trading_review_due:${snapshot.today}`,
-    });
-  }
+export async function runAutomationRules(userId: string, snapshot: TodaySnapshot): Promise<void> {
+  const { evaluateAll } = await import('@/modules/rules/engine');
+  await evaluateAll(userId, snapshot);
 }

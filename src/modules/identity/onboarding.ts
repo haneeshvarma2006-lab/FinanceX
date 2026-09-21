@@ -1,5 +1,6 @@
 import * as emailRepo from '@/modules/email/repository';
 import { seedNotificationPreferences } from '@/modules/productivity/notifications';
+import { seedStarterRules } from '@/modules/rules/defaults';
 
 /**
  * Seed a new account's email preferences.
@@ -14,6 +15,10 @@ export async function seedEmailPreferences(userId: string, marketingOptIn: boole
   // In-app notifications default on: every one is raised from the user's own
   // records, in response to something they set up themselves.
   await seedNotificationPreferences(userId);
+
+  // Starter automation rules. Configuration the user owns and can change —
+  // these used to be hardcoded conditions nobody could see or switch off.
+  await seedStarterRules(userId);
 
   // Marketing is only ever turned ON by an explicit opt-in; the default is off.
   if (marketingOptIn) {

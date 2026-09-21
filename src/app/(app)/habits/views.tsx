@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useClearingField } from '@/components/ui/use-clearing-field';
 import { Check, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
@@ -17,14 +18,28 @@ type Streak = {
 
 export function AddHabitForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(createHabitAction, {});
+  const titleField = useClearingField(state);
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <form
+      action={action}
+      onSubmit={titleField.markSubmitted}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
 
-      <Field label="Habit" name="name" required maxLength={120} error={state.fieldErrors?.name} />
+      <Field
+        label="Habit"
+        name="name"
+        required
+        maxLength={120}
+        value={titleField.value}
+        onChange={titleField.onChange}
+        error={state.fieldErrors?.name}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField label="How often" name="cadence" defaultValue="daily">

@@ -4,13 +4,24 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 import { useId } from 'react';
 import { cn } from '@/lib/cn';
 
-const CONTROL =
-  'rounded-[var(--radius-control)] border bg-surface-inset px-3 py-2.5 text-sm ' +
-  'text-text-primary placeholder:text-text-muted transition-colors ' +
-  'duration-[var(--duration-fast)] disabled:cursor-not-allowed disabled:opacity-50';
+/**
+ * One control style, shared by every input, select and textarea.
+ *
+ * Heights match the Button scale (h-9.5 at md) so a field and the button
+ * beside it align without per-page correction.
+ */
+const CONTROL = [
+  'w-full rounded-[var(--radius-control)] border bg-surface-inset',
+  'px-3 py-2 text-sm text-text-primary placeholder:text-text-muted',
+  'transition-[border-color,background-color] duration-[var(--duration-fast)]',
+  'ease-(--ease-out-soft)',
+  'disabled:cursor-not-allowed disabled:opacity-45',
+].join(' ');
 
 function borderFor(error?: string) {
-  return error ? 'border-negative' : 'border-border-subtle hover:border-border-strong';
+  return error
+    ? 'border-negative focus:border-negative'
+    : 'border-border-subtle hover:border-border-strong';
 }
 
 type Shared = { label: string; hint?: string; error?: string };
@@ -73,14 +84,14 @@ export function Field({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={controlId} className="text-sm text-text-secondary">
+      <label htmlFor={controlId} className="text-xs font-medium text-text-secondary">
         {label}
       </label>
       <input
         id={controlId}
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
-        className={cn(CONTROL, borderFor(error), className)}
+        className={cn(CONTROL, borderFor(error), 'h-9.5', className)}
         {...props}
       />
       <Messages hint={hint} error={error} hintId={hintId} errorId={errorId} />
@@ -101,14 +112,14 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={controlId} className="text-sm text-text-secondary">
+      <label htmlFor={controlId} className="text-xs font-medium text-text-secondary">
         {label}
       </label>
       <select
         id={controlId}
         aria-describedby={describedBy}
         aria-invalid={error ? true : undefined}
-        className={cn(CONTROL, borderFor(error), className)}
+        className={cn(CONTROL, borderFor(error), 'h-9.5 pr-8', className)}
         {...props}
       >
         {children}
@@ -130,7 +141,7 @@ export function TextareaField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={controlId} className="text-sm text-text-secondary">
+      <label htmlFor={controlId} className="text-xs font-medium text-text-secondary">
         {label}
       </label>
       <textarea
@@ -196,10 +207,10 @@ export function FormAlert({
     <p
       role="alert"
       className={cn(
-        'rounded-[var(--radius-control)] border px-3 py-2 text-sm',
+        'rounded-[var(--radius-control)] border border-l-2 px-3 py-2 text-xs',
         tone === 'error'
-          ? 'border-negative/40 bg-negative/10 text-negative'
-          : 'border-positive/40 bg-positive/10 text-positive',
+          ? 'border-negative/30 border-l-negative bg-negative-soft text-negative'
+          : 'border-positive/30 border-l-positive bg-positive-soft text-positive',
       )}
     >
       {children}
