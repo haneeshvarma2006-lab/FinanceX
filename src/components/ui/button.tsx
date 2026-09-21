@@ -22,18 +22,20 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const VARIANTS: Record<Variant, string> = {
   primary: cn(
-    'bg-accent text-accent-contrast font-medium shadow-(--shadow-raised)',
+    'bg-accent text-accent-contrast font-medium',
+    'shadow-[var(--shadow-raised),var(--shadow-edge)]',
     // Lifting brightness rather than swapping colour keeps hover subtle at
     // this saturation; a second hue would read as a different button.
     'hover:brightness-110 active:brightness-95',
   ),
   secondary: cn(
-    'bg-surface-overlay text-text-primary border border-border-subtle',
+    'bg-surface-overlay text-text-primary border border-border-subtle shadow-(--shadow-edge)',
     'hover:border-border-strong hover:bg-surface-raised active:brightness-95',
   ),
   ghost: 'text-text-secondary hover:bg-surface-raised hover:text-text-primary active:brightness-95',
   danger: cn(
-    'bg-negative text-white font-medium shadow-(--shadow-raised)',
+    'bg-negative text-white font-medium',
+    'shadow-[var(--shadow-raised),var(--shadow-edge)]',
     'hover:brightness-110 active:brightness-95',
   ),
 };

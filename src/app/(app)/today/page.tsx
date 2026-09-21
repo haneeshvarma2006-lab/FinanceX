@@ -1,8 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AlertTriangle, CheckSquare, Flame, LineChart, Target, Wallet } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckSquare,
+  ChevronRight,
+  Flame,
+  LineChart,
+  Target,
+  Wallet,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader, Stat } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardBody,
+  CardHeader,
+  Stat,
+  StatGrid,
+  type Accent,
+} from '@/components/ui/card';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
 
@@ -61,6 +78,7 @@ export default async function TodayPage() {
                 <Attention
                   href="/tasks"
                   icon={<AlertTriangle aria-hidden className="size-4" />}
+                  accent="tasks"
                   title={`${snapshot.tasks.overdue} overdue task${snapshot.tasks.overdue === 1 ? '' : 's'}`}
                   detail="Past the due time and still open."
                 />
@@ -71,6 +89,7 @@ export default async function TodayPage() {
                   key={habit.id}
                   href="/habits"
                   icon={<Flame aria-hidden className="size-4" />}
+                  accent="habits"
                   title={`${habit.name}: ${habit.streak.current}-day streak`}
                   detail="Not logged yet today."
                 />
@@ -81,6 +100,7 @@ export default async function TodayPage() {
                   key={goal.id}
                   href="/goals"
                   icon={<Target aria-hidden className="size-4" />}
+                  accent="habits"
                   title={`${goal.title} is behind pace`}
                   detail={`At ${goal.percent}%, with less time left than that.`}
                 />
@@ -90,6 +110,7 @@ export default async function TodayPage() {
                 <Attention
                   href="/finance"
                   icon={<Wallet aria-hidden className="size-4" />}
+                  accent="finance"
                   title={`${snapshot.finance.overBudget.length} budget${snapshot.finance.overBudget.length === 1 ? '' : 's'} exceeded`}
                   detail="Spending has passed the limit you set this month."
                 />
@@ -99,6 +120,7 @@ export default async function TodayPage() {
                 <Attention
                   href="/trading"
                   icon={<LineChart aria-hidden className="size-4" />}
+                  accent="trading"
                   title={`${snapshot.trading.consecutiveLosses} losing trades in a row`}
                   detail="Worth reviewing what they had in common before the next one."
                 />
@@ -113,16 +135,14 @@ export default async function TodayPage() {
         <Card>
           <CardHeader
             title="Today's work"
+            accent="tasks"
+            icon={<CheckSquare aria-hidden className="size-4" />}
             description={
               snapshot.tasks.hasData
                 ? `${snapshot.tasks.completedToday} done · ${snapshot.tasks.openTotal} open`
                 : undefined
             }
-            action={
-              <Link href="/tasks" className="text-xs text-accent hover:underline">
-                All tasks
-              </Link>
-            }
+            action={<CardAction href="/tasks">All tasks</CardAction>}
           />
           <CardBody className="p-0">
             {!snapshot.tasks.hasData ? (
@@ -170,16 +190,14 @@ export default async function TodayPage() {
         <Card>
           <CardHeader
             title="Habits"
+            accent="habits"
+            icon={<Flame aria-hidden className="size-4" />}
             description={
               snapshot.habits.hasData
                 ? `${snapshot.habits.doneToday} of ${snapshot.habits.items.length} done today`
                 : undefined
             }
-            action={
-              <Link href="/habits" className="text-xs text-accent hover:underline">
-                All habits
-              </Link>
-            }
+            action={<CardAction href="/habits">All habits</CardAction>}
           />
           <CardBody className="p-0">
             {!snapshot.habits.hasData ? (
@@ -216,11 +234,9 @@ export default async function TodayPage() {
         <Card>
           <CardHeader
             title="Money this month"
-            action={
-              <Link href="/finance" className="text-xs text-accent hover:underline">
-                Finance
-              </Link>
-            }
+            accent="finance"
+            icon={<Wallet aria-hidden className="size-4" />}
+            action={<CardAction href="/finance">Finance</CardAction>}
           />
           <CardBody className={snapshot.finance.hasData ? undefined : 'p-0'}>
             {!snapshot.finance.hasData ? (
@@ -232,7 +248,7 @@ export default async function TodayPage() {
                 cta="Add an account"
               />
             ) : (
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatGrid>
                 <Stat
                   label="Balance"
                   value={
@@ -262,7 +278,7 @@ export default async function TodayPage() {
                     />
                   }
                 />
-              </dl>
+              </StatGrid>
             )}
           </CardBody>
         </Card>
@@ -271,12 +287,10 @@ export default async function TodayPage() {
         <Card>
           <CardHeader
             title="Trading"
+            accent="trading"
+            icon={<LineChart aria-hidden className="size-4" />}
             description={snapshot.trading.hasData ? 'Your recorded trades only.' : undefined}
-            action={
-              <Link href="/trading" className="text-xs text-accent hover:underline">
-                Journal
-              </Link>
-            }
+            action={<CardAction href="/trading">Journal</CardAction>}
           />
           <CardBody className={snapshot.trading.hasData ? undefined : 'p-0'}>
             {!snapshot.trading.hasData ? (
@@ -294,7 +308,7 @@ export default async function TodayPage() {
                   : 'No trades recorded yet. Log one to start building a history.'}
               </p>
             ) : (
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatGrid>
                 <Stat label="Closed" value={snapshot.trading.closedTrades} />
                 <Stat label="Win rate" value={`${snapshot.trading.winRatePercent}%`} />
                 <Stat
@@ -307,7 +321,7 @@ export default async function TodayPage() {
                     />
                   }
                 />
-              </dl>
+              </StatGrid>
             )}
           </CardBody>
         </Card>
@@ -318,11 +332,9 @@ export default async function TodayPage() {
         <Card>
           <CardHeader
             title="Closest deadline"
-            action={
-              <Link href="/goals" className="text-xs text-accent hover:underline">
-                All goals
-              </Link>
-            }
+            accent="habits"
+            icon={<Target aria-hidden className="size-4" />}
+            action={<CardAction href="/goals">All goals</CardAction>}
           />
           <CardBody className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -348,25 +360,62 @@ export default async function TodayPage() {
 function Attention({
   href,
   icon,
+  accent,
   title,
   detail,
 }: {
   href: '/tasks' | '/habits' | '/goals' | '/finance' | '/trading';
   icon: React.ReactNode;
+  /** The domain the item came from, so the row matches its section. */
+  accent: Accent;
   title: string;
   detail: string;
 }) {
+  const iconTone = {
+    tasks: 'bg-tasks/12 text-tasks',
+    habits: 'bg-habits/12 text-habits',
+    finance: 'bg-finance/12 text-finance',
+    trading: 'bg-trading/12 text-trading',
+    accent: 'bg-accent-soft text-accent',
+  }[accent];
+
   return (
     <li>
       <Link
         href={href}
-        className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-surface-overlay"
+        className={cn(
+          'group relative flex items-center gap-3 py-3 pr-4 pl-5',
+          'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+          'hover:bg-surface-overlay',
+          // A rail that arrives on hover rather than a background that jumps:
+          // it points at the row being pointed at.
+          'before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-accent',
+          'before:scale-y-0 before:transition-transform before:duration-[var(--duration-fast)]',
+          'before:ease-(--ease-out-soft) hover:before:scale-y-100',
+        )}
       >
-        <span className="mt-0.5 shrink-0 text-warning">{icon}</span>
-        <span className="min-w-0">
+        <span
+          aria-hidden
+          className={cn(
+            'inline-flex size-7 shrink-0 items-center justify-center',
+            'rounded-[var(--radius-control)]',
+            iconTone,
+          )}
+        >
+          {icon}
+        </span>
+        <span className="min-w-0 flex-1">
           <span className="block text-sm text-text-primary">{title}</span>
           <span className="block text-xs text-pretty text-text-muted">{detail}</span>
         </span>
+        <ChevronRight
+          aria-hidden
+          className={cn(
+            'size-4 shrink-0 text-text-muted opacity-0',
+            'transition-opacity duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+            'group-hover:opacity-100',
+          )}
+        />
       </Link>
     </li>
   );

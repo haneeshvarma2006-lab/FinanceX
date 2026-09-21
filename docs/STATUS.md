@@ -11,43 +11,56 @@ command named, in this environment. Nothing is asserted from inspection alone.
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ **no known vulnerabilities**                           |
-| `pnpm test`         | ✅ **320 passing**, 20 files                              |
-| `pnpm test:e2e`     | ✅ **46 passing**, Chromium, production build             |
+| `pnpm test`         | ✅ **348 passing** (258 app + 90 package)                 |
+| `pnpm test:e2e`     | ✅ **58 passing**, Chromium, production build             |
 | `pnpm build`        | ✅ 24 routes                                              |
-| Migrations          | ✅ 7 applied to clean databases                           |
+| Migrations          | ✅ 9 applied to clean databases                           |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
 
 Integration and E2E tests run against real PostgreSQL databases, not mocks.
 
-## Test inventory — 320 unit/integration + 46 E2E
+## Test inventory — 258 app + 90 package + 58 E2E
 
-Counts below are read from an actual `--reporter=verbose` run, not maintained
-by hand. An earlier revision of this table drifted out of step with the totals;
-it is regenerated from the runner now.
+Counts below are read from an actual runner report, not maintained by hand. An
+earlier revision of this table drifted out of step with the totals; it is
+regenerated from the runner now.
+
+The domain and token packages run their own suites (`pnpm test` runs all
+three), which is why the app total dropped while the overall total rose: the
+money, P&L, recurrence and streak tests moved into `@kylix/domain`.
 
 | Suite                                 | Count | Covers                                                     |
 | ------------------------------------- | ----- | ---------------------------------------------------------- |
 | `tests/integration/productivity`      | 31    | Tasks, recurrence, habits, goals, notifications, isolation |
 | `tests/integration/auth`              | 30    | Sign-up, sign-in, sessions, rate limits, age, consent      |
-| `src/modules/trading/pnl`             | 27    | P&L for long/short, fees, partial fills, statistics        |
 | `tests/integration/email`             | 23    | Preferences, suppression, unsubscribe, replay              |
-| `src/lib/money`                       | 22    | Integer arithmetic, parsing, allocation, precision         |
 | `tests/integration/rules`             | 21    | Rules engine: firing, dedupe, thresholds, isolation        |
 | `src/lib/query`                       | 18    | Pagination bounds, sort allow-list, LIKE escaping          |
+| `tests/unit/architecture`             | 18    | Invariants — each verified to fail when violated           |
 | `tests/unit/env`                      | 17    | Boot-time environment contract                             |
-| `src/modules/productivity/recurrence` | 17    | RRULE, DST, leap day, month-end, exhausted series          |
-| `src/modules/productivity/streaks`    | 15    | Streaks across backfill, deletion, timezone, leap year     |
 | `tests/integration/finance`           | 14    | Transfers, balances, budgets, revisions                    |
 | `tests/integration/oauth-linking`     | 13    | Account-linking takeover, pending registration             |
-| `tests/integration/trading`           | 12    | Lifecycle, derived aggregates, isolation                   |
 | `tests/integration/finance-isolation` | 12    | IDOR across every finance operation                        |
+| `tests/integration/sync`              | 12    | Change-log cursor, tombstones, per-user scoping            |
+| `tests/integration/trading`           | 12    | Lifecycle, derived aggregates, isolation                   |
 | `src/modules/identity/age`            | 12    | Age policy, boundaries, leap day                           |
-| `tests/unit/architecture`             | 11    | Invariants — verified to fail when violated                |
 | `tests/integration/tenancy`           | 7     | Cross-account isolation (identity)                         |
 | `src/lib/security/tokens`             | 7     | Session tokens, constant-time compare                      |
 | `src/lib/security/password`           | 6     | argon2id                                                   |
 | `src/modules/identity/oauth`          | 5     | Open-redirect defence, state hashing                       |
-| `tests/e2e`                           | 46    | Full journeys, security headers, real browser              |
+| **App total**                         | 258   |                                                            |
+
+| Package suite                           | Count | Covers                                                 |
+| --------------------------------------- | ----- | ------------------------------------------------------ |
+| `@kylix/domain` trading/pnl             | 27    | P&L for long/short, fees, partial fills, statistics    |
+| `@kylix/domain` money                   | 22    | Integer arithmetic, parsing, allocation, precision     |
+| `@kylix/domain` productivity/recurrence | 17    | RRULE, DST, leap day, month-end, exhausted series      |
+| `@kylix/domain` productivity/streaks    | 15    | Streaks across backfill, deletion, timezone, leap year |
+| `@kylix/tokens` css                     | 9     | Generated CSS matches the pre-extraction design system |
+| **Package total**                       | 90    |                                                        |
+
+| `tests/e2e` | 58  | Full journeys, security headers, real browser |
+| ----------- | --- | --------------------------------------------- |
 
 **23 dedicated cross-account isolation tests** span read, write, update,
 delete, archive, bulk operations and cascade behaviour.
@@ -366,3 +379,66 @@ assumed.
 4. Editing an existing rule. Rules can be created, paused and deleted, but not
    edited in place — changing a threshold means deleting and recreating.
 5. Legal review of the drafted terms and privacy notice.
+
+---
+
+## Mobile-readiness milestones W1–W5 — complete
+
+`docs/MOBILE-PLAN.md` identified five things the web build did that a second
+client could not share. All five are done and verified in this environment.
+
+| Milestone                        | Verification                                                        |
+| -------------------------------- | ------------------------------------------------------------------- |
+| W1 — JSON API beside the actions | 13 routes under `/api/v1`, 12 E2E tests driving them                |
+| W2 — Bearer sessions             | Same session store, Authorization header preferred over the cookie  |
+| W3 — Sync primitives             | Change log with a monotonic cursor, 18 DB triggers, 12 tests        |
+| W4 — `@kylix/domain`             | Money, P&L, recurrence and streaks moved out; 81 tests move with it |
+| W5 — `@kylix/tokens`             | Tokens authored as data, CSS generated; 9 tests                     |
+
+**iOS and Android remain untested.** This environment is Linux with no Xcode,
+no Android SDK and no emulator, so no claim about either platform is made here.
+W1–W5 remove the architectural blockers; they do not constitute a mobile build.
+
+### How the token extraction was proved to change nothing
+
+Two independent checks, both run:
+
+1. `packages/tokens/src/css.test.ts` parses a verbatim copy of `globals.css`
+   as it stood before the extraction and asserts every one of its 60
+   declarations still generates at the same value. Changing a token value in
+   `packages/tokens/src/index.ts` makes it fail; adding one does not.
+2. The compiled Tailwind stylesheet was built before and after the change and
+   compared: **byte-for-byte identical, 35095 bytes.** This also confirmed that
+   Tailwind honours `@theme` from an imported file.
+
+## Interface pass — what changed and what was checked
+
+Reviewed by capturing the rendered pages in a real browser at 1280px and
+390px, not by reading the markup.
+
+- Depth is now a lit one-pixel top edge (`--shadow-edge`) rather than a
+  gradient or a glow. It applies to cards and to filled buttons.
+- Each dashboard card carries its domain's accent as a small chip beside its
+  title, connecting it to the navigation. The label says the same thing, so
+  nothing depends on the colour.
+- Figures share one `Stat`/`StatGrid` component across the dashboard, Finance
+  and Trading. Finance and Trading previously hand-rolled their own.
+- The task form moved its refining fields behind **More options**: capturing a
+  task is one field and one click, and the list owns the page. Nothing was
+  removed; the E2E tests open the disclosure as a user would.
+- Priority now appears as a rail on the row as well as a badge, so scanning a
+  long list does not mean reading every label.
+- **Phone navigation is a bottom bar**, from the same markup as the desktop
+  row — repositioned by CSS rather than rendered twice, which would put every
+  destination in the page twice for a screen reader. Found and fixed while
+  checking this: `backdrop-filter` on the header made it the containing block
+  for its fixed descendants, which pinned the bar to the header instead of the
+  viewport.
+- Page content enters with an 8px, 200ms rise, collapsed to nothing under
+  `prefers-reduced-motion`.
+
+Two invariants were added and each was verified by introducing the violation
+and watching the test fail: no source file may declare a design token by hand
+outside `packages/tokens`, and none may use a one-off length such as
+`mt-[1.625rem]`. Fixing the five existing violations produced the `3xs` type
+size, the `hairline` radius and the `brand` tracking tokens.

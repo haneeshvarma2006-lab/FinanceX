@@ -13,7 +13,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           <span className="text-2xl font-semibold tracking-tight text-text-primary">
             Kyli<span className="text-accent">X</span>
           </span>
-          <span className="mt-1 block text-xs tracking-[0.2em] text-text-muted uppercase">
+          <span className="mt-1 block text-xs tracking-brand text-text-muted uppercase">
             Plan · Track · Grow
           </span>
         </Link>

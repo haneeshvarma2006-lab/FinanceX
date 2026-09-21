@@ -64,25 +64,39 @@ const before = readFileSync(FIXTURE, 'utf8');
 const generated = generateCss();
 
 /**
- * The refactor's whole claim is that it changed no pixels. These compare the
+ * The extraction's whole claim is that it changed no pixels. These compare the
  * generated sheet against a verbatim copy of `globals.css` as it stood before
  * the tokens moved into this package, so the claim is checked rather than
  * asserted.
+ *
+ * The comparison is one-directional on purpose. Adding a token is ordinary
+ * work and must not fail here. Changing or removing one that the original
+ * design system defined is not: it fails until someone updates the fixture,
+ * which puts the before and after of a design decision in the diff where a
+ * reviewer will see it.
  */
 describe('generated CSS preserves the hand-written design system', () => {
   it.each([':root', ":root[data-theme='light']", '@theme', '@theme inline'])(
-    'declares exactly the same values in %s',
+    'keeps every %s declaration at its original value',
     (selector) => {
-      expect(sorted(scope(generated, selector))).toEqual(sorted(scope(before, selector)));
+      const original = scope(before, selector);
+      const now = scope(generated, selector);
+
+      expect(original.size).toBeGreaterThan(2);
+      for (const [name, value] of sorted(original)) {
+        expect(now.get(name), `${selector} { ${name} }`).toBe(value);
+      }
     },
   );
 
-  it('carries every declaration the original had, with nothing dropped', () => {
-    const originalNames = [...scope(before, ':root').keys()];
-    expect(originalNames.length).toBeGreaterThan(20);
-    for (const name of originalNames) {
-      expect(scope(generated, ':root').has(name)).toBe(true);
-    }
+  it('covers the whole original system, not a handful of tokens', () => {
+    const originalNames = [...scope(before, ':root').keys(), ...scope(before, '@theme').keys()];
+
+    // Guards the loops above against passing because the fixture went missing
+    // or the parser silently returned almost nothing.
+    // The fixture is frozen, so this count is exact: 60 declarations across
+    // the primitives and the dark semantic layer.
+    expect(originalNames.length).toBe(60);
   });
 });
 

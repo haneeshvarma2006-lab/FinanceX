@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
+import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { ratioToPercent, type Currency } from '@kylix/domain/money';
@@ -45,32 +45,26 @@ export default async function FinancePage() {
         description="Everything here is entered by you. KyliX connects to no bank."
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardBody>
-            <p className="text-xs tracking-wide text-text-muted uppercase">Total balance</p>
-            <p className="mt-2 text-2xl">
-              <Money minor={totalBalance} currency={currency} />
-            </p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-xs tracking-wide text-text-muted uppercase">Income this month</p>
-            <p className="mt-2 text-2xl text-positive">
-              <Money minor={totals.incomeMinor} currency={currency} />
-            </p>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <p className="text-xs tracking-wide text-text-muted uppercase">Spent this month</p>
-            <p className="mt-2 text-2xl text-negative">
-              <Money minor={totals.expenseMinor} currency={currency} />
-            </p>
-          </CardBody>
-        </Card>
-      </div>
+      <Card>
+        <CardBody>
+          <StatGrid>
+            <Stat
+              label="Total balance"
+              value={<Money minor={totalBalance} currency={currency} />}
+            />
+            <Stat
+              label="Income this month"
+              tone="positive"
+              value={<Money minor={totals.incomeMinor} currency={currency} />}
+            />
+            <Stat
+              label="Spent this month"
+              tone="negative"
+              value={<Money minor={totals.expenseMinor} currency={currency} />}
+            />
+          </StatGrid>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader
@@ -132,7 +126,7 @@ export default async function FinancePage() {
         </Card>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Add an account" />
           <CardBody>

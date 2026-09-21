@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LineChart } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
+import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader } from '@/components/ui/money';
 import type { Currency } from '@kylix/domain/money';
@@ -56,49 +56,40 @@ export default async function TradingPage() {
             </Badge>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardBody>
-                <p className="text-xs tracking-wide text-text-muted uppercase">Closed trades</p>
-                <p className="numeric mt-2 text-2xl">{performance.stats.trades}</p>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <p className="text-xs tracking-wide text-text-muted uppercase">Win rate</p>
-                <p className="numeric mt-2 text-2xl">
-                  {performance.stats.trades === 0 ? '—' : `${performance.stats.winRatePercent}%`}
-                </p>
-                <p className="numeric mt-1 text-xs text-text-muted">
-                  {performance.stats.wins}W · {performance.stats.losses}L ·{' '}
-                  {performance.stats.breakEven}BE
-                </p>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <p className="text-xs tracking-wide text-text-muted uppercase">Realised P&amp;L</p>
-                <p className="mt-2 text-2xl">
-                  <Money
-                    minor={performance.stats.netPnlMinor}
-                    currency={primary.currency as Currency}
-                    signed
-                  />
-                </p>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <p className="text-xs tracking-wide text-text-muted uppercase">Max drawdown</p>
-                <p className="mt-2 text-2xl text-negative">
-                  <Money
-                    minor={performance.curve.maxDrawdownMinor}
-                    currency={primary.currency as Currency}
-                  />
-                </p>
-              </CardBody>
-            </Card>
-          </div>
+          <Card>
+            <CardBody>
+              <StatGrid columns={4}>
+                <Stat label="Closed trades" value={performance.stats.trades} />
+                <Stat
+                  label="Win rate"
+                  value={
+                    performance.stats.trades === 0 ? '—' : `${performance.stats.winRatePercent}%`
+                  }
+                  detail={`${performance.stats.wins}W · ${performance.stats.losses}L · ${performance.stats.breakEven}BE`}
+                />
+                <Stat
+                  label="Realised P&L"
+                  value={
+                    <Money
+                      minor={performance.stats.netPnlMinor}
+                      currency={primary.currency as Currency}
+                      signed
+                    />
+                  }
+                />
+                <Stat
+                  label="Max drawdown"
+                  tone="negative"
+                  value={
+                    <Money
+                      minor={performance.curve.maxDrawdownMinor}
+                      currency={primary.currency as Currency}
+                    />
+                  }
+                />
+              </StatGrid>
+            </CardBody>
+          </Card>
         </>
       )}
 

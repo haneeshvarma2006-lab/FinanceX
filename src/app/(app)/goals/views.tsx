@@ -130,7 +130,7 @@ export function AddGoalForm({ habits }: { habits: { id: string; name: string }[]
 
       <TextareaField label="Why" name="description" rows={2} maxLength={4000} />
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Set goal
       </Button>
     </form>

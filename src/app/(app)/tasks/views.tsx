@@ -3,9 +3,9 @@
 import { useActionState } from 'react';
 import { useClearingField } from '@/components/ui/use-clearing-field';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Check, RotateCcw, Trash2 } from 'lucide-react';
+import { Check, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
+import { controlClass, Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
 import { setParam } from '@/lib/navigation';
@@ -39,6 +39,50 @@ const PRIORITY_TONE = {
   4: 'neutral',
 } as const;
 
+/** Only the two priorities that mean "sooner" get a rail; the rest are quiet. */
+const PRIORITY_RAIL: Record<1 | 2 | 3 | 4, string> = {
+  1: 'before:bg-negative',
+  2: 'before:bg-warning',
+  3: 'before:bg-transparent',
+  4: 'before:bg-transparent',
+};
+
+/**
+ * Progressive disclosure, so the list owns the page rather than the form.
+ *
+ * Capturing a task has to be one field and one click, because anything slower
+ * gets done on paper instead. Everything that refines a task — when, how
+ * often, which project — is real and stays one click away, not removed.
+ */
+function MoreOptions({ children }: { children: React.ReactNode }) {
+  return (
+    <details className="group">
+      <summary
+        className={cn(
+          'inline-flex cursor-pointer list-none items-center gap-1',
+          'rounded-[var(--radius-control)] py-1 pr-2 pl-1.5',
+          'text-xs text-text-secondary select-none',
+          'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+          'hover:bg-surface-overlay hover:text-text-primary',
+          '[&::-webkit-details-marker]:hidden',
+        )}
+      >
+        <ChevronRight
+          aria-hidden
+          className={cn(
+            'size-3.5 text-text-muted',
+            'transition-transform duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+            'group-open:rotate-90',
+          )}
+        />
+        More options
+      </summary>
+
+      <div className="mt-4 flex flex-col gap-4 border-t border-border-subtle pt-4">{children}</div>
+    </details>
+  );
+}
+
 export function AddTaskForm({ projects }: { projects: Project[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createTaskAction, {});
   const titleField = useClearingField(state);
@@ -62,74 +106,77 @@ export function AddTaskForm({ projects }: { projects: Project[] }) {
         value={titleField.value}
         onChange={titleField.onChange}
         error={state.fieldErrors?.title}
+        trailing={
+          <Button type="submit" loading={pending}>
+            Add task
+          </Button>
+        }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <SelectField label="Priority" name="priority" defaultValue="3">
-          {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </SelectField>
+      <MoreOptions>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SelectField label="Priority" name="priority" defaultValue="3">
+            {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </SelectField>
 
-        <Field
-          label="Do it on"
-          name="scheduledFor"
-          type="date"
-          hint="The day you plan to do it."
-          error={state.fieldErrors?.scheduledFor}
-        />
+          <Field
+            label="Do it on"
+            name="scheduledFor"
+            type="date"
+            hint="The day you plan to do it."
+            error={state.fieldErrors?.scheduledFor}
+          />
 
-        <Field
-          label="Due by"
-          name="dueAt"
-          type="datetime-local"
-          hint="A hard deadline, if there is one."
-          error={state.fieldErrors?.dueAt}
-        />
-      </div>
+          <Field
+            label="Due by"
+            name="dueAt"
+            type="datetime-local"
+            hint="A hard deadline, if there is one."
+            error={state.fieldErrors?.dueAt}
+          />
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <SelectField label="Project" name="projectId">
-          <option value="">None</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </SelectField>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SelectField label="Project" name="projectId">
+            <option value="">None</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </SelectField>
 
-        <SelectField
-          label="Repeat"
-          name="repeat"
-          hint="The next one is created when you complete this."
-          error={state.fieldErrors?.repeat}
-        >
-          <option value="">Does not repeat</option>
-          {SUPPORTED_FREQUENCIES.map((f) => (
-            <option key={f} value={f} className="capitalize">
-              {f}
-            </option>
-          ))}
-        </SelectField>
+          <SelectField
+            label="Repeat"
+            name="repeat"
+            hint="The next one is created when you complete this."
+            error={state.fieldErrors?.repeat}
+          >
+            <option value="">Does not repeat</option>
+            {SUPPORTED_FREQUENCIES.map((f) => (
+              <option key={f} value={f} className="capitalize">
+                {f}
+              </option>
+            ))}
+          </SelectField>
 
-        <Field
-          label="Every"
-          name="repeatInterval"
-          type="number"
-          min="1"
-          max="365"
-          defaultValue="1"
-          hint="1 = every time."
-        />
-      </div>
+          <Field
+            label="Every"
+            name="repeatInterval"
+            type="number"
+            min="1"
+            max="365"
+            defaultValue="1"
+            hint="1 = every time."
+          />
+        </div>
 
-      <TextareaField label="Notes" name="notes" rows={2} maxLength={4000} />
-
-      <Button type="submit" loading={pending}>
-        Add task
-      </Button>
+        <TextareaField label="Notes" name="notes" rows={2} maxLength={4000} />
+      </MoreOptions>
     </form>
   );
 }
@@ -149,7 +196,10 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="min-w-48 flex-1">
-        <label htmlFor="task-search" className="mb-1.5 block text-sm text-text-secondary">
+        <label
+          htmlFor="task-search"
+          className="mb-1.5 block text-xs font-medium text-text-secondary"
+        >
           Search
         </label>
         <input
@@ -167,19 +217,22 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
               300,
             );
           }}
-          className="w-full rounded-[var(--radius-control)] border border-border-subtle bg-surface-inset px-3 py-2 text-sm text-text-primary placeholder:text-text-muted"
+          className={controlClass()}
         />
       </div>
 
       <div>
-        <label htmlFor="task-status" className="mb-1.5 block text-sm text-text-secondary">
+        <label
+          htmlFor="task-status"
+          className="mb-1.5 block text-xs font-medium text-text-secondary"
+        >
           Show
         </label>
         <select
           id="task-status"
           value={status}
           onChange={(event) => update('status', event.target.value === 'open' ? '' : 'done')}
-          className="rounded-[var(--radius-control)] border border-border-subtle bg-surface-inset px-3 py-2 text-sm text-text-primary"
+          className={controlClass()}
         >
           <option value="open">Open</option>
           <option value="done">Completed</option>
@@ -188,14 +241,17 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
 
       {projects.length > 0 && (
         <div>
-          <label htmlFor="task-project" className="mb-1.5 block text-sm text-text-secondary">
+          <label
+            htmlFor="task-project"
+            className="mb-1.5 block text-xs font-medium text-text-secondary"
+          >
             Project
           </label>
           <select
             id="task-project"
             defaultValue={searchParams.get('project') ?? ''}
             onChange={(event) => update('project', event.target.value)}
-            className="rounded-[var(--radius-control)] border border-border-subtle bg-surface-inset px-3 py-2 text-sm text-text-primary"
+            className={controlClass()}
           >
             <option value="">All projects</option>
             {projects.map((p) => (
@@ -208,14 +264,14 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
       )}
 
       <div>
-        <label htmlFor="task-sort" className="mb-1.5 block text-sm text-text-secondary">
+        <label htmlFor="task-sort" className="mb-1.5 block text-xs font-medium text-text-secondary">
           Sort by
         </label>
         <select
           id="task-sort"
           defaultValue={searchParams.get('sort') ?? 'createdAt'}
           onChange={(event) => update('sort', event.target.value)}
-          className="rounded-[var(--radius-control)] border border-border-subtle bg-surface-inset px-3 py-2 text-sm text-text-primary"
+          className={controlClass()}
         >
           <option value="createdAt">Recently added</option>
           <option value="dueAt">Due date</option>
@@ -278,7 +334,14 @@ function DeleteButton({ id }: { id: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label="Delete task">
+      <Button
+        type="submit"
+        variant="ghost"
+        size="sm"
+        loading={pending}
+        aria-label="Delete task"
+        className="hover:bg-negative-soft hover:text-negative"
+      >
         <Trash2 aria-hidden className="size-3.5" />
       </Button>
     </form>
@@ -311,7 +374,19 @@ export function TaskList({
           !showDone && task.dueAt !== null && new Date(task.dueAt).getTime() < renderedAt;
 
         return (
-          <li key={task.id} className="flex flex-wrap items-start justify-between gap-3 px-5 py-3">
+          <li
+            key={task.id}
+            className={cn(
+              'group relative flex flex-wrap items-start justify-between gap-3 py-3 pr-4 pl-5',
+              'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+              'hover:bg-surface-overlay/60',
+              // Priority as a rail as well as a badge: scanning a long list
+              // for what is urgent should not mean reading every label.
+              'before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full',
+              PRIORITY_RAIL[task.priority as 1 | 2 | 3 | 4] ?? 'before:bg-transparent',
+              showDone && 'before:bg-transparent',
+            )}
+          >
             <div className="min-w-0 flex-1">
               <p
                 className={cn(

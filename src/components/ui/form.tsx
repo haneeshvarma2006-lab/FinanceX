@@ -1,6 +1,11 @@
 'use client';
 
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 import { useId } from 'react';
 import { cn } from '@/lib/cn';
 
@@ -17,6 +22,19 @@ const CONTROL = [
   'ease-(--ease-out-soft)',
   'disabled:cursor-not-allowed disabled:opacity-45',
 ].join(' ');
+
+/**
+ * The same control surface for anything that is not a labelled Field — the
+ * filter bars, mainly. Exported so a one-off `<select>` cannot quietly drift
+ * into its own padding and its own focus behaviour.
+ */
+export function controlClass(className?: string) {
+  // An explicit height, unlike the multi-line controls: a filter bar puts an
+  // input and two selects side by side, and their intrinsic heights differ by
+  // a couple of pixels, which is exactly the kind of ragged baseline that
+  // reads as unfinished.
+  return cn(CONTROL, borderFor(), 'h-9.5 py-0', className);
+}
 
 function borderFor(error?: string) {
   return error
@@ -78,22 +96,42 @@ export function Field({
   error,
   className,
   id,
+  trailing,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & Shared) {
+}: InputHTMLAttributes<HTMLInputElement> &
+  Shared & {
+    /**
+     * A control that belongs beside the input — a submit button on a
+     * single-field form, typically. It sits in the input's own row, so the two
+     * align without the caller guessing at the height of the label above.
+     */
+    trailing?: ReactNode;
+  }) {
   const { controlId, hintId, errorId, describedBy } = useFieldIds(id, hint, error);
+
+  const input = (
+    <input
+      id={controlId}
+      aria-describedby={describedBy}
+      aria-invalid={error ? true : undefined}
+      className={cn(CONTROL, borderFor(error), 'h-9.5', className)}
+      {...props}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={controlId} className="text-xs font-medium text-text-secondary">
         {label}
       </label>
-      <input
-        id={controlId}
-        aria-describedby={describedBy}
-        aria-invalid={error ? true : undefined}
-        className={cn(CONTROL, borderFor(error), 'h-9.5', className)}
-        {...props}
-      />
+      {trailing ? (
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">{input}</div>
+          {trailing}
+        </div>
+      ) : (
+        input
+      )}
       <Messages hint={hint} error={error} hintId={hintId} errorId={errorId} />
     </div>
   );

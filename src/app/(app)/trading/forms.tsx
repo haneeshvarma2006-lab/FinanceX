@@ -78,7 +78,7 @@ export function AddTradingAccountForm({ defaultCurrency }: { defaultCurrency: st
         />
       </div>
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Add trading account
       </Button>
     </form>
@@ -162,7 +162,7 @@ export function AddTradeForm({
         />
       </div>
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Log trade
       </Button>
     </form>

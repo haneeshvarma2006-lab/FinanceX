@@ -67,7 +67,7 @@ export function AddAccountForm({ defaultCurrency }: { defaultCurrency: string })
         error={state.fieldErrors?.openingBalance}
       />
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Add account
       </Button>
     </form>
@@ -145,7 +145,7 @@ export function AddTransactionForm({
         error={state.fieldErrors?.occurredOn}
       />
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Record transaction
       </Button>
     </form>

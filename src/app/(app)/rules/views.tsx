@@ -139,7 +139,7 @@ export function AddRuleForm({
         )}
       </fieldset>
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Create rule
       </Button>
     </form>

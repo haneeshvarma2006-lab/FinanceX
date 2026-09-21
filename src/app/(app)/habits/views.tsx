@@ -59,7 +59,7 @@ export function AddHabitForm() {
 
       <TextareaField label="Why this matters" name="description" rows={2} maxLength={500} />
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" loading={pending} className="self-start">
         Add habit
       </Button>
     </form>

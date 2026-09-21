@@ -278,6 +278,26 @@ describe('invariant: design tokens have exactly one home', () => {
     expect(generated).toContain('GENERATED FILE — do not edit');
   });
 
+  it('never hard-codes a length in a component', async () => {
+    const files = await sourceFiles('src/**/*.{ts,tsx}');
+
+    const offenders: string[] = [];
+    for (const file of files) {
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      // A Tailwind arbitrary value holding a raw length, e.g. `text-[13px]` or
+      // `mt-[1.625rem]`. `rounded-[var(--radius-card)]` is how a token is
+      // referenced and stays allowed.
+      for (const [match] of source.matchAll(/\[[0-9][0-9.]*(?:px|rem|em)\]/g)) {
+        offenders.push(`${file}: ${match}`);
+      }
+    }
+
+    expect(
+      offenders,
+      `Add a token in packages/tokens instead of a one-off length: ${offenders.join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('never hard-codes a colour outside the token package', async () => {
     const files = await sourceFiles('src/**/*.{ts,tsx,css}');
 

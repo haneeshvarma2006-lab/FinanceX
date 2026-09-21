@@ -23,6 +23,8 @@ export const typography = {
    * ever-larger text.
    */
   size: {
+    /** Only for a count inside a badge, where nothing smaller would fit. */
+    '3xs': { size: '0.625rem', line: '1rem' },
     '2xs': { size: '0.6875rem', line: '1rem' },
     xs: { size: '0.75rem', line: '1.125rem' },
     sm: { size: '0.875rem', line: '1.375rem' },
@@ -33,10 +35,17 @@ export const typography = {
     '3xl': { size: '2.25rem', line: '2.5rem' },
   },
 
-  tracking: { tight: '-0.015em', wide: '0.08em' },
+  tracking: {
+    tight: '-0.015em',
+    wide: '0.08em',
+    /** The wordmark and the eyebrows above it. Wide enough to read as set. */
+    brand: '0.2em',
+  },
 } as const;
 
 export const radius = {
+  /** A single pixel, for cells too small for a real corner. */
+  hairline: '1px',
   control: '0.5rem',
   card: '0.75rem',
   sheet: '1rem',
@@ -47,12 +56,20 @@ export const radius = {
  * tight, or they read as a smudge rather than elevation.
  */
 export const shadow = {
+  /**
+   * A one-pixel inset highlight along the top edge, as a lit surface has.
+   * This is what separates a raised panel from a rectangle of lighter paint
+   * on a dark theme, and it costs no gradient and no glow to say it.
+   */
+  edge: 'inset 0 1px 0 oklch(1 0 0 / 0.055)',
   raised: '0 1px 2px oklch(0% 0 0 / 0.4)',
   overlay: '0 4px 12px oklch(0% 0 0 / 0.35), 0 1px 3px oklch(0% 0 0 / 0.3)',
   sheet: '0 16px 48px oklch(0% 0 0 / 0.5), 0 4px 12px oklch(0% 0 0 / 0.35)',
 } as const;
 
 export const shadowLight = {
+  /** On white the highlight would be invisible, so light gets a rim instead. */
+  edge: 'inset 0 1px 0 oklch(1 0 0 / 0.9)',
   raised: '0 1px 2px oklch(0% 0 0 / 0.06)',
   overlay: '0 4px 12px oklch(0% 0 0 / 0.08), 0 1px 3px oklch(0% 0 0 / 0.06)',
   sheet: '0 16px 48px oklch(0% 0 0 / 0.12), 0 4px 12px oklch(0% 0 0 / 0.08)',
@@ -60,6 +77,8 @@ export const shadowLight = {
 
 /** Short, decelerating, never decorative. Past ~200ms reads as latency. */
 export const motion = {
+  /** How far a surface travels when it lifts. One pixel is the whole effect. */
+  liftDistance: '1px',
   easeOutSoft: 'cubic-bezier(0.22, 1, 0.36, 1)',
   easeInOutSoft: 'cubic-bezier(0.4, 0, 0.2, 1)',
   durationInstant: '80ms',

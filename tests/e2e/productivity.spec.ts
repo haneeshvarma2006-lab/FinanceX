@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { resetRateLimits } from './fixtures';
+import { openTaskOptions, resetRateLimits } from './fixtures';
 
 /**
  * Acceptance tests for the productivity modules, driven through the real UI
@@ -83,6 +83,7 @@ test('a repeating task schedules exactly one successor on completion', async ({ 
   await page.goto('/tasks');
 
   await page.getByLabel('What needs doing?').fill('Daily review');
+  await openTaskOptions(page);
   await page.getByLabel('Do it on').fill('2026-09-21');
   await page.getByLabel('Repeat').selectOption('daily');
   await page.getByRole('button', { name: /add task/i }).click();
@@ -203,6 +204,7 @@ test('overdue work is surfaced on the dashboard and notified', async ({ page }) 
   await page.goto('/tasks');
 
   await page.getByLabel('What needs doing?').fill('Already late');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Task added')).toBeVisible();
@@ -243,6 +245,7 @@ test('notification preferences suppress a kind entirely', async ({ page }) => {
 
   await page.goto('/tasks');
   await page.getByLabel('What needs doing?').fill('Late but silent');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Task added')).toBeVisible();

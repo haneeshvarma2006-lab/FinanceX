@@ -170,7 +170,10 @@ export function ActivityStrip({
         <span
           key={i}
           aria-hidden
-          className={cn('h-3.5 w-1 rounded-[1px]', done ? 'bg-accent' : 'bg-surface-inset')}
+          className={cn(
+            'h-3.5 w-1 rounded-[var(--radius-hairline)]',
+            done ? 'bg-accent' : 'bg-surface-inset',
+          )}
         />
       ))}
     </div>

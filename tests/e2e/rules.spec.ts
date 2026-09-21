@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { resetRateLimits } from './fixtures';
+import { openTaskOptions, resetRateLimits } from './fixtures';
 
 /**
  * The rules engine, end to end. This is the product thesis made operable:
@@ -50,6 +50,7 @@ test('a rule fires from real data and is not repeated', async ({ page }) => {
 
   await page.goto('/tasks');
   await page.getByLabel('What needs doing?').fill('Already late');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Overdue')).toBeVisible();
@@ -92,6 +93,7 @@ test('pausing a rule stops it acting', async ({ page }) => {
 
   await page.goto('/tasks');
   await page.getByLabel('What needs doing?').fill('Late but ignored');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Overdue')).toBeVisible();
@@ -106,6 +108,7 @@ test('testing a rule reports what it currently sees, without acting', async ({ p
 
   await page.goto('/tasks');
   await page.getByLabel('What needs doing?').fill('Already late');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Overdue')).toBeVisible();
@@ -138,6 +141,7 @@ test('a user-created rule creates a task when it matches', async ({ page }) => {
 
   await page.goto('/tasks');
   await page.getByLabel('What needs doing?').fill('Already late');
+  await openTaskOptions(page);
   await page.getByLabel('Due by').fill('2020-01-01T09:00');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Overdue')).toBeVisible();

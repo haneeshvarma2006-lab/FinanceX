@@ -9,7 +9,7 @@ export default async function LandingPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-8 px-6 py-16">
       <div>
-        <p className="text-xs tracking-[0.2em] text-text-muted uppercase">Plan · Track · Grow</p>
+        <p className="text-xs tracking-brand text-text-muted uppercase">Plan · Track · Grow</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
           Your tasks, your money, your trades.{' '}
           <span className="text-text-secondary">One system.</span>

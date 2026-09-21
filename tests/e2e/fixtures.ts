@@ -17,3 +17,14 @@ export async function resetRateLimits(): Promise<void> {
     await client.end();
   }
 }
+
+/**
+ * The task form keeps its refining fields — schedule, repeat, project — behind
+ * a "More options" disclosure so capturing a task stays one field and one
+ * click. Tests that set those fields open it first, as a user would.
+ */
+export async function openTaskOptions(page: import('@playwright/test').Page): Promise<void> {
+  const details = page.locator('form details').first();
+  const alreadyOpen = await details.evaluate((el) => (el as HTMLDetailsElement).open);
+  if (!alreadyOpen) await details.locator('summary').click();
+}
