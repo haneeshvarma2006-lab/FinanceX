@@ -3,9 +3,10 @@ import { Pool } from 'pg';
 import { getEnv } from '@/lib/env';
 import * as finance from '@/modules/finance/schema';
 import * as identity from '@/modules/identity/schema';
+import * as productivity from '@/modules/productivity/schema';
 import * as trading from '@/modules/trading/schema';
 
-const schema = { ...identity, ...finance, ...trading };
+const schema = { ...identity, ...finance, ...trading, ...productivity };
 
 declare global {
   // Reuse the pool across hot reloads in development, otherwise every edit

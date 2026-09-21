@@ -11,9 +11,10 @@ is to rename before any public use.
 
 ## Status
 
-Milestones **M0–M1** (foundation, identity, security) plus **M3–M4** (finance,
-trading) are built, tested and verified. Tasks, habits, goals and the rules
-engine are not started.
+All nine core modules are built, tested and verified: auth and account
+settings, dashboard, tasks and projects, goals and habits, finance, trading
+journal, notifications, query/export primitives, and privacy controls. A
+user-editable rules engine and a focus-timer UI are not started.
 
 | Gate                      | Result                                       |
 | ------------------------- | -------------------------------------------- |
@@ -27,6 +28,15 @@ Full evidence in [`docs/STATUS.md`](docs/STATUS.md).
 
 ## What it does
 
+- **Dashboard** — every widget reads real records. Nothing is seeded or
+  simulated; a widget with no data says so and links to the action that would
+  fill it. The attention panel surfaces overdue work, streaks about to break,
+  goals behind pace, budgets exceeded, and runs of losing trades.
+- **Tasks** — projects, priorities, scheduled days, hard deadlines, search,
+  filtering, sorting, pagination, and RFC 5545 recurrence that materialises
+  exactly one successor on completion.
+- **Habits and goals** — streaks computed from entries (never stored), and
+  goals that keep exact precision whether the target is 42.195 km or ₹300,000.
 - **Finance** — accounts, categories, transactions, transfers, budgets,
   subscriptions, net worth. Money is integer minor units throughout; transfers
   are two balanced rows and never inflate income or spending; balances are

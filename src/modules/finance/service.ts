@@ -1,3 +1,4 @@
+import { invalid, notFound, ok, type Result } from '@/lib/result';
 import { parseAmount, type Currency } from '@/lib/money';
 import type { Transaction } from './schema';
 import * as repo from './repository';
@@ -10,17 +11,6 @@ import type { TransactionInput, TransferInput } from './validators';
  * being written. Trusting an accountId straight from a form would let a caller
  * post a transaction into someone else's account — the classic IDOR.
  */
-
-export type ServiceError =
-  | { kind: 'not_found' }
-  | { kind: 'forbidden' }
-  | { kind: 'invalid'; field: string; message: string };
-
-export type Result<T> = { ok: true; value: T } | { ok: false; error: ServiceError };
-
-function invalid(field: string, message: string): Result<never> {
-  return { ok: false, error: { kind: 'invalid', field, message } };
-}
 
 /** Snapshot for the revision log. Bigints are stringified so JSON can hold them. */
 function snapshot(row: Transaction): Record<string, unknown> {
@@ -43,11 +33,11 @@ export async function createTransaction(
   const account = await repo.findAccount(userId, input.accountId);
   // Not "forbidden": revealing that an id exists but belongs to someone else
   // is itself a disclosure. An unowned id is simply not found.
-  if (!account) return { ok: false, error: { kind: 'not_found' } };
+  if (!account) return notFound();
 
   if (input.categoryId) {
     const category = await repo.findCategory(userId, input.categoryId);
-    if (!category) return { ok: false, error: { kind: 'not_found' } };
+    if (!category) return notFound();
     if (category.kind !== input.kind) {
       return invalid('categoryId', `That category is for ${category.kind}, not ${input.kind}`);
     }
@@ -89,7 +79,7 @@ export async function createTransaction(
     after: snapshot(row),
   });
 
-  return { ok: true, value: row };
+  return ok(row);
 }
 
 export async function updateTransaction(
@@ -98,18 +88,18 @@ export async function updateTransaction(
   input: TransactionInput,
 ): Promise<Result<Transaction>> {
   const existing = await repo.findTransaction(userId, id);
-  if (!existing) return { ok: false, error: { kind: 'not_found' } };
+  if (!existing) return notFound();
 
   if (existing.kind === 'transfer') {
     return invalid('kind', 'Edit a transfer by deleting it and creating a new one');
   }
 
   const account = await repo.findAccount(userId, input.accountId);
-  if (!account) return { ok: false, error: { kind: 'not_found' } };
+  if (!account) return notFound();
 
   if (input.categoryId) {
     const category = await repo.findCategory(userId, input.categoryId);
-    if (!category) return { ok: false, error: { kind: 'not_found' } };
+    if (!category) return notFound();
   }
 
   let magnitude: bigint;
@@ -132,7 +122,7 @@ export async function updateTransaction(
     notes: input.notes ?? null,
   });
 
-  if (!updated) return { ok: false, error: { kind: 'not_found' } };
+  if (!updated) return notFound();
 
   await repo.insertRevision({
     userId,
@@ -143,12 +133,12 @@ export async function updateTransaction(
     after: snapshot(updated),
   });
 
-  return { ok: true, value: updated };
+  return ok(updated);
 }
 
 export async function deleteTransaction(userId: string, id: string): Promise<Result<null>> {
   const existing = await repo.findTransaction(userId, id);
-  if (!existing) return { ok: false, error: { kind: 'not_found' } };
+  if (!existing) return notFound();
 
   // Removing one leg of a transfer would leave the other stranded.
   if (existing.transferGroupId) {
@@ -163,11 +153,11 @@ export async function deleteTransaction(userId: string, id: string): Promise<Res
         after: null,
       });
     }
-    return { ok: true, value: null };
+    return ok(null);
   }
 
   const removed = await repo.deleteTransaction(userId, id);
-  if (!removed) return { ok: false, error: { kind: 'not_found' } };
+  if (!removed) return notFound();
 
   await repo.insertRevision({
     userId,
@@ -178,7 +168,7 @@ export async function deleteTransaction(userId: string, id: string): Promise<Res
     after: null,
   });
 
-  return { ok: true, value: null };
+  return ok(null);
 }
 
 /**
@@ -197,7 +187,7 @@ export async function createTransfer(
     repo.findAccount(userId, input.toAccountId),
   ]);
 
-  if (!from || !to) return { ok: false, error: { kind: 'not_found' } };
+  if (!from || !to) return notFound();
 
   if (from.currency !== to.currency) {
     return invalid('toAccountId', 'Transfers between different currencies are not supported yet');
@@ -233,7 +223,7 @@ export async function createTransfer(
     },
   );
 
-  return { ok: true, value: pair };
+  return ok(pair);
 }
 
 /**

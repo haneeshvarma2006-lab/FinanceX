@@ -1,4 +1,5 @@
 import * as emailRepo from '@/modules/email/repository';
+import { seedNotificationPreferences } from '@/modules/productivity/notifications';
 
 /**
  * Seed a new account's email preferences.
@@ -10,7 +11,11 @@ import * as emailRepo from '@/modules/email/repository';
 export async function seedEmailPreferences(userId: string, marketingOptIn: boolean): Promise<void> {
   await emailRepo.seedPreferences(userId);
 
-  // Only ever turned ON by an explicit opt-in; the seeded default is off.
+  // In-app notifications default on: every one is raised from the user's own
+  // records, in response to something they set up themselves.
+  await seedNotificationPreferences(userId);
+
+  // Marketing is only ever turned ON by an explicit opt-in; the default is off.
   if (marketingOptIn) {
     await emailRepo.setPreference(userId, 'marketing', true);
     await emailRepo.setPreference(userId, 'product_updates', true);

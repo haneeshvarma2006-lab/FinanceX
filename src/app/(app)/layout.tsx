@@ -1,13 +1,17 @@
 import Link from 'next/link';
+import { requireUser } from '@/lib/auth/current-user';
+import { countUnreadNotifications } from '@/modules/productivity/repository';
+import { NotificationBell } from '@/components/ui/notification-bell';
+import { signOutAction } from '../(auth)/actions';
 
 const NAV = [
   { href: '/today', label: 'Today' },
+  { href: '/tasks', label: 'Tasks' },
+  { href: '/habits', label: 'Habits' },
+  { href: '/goals', label: 'Goals' },
   { href: '/finance', label: 'Finance' },
   { href: '/trading', label: 'Trading' },
-  { href: '/settings', label: 'Settings' },
 ] as const;
-import { requireUser } from '@/lib/auth/current-user';
-import { signOutAction } from '../(auth)/actions';
 
 /**
  * Every route inside this group is authenticated by this one call. A page that
@@ -15,6 +19,7 @@ import { signOutAction } from '../(auth)/actions';
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  const unread = await countUnreadNotifications(user.id);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -32,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               Kyli<span className="text-accent">X</span>
             </Link>
 
-            <nav aria-label="Main">
+            <nav aria-label="Main" className="min-w-0 overflow-x-auto">
               <ul className="flex items-center gap-1">
                 {NAV.map((item) => (
                   <li key={item.href}>
@@ -48,7 +53,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <NotificationBell count={unread} />
+
+            <Link
+              href="/settings"
+              className="rounded-[var(--radius-control)] px-2.5 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-raised hover:text-text-primary"
+            >
+              Settings
+            </Link>
+
             <span className="hidden text-sm text-text-secondary sm:inline">{user.displayName}</span>
             <form action={signOutAction}>
               <button

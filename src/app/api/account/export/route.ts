@@ -4,6 +4,7 @@ import * as identityRepo from '@/modules/identity/repository';
 import * as emailRepo from '@/modules/email/repository';
 import * as financeRepo from '@/modules/finance/repository';
 import * as tradingRepo from '@/modules/trading/repository';
+import * as productivityRepo from '@/modules/productivity/repository';
 
 /**
  * Full data export for the signed-in account.
@@ -28,6 +29,11 @@ export async function GET(): Promise<NextResponse> {
     trades,
     preferences,
     consents,
+    projects,
+    tasks,
+    habits,
+    goals,
+    notificationPreferences,
   ] = await Promise.all([
     financeRepo.listAccounts(user.id, true),
     financeRepo.listCategories(user.id),
@@ -40,6 +46,11 @@ export async function GET(): Promise<NextResponse> {
     tradingRepo.listTrades(user.id, { limit: 500 }),
     emailRepo.listPreferences(user.id),
     identityRepo.listConsents(user.id),
+    productivityRepo.listProjects(user.id),
+    productivityRepo.listTasks(user.id, { limit: 100 }),
+    productivityRepo.listHabits(user.id),
+    productivityRepo.listGoals(user.id),
+    productivityRepo.listNotificationPreferences(user.id),
   ]);
 
   const payload = {
@@ -56,9 +67,11 @@ export async function GET(): Promise<NextResponse> {
       emailVerifiedAt: user.emailVerifiedAt,
       createdAt: user.createdAt,
     },
+    productivity: { projects, tasks, habits, goals },
     finance: { accounts, categories, transactions, budgets, subscriptions, netWorth },
     trading: { tradingAccounts, strategies, trades },
     emailPreferences: preferences,
+    notificationPreferences,
     consents,
   };
 

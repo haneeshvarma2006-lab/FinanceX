@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/current-user';
+import { fieldErrorsFrom, toFormState, type FormState } from '@/lib/result';
+
+export type { FormState };
 import { parseAmount, type Currency } from '@/lib/money';
 import * as repo from '@/modules/trading/repository';
 import * as trading from '@/modules/trading/service';
@@ -11,26 +14,6 @@ import {
   tradeSchema,
   tradingAccountSchema,
 } from '@/modules/trading/validators';
-
-export type FormState = {
-  message?: string;
-  tone?: 'error' | 'success';
-  fieldErrors?: Record<string, string>;
-};
-
-function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? '');
-    if (key && !errors[key]) errors[key] = issue.message;
-  }
-  return errors;
-}
-
-function present(error: trading.ServiceError): FormState {
-  if (error.kind === 'invalid') return { fieldErrors: { [error.field]: error.message } };
-  return { message: 'That item no longer exists, or is not yours.', tone: 'error' };
-}
 
 export async function createTradingAccount(
   _prev: FormState,
@@ -47,7 +30,7 @@ export async function createTradingAccount(
     environment: formData.get('environment') || 'live',
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   let starting: bigint;
   try {
@@ -87,7 +70,7 @@ export async function createStrategy(_prev: FormState, formData: FormData): Prom
     rules: formData.get('rules') || undefined,
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   try {
     await repo.insertStrategy(user.id, {
@@ -117,10 +100,10 @@ export async function createTrade(_prev: FormState, formData: FormData): Promise
     plannedRisk: formData.get('plannedRisk') || undefined,
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   const result = await trading.createTrade(user.id, parsed.data);
-  if (!result.ok) return present(result.error);
+  if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/trading');
   return { message: 'Trade created — add executions to open it', tone: 'success' };
@@ -138,10 +121,10 @@ export async function addExecution(_prev: FormState, formData: FormData): Promis
     executedAt: formData.get('executedAt'),
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   const result = await trading.addExecution(user.id, tradeId, parsed.data);
-  if (!result.ok) return present(result.error);
+  if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/trading');
   return { message: 'Execution recorded', tone: 'success' };

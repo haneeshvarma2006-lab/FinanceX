@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/current-user';
+import { fieldErrorsFrom, toFormState, type FormState } from '@/lib/result';
+
+export type { FormState };
 import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import {
@@ -11,33 +14,6 @@ import {
   transferSchema,
 } from '@/modules/finance/validators';
 import { parseAmount, type Currency } from '@/lib/money';
-
-export type FormState = {
-  message?: string;
-  tone?: 'error' | 'success';
-  fieldErrors?: Record<string, string>;
-};
-
-function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? '');
-    if (key && !errors[key]) errors[key] = issue.message;
-  }
-  return errors;
-}
-
-/** Service errors are mapped to copy here; raw internals never reach the client. */
-function present(error: finance.ServiceError): FormState {
-  switch (error.kind) {
-    case 'invalid':
-      return { fieldErrors: { [error.field]: error.message } };
-    case 'not_found':
-      return { message: 'That item no longer exists, or is not yours.', tone: 'error' };
-    default:
-      return { message: 'Something went wrong. Please try again.', tone: 'error' };
-  }
-}
 
 export async function createAccount(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
@@ -49,7 +25,7 @@ export async function createAccount(_prev: FormState, formData: FormData): Promi
     openingBalance: formData.get('openingBalance') || '0',
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   let opening: bigint;
   try {
@@ -86,7 +62,7 @@ export async function createCategory(_prev: FormState, formData: FormData): Prom
     kind: formData.get('kind'),
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   try {
     await repo.insertCategory(user.id, parsed.data);
@@ -111,10 +87,10 @@ export async function createTransaction(_prev: FormState, formData: FormData): P
     merchant: formData.get('merchant') || undefined,
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   const result = await finance.createTransaction(user.id, parsed.data);
-  if (!result.ok) return present(result.error);
+  if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/finance');
   return { message: 'Transaction recorded', tone: 'success' };
@@ -131,10 +107,10 @@ export async function createTransfer(_prev: FormState, formData: FormData): Prom
     description: formData.get('description') || 'Transfer',
   });
 
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error.issues) };
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   const result = await finance.createTransfer(user.id, parsed.data);
-  if (!result.ok) return present(result.error);
+  if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/finance');
   return { message: 'Transfer recorded', tone: 'success' };
@@ -145,7 +121,7 @@ export async function deleteTransaction(_prev: FormState, formData: FormData): P
   const id = String(formData.get('id') ?? '');
 
   const result = await finance.deleteTransaction(user.id, id);
-  if (!result.ok) return present(result.error);
+  if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/finance');
   return { message: 'Deleted', tone: 'success' };

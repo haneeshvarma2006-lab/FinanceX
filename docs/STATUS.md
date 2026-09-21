@@ -1,6 +1,6 @@
 # KyliX — Build Status
 
-Last verified: **2026-09-20**. Every result below was produced by running the
+Last verified: **2026-09-21**. Every result below was produced by running the
 command named, in this environment. Nothing is asserted from inspection alone.
 
 ## Quality gates — all run
@@ -11,15 +11,15 @@ command named, in this environment. Nothing is asserted from inspection alone.
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ **no known vulnerabilities**                           |
-| `pnpm test`         | ✅ **217 passing**, 15 files                              |
-| `pnpm test:e2e`     | ✅ **23 passing**, Chromium, production build             |
-| `pnpm build`        | ✅ 20 routes                                              |
-| Migrations          | ✅ 5 applied to clean databases                           |
+| `pnpm test`         | ✅ **298 passing**, 19 files                              |
+| `pnpm test:e2e`     | ✅ **36 passing**, Chromium, production build             |
+| `pnpm build`        | ✅ 23 routes                                              |
+| Migrations          | ✅ 6 applied to clean databases                           |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
 
 Integration and E2E tests run against real PostgreSQL databases, not mocks.
 
-## Test inventory — 217 unit/integration + 23 E2E
+## Test inventory — 298 unit/integration + 36 E2E
 
 | Suite                                 | Count | Covers                                                |
 | ------------------------------------- | ----- | ----------------------------------------------------- |
@@ -171,9 +171,86 @@ checked, no domain availability was tested. A trademark attorney must do that.
 - **No tasks, habits, goals** (M2) and **no rules engine** (M5).
 - **Web only** — no native mobile or desktop build.
 
+---
+
+## Core product modules — 2026-09-21
+
+Built in priority order, each validated before the next began.
+
+| Module                                         | State                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------- |
+| 1 — Auth, onboarding, account settings         | ✅ Done previously                                             |
+| 2 — Dashboard with actionable widgets          | ✅ Every widget reads real data; honest empty states           |
+| 3 — Task management                            | ✅ CRUD, priority, scheduling, due dates, projects, recurrence |
+| 4 — Goals and habits                           | ✅ Measurable targets, streaks, checkpoints, review history    |
+| 5 — Finance                                    | ✅ Done previously                                             |
+| 6 — Trading journal                            | ✅ Done previously                                             |
+| 7 — Notifications and preferences              | ✅ In-app, per-kind switches, deduplicated                     |
+| 8 — Search, filter, sort, pagination, export   | ✅ Shared primitives; export covers every module               |
+| 9 — Privacy, security, deletion, data controls | ✅ Done previously                                             |
+
+### What the dashboard actually does
+
+Every figure is read from the user's own records. A widget with nothing behind
+it returns `hasData: false` and renders a blank that names the missing thing and
+links to the action that would create it. **No demo data, no seeded balances, no
+placeholder streaks or win rates exist anywhere in the codebase** — an E2E test
+asserts a new account's dashboard contains no money figure at all.
+
+The "Worth your attention" panel is the connective tissue: overdue tasks,
+streaks about to break, goals behind pace, budgets exceeded, and a run of losing
+trades — each derived from the same read the page renders, so what the user is
+told always matches what they can see. The same conditions raise in-app
+notifications, deduplicated per day.
+
+### Correctness work in this milestone
+
+- **Recurrence** materialises exactly ONE successor, on completion, scheduled
+  from the completion date. 17 tests cover DST, leap day, month-end, year
+  boundaries, and exhausted finite series.
+- **Streaks** are computed, never stored, and survive backfill, deletion and
+  timezone change. 15 tests.
+- **Goal values** stay exact: a money goal is minor units, a numeric goal is an
+  8-decimal scaled integer. `₹45,000.50` round-trips without losing paise.
+- **Search escapes `LIKE` wildcards**, so a term containing `%` matches a
+  literal percent sign instead of everything.
+- **Sort keys are allow-listed**, so an arbitrary column name cannot reach a
+  query builder.
+
+### Defects found and fixed
+
+1. **rrule silently accepted garbage.** An empty string parsed to `freq = 0`,
+   which is YEARLY, without throwing — so a corrupt stored rule would have
+   turned a daily task into a yearly one. Now an explicit `FREQ=` token is
+   required before the string reaches the parser.
+2. **Clock reads during render.** `Date.now()` inside a component is impure;
+   in a client component it also means the server and hydrating client can
+   disagree about what is overdue. Clock reads now live in `src/lib/clock.ts`
+   and the value is passed down.
+3. **Two error contracts.** Finance and trading each had their own
+   `ServiceError`/`Result`. Unified into `src/lib/result.ts`.
+
+### A limitation I could not remove
+
+The uncontrolled "add" forms clear when `revalidatePath` re-renders the tree,
+which happens shortly after a submit resolves rather than at a defined moment.
+Text typed inside that window is wiped.
+
+At human typing speed the window is unreachable; an automated driver hits it.
+**An explicit reset in an effect was tried and made it worse** — it adds a
+second, later wipe. Closing the window entirely needs either controlled inputs
+throughout, or clearing synchronously at submit time, which would discard the
+user's text whenever validation fails. Left as-is and recorded here rather than
+papered over.
+
 ## Next
 
 1. **Decide the product name** — blocking for anything public.
-2. M2: tasks, focus timer, habits, goals.
-3. M5: the connections and rules engine — the product thesis.
-4. Legal review of the drafted terms and privacy notice.
+2. A user-editable rules engine. The notification pipeline (kinds, dedupe keys,
+   per-kind preferences) already exists; what is missing is letting the user
+   define the conditions rather than shipping five fixed ones.
+3. The focus timer — `focus_sessions` exists and the dashboard reads it, but
+   there is no UI to start one.
+4. CSV import for transactions. The schema is idempotent-import-ready via
+   `external_id`; no importer is built.
+5. Legal review of the drafted terms and privacy notice.

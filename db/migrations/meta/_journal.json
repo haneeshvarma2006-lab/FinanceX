@@ -36,6 +36,13 @@
       "when": 1789914586117,
       "tag": "0004_eager_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789919352045,
+      "tag": "0005_naive_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

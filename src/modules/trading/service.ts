@@ -1,3 +1,4 @@
+import { invalid, notFound, ok, type Result } from '@/lib/result';
 import { exponentOf, parseAmount, type Currency } from '@/lib/money';
 import { formatDecimal, parseDecimal } from './decimal';
 import { computeStrategyStats, computeTradeMetrics, equityCurve, rMultiple } from './pnl';
@@ -5,22 +6,13 @@ import * as repo from './repository';
 import type { Trade, TradeExecution, TradeNote } from './schema';
 import type { ExecutionInput, NoteInput, TradeInput } from './validators';
 
-export type ServiceError =
-  { kind: 'not_found' } | { kind: 'invalid'; field: string; message: string };
-
-export type Result<T> = { ok: true; value: T } | { ok: false; error: ServiceError };
-
-function invalid(field: string, message: string): Result<never> {
-  return { ok: false, error: { kind: 'invalid', field, message } };
-}
-
 export async function createTrade(userId: string, input: TradeInput): Promise<Result<Trade>> {
   const account = await repo.findTradingAccount(userId, input.tradingAccountId);
-  if (!account) return { ok: false, error: { kind: 'not_found' } };
+  if (!account) return notFound();
 
   if (input.strategyId) {
     const strategy = await repo.findStrategy(userId, input.strategyId);
-    if (!strategy) return { ok: false, error: { kind: 'not_found' } };
+    if (!strategy) return notFound();
   }
 
   let plannedRiskMinor: bigint | null = null;
@@ -45,7 +37,7 @@ export async function createTrade(userId: string, input: TradeInput): Promise<Re
     plannedRiskMinor,
   });
 
-  return { ok: true, value: trade };
+  return ok(trade);
 }
 
 /**
@@ -62,7 +54,7 @@ export async function addExecution(
   input: ExecutionInput,
 ): Promise<Result<{ trade: Trade; execution: TradeExecution }>> {
   const trade = await repo.findTrade(userId, tradeId);
-  if (!trade) return { ok: false, error: { kind: 'not_found' } };
+  if (!trade) return notFound();
 
   if (trade.status === 'cancelled') {
     return invalid('side', 'This trade was cancelled');
@@ -103,19 +95,19 @@ export async function addExecution(
   });
 
   const updated = await recomputeTrade(userId, tradeId);
-  if (!updated) return { ok: false, error: { kind: 'not_found' } };
+  if (!updated) return notFound();
 
   return { ok: true, value: { trade: updated, execution } };
 }
 
 export async function removeExecution(userId: string, executionId: string): Promise<Result<Trade>> {
   const removed = await repo.deleteExecution(userId, executionId);
-  if (!removed) return { ok: false, error: { kind: 'not_found' } };
+  if (!removed) return notFound();
 
   const updated = await recomputeTrade(userId, removed.tradeId);
-  if (!updated) return { ok: false, error: { kind: 'not_found' } };
+  if (!updated) return notFound();
 
-  return { ok: true, value: updated };
+  return ok(updated);
 }
 
 /** Recompute every derived field on a trade from its executions. */
@@ -168,7 +160,7 @@ export async function addNote(
   input: NoteInput,
 ): Promise<Result<TradeNote>> {
   const trade = await repo.findTrade(userId, tradeId);
-  if (!trade) return { ok: false, error: { kind: 'not_found' } };
+  if (!trade) return notFound();
 
   const note = await repo.insertNote(userId, {
     tradeId,
@@ -178,7 +170,7 @@ export async function addNote(
     confidence: input.confidence ?? null,
   });
 
-  return { ok: true, value: note };
+  return ok(note);
 }
 
 /**
