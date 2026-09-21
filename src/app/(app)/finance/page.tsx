@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
-import { ratioToPercent, type Currency } from '@/lib/money';
+import { ratioToPercent, type Currency } from '@kylix/domain/money';
 import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import { AddAccountForm, AddTransactionForm, AddTransferForm } from './forms';

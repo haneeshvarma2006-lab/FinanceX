@@ -5,7 +5,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { fieldErrorsFrom, toFormState, type FormState } from '@/lib/result';
 
 export type { FormState };
-import { parseAmount, type Currency } from '@/lib/money';
+import { parseAmount, type Currency } from '@kylix/domain/money';
 import * as repo from '@/modules/trading/repository';
 import * as trading from '@/modules/trading/service';
 import {

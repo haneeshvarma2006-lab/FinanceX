@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField } from '@/components/ui/form';
-import { SUPPORTED_CURRENCIES } from '@/lib/money';
+import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
 import { ACCOUNT_KINDS } from '@/modules/finance/validators';
 import {
   createAccount,

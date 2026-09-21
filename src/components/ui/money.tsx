@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn';
-import { formatMoney, type Currency } from '@/lib/money';
+import { formatMoney, type Currency } from '@kylix/domain/money';
 
 /**
  * Money on screen.

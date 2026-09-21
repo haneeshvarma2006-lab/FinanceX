@@ -80,6 +80,7 @@ export async function insertSession(input: {
   idleExpiresAt: Date;
   ip: string | null;
   userAgent: string | null;
+  client?: string;
 }): Promise<Session> {
   const [row] = await db.insert(sessions).values(input).returning();
   if (!row) throw new Error('Session insert returned no row');
@@ -380,6 +381,7 @@ export async function listSessionsForUser(userId: string, now: Date) {
       id: sessions.id,
       ip: sessions.ip,
       userAgent: sessions.userAgent,
+      client: sessions.client,
       createdAt: sessions.createdAt,
       expiresAt: sessions.expiresAt,
       idleExpiresAt: sessions.idleExpiresAt,
@@ -443,6 +445,14 @@ export async function cancelDeletionRequest(userId: string): Promise<void> {
  */
 export async function hardDeleteUser(userId: string): Promise<void> {
   await db.delete(users).where(eq(users.id, userId));
+
+  /**
+   * The cascade above fires the change-log triggers, so deleting the user
+   * writes a final burst of 'deleted' entries. `change_log.user_id` has no
+   * foreign key precisely so those inserts succeed; they are cleared here
+   * instead, after the cascade has finished.
+   */
+  await db.execute(sql`delete from change_log where user_id = ${userId}`);
 }
 
 /* --------------------------------------------- pending registrations --- */

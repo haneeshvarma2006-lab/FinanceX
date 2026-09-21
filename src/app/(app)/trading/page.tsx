@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader } from '@/components/ui/money';
-import type { Currency } from '@/lib/money';
+import type { Currency } from '@kylix/domain/money';
 import * as repo from '@/modules/trading/repository';
 import * as trading from '@/modules/trading/service';
 import { AddExecutionForm, AddTradeForm, AddTradingAccountForm } from './forms';

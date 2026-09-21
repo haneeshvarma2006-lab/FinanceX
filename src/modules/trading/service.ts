@@ -1,7 +1,12 @@
 import { invalid, notFound, ok, type Result } from '@/lib/result';
-import { exponentOf, parseAmount, type Currency } from '@/lib/money';
-import { formatDecimal, parseDecimal } from './decimal';
-import { computeStrategyStats, computeTradeMetrics, equityCurve, rMultiple } from './pnl';
+import { exponentOf, parseAmount, type Currency } from '@kylix/domain/money';
+import { formatDecimal, parseDecimal } from '@kylix/domain/trading';
+import {
+  computeStrategyStats,
+  computeTradeMetrics,
+  equityCurve,
+  rMultiple,
+} from '@kylix/domain/trading';
 import * as repo from './repository';
 import type { Trade, TradeExecution, TradeNote } from './schema';
 import type { ExecutionInput, NoteInput, TradeInput } from './validators';

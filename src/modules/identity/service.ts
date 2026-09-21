@@ -11,7 +11,12 @@ import * as repo from './repository';
 import type { User } from './schema';
 import type { CompleteOAuthSignUpInput, SignInInput, SignUpInput } from './validators';
 
-export type RequestContext = { ip: string | null; userAgent: string | null };
+export type RequestContext = {
+  ip: string | null;
+  userAgent: string | null;
+  /** 'web' | 'mobile' | 'api'. Defaults to web; see sessions.client. */
+  client?: string;
+};
 
 export type AuthFailure =
   | { kind: 'invalid_credentials' }
@@ -50,6 +55,7 @@ async function startSession(user: User, ctx: RequestContext, now: Date) {
     idleExpiresAt,
     ip: ctx.ip,
     userAgent: ctx.userAgent,
+    client: ctx.client ?? 'web',
   });
 
   return { token, expiresAt };

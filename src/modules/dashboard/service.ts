@@ -1,11 +1,11 @@
 import { startOfMonth, endOfMonth, parseISO } from 'date-fns';
-import type { Currency } from '@/lib/money';
+import type { Currency } from '@kylix/domain/money';
 import * as productivityRepo from '@/modules/productivity/repository';
 import * as productivity from '@/modules/productivity/service';
 import * as financeRepo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import * as tradingRepo from '@/modules/trading/repository';
-import { computeStrategyStats } from '@/modules/trading/pnl';
+import { computeStrategyStats } from '@kylix/domain/trading';
 import type { Task } from '@/modules/productivity/schema';
 import type { HabitWithStreak } from '@/modules/productivity/service';
 

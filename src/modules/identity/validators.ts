@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SUPPORTED_CURRENCIES } from '@/lib/money';
+import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
 
 /**
  * A length floor rather than a character-class maze. Composition rules push

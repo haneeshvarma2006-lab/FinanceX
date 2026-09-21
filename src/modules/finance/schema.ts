@@ -69,6 +69,7 @@ export const categories = pgTable(
 
     archivedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('categories_user_id_idx').on(t.userId),
@@ -157,6 +158,7 @@ export const budgets = pgTable(
     endsOn: date(),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('budgets_user_id_idx').on(t.userId),
@@ -192,6 +194,7 @@ export const subscriptions = pgTable(
     cancelBy: date(),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('subscriptions_user_next_due_idx').on(t.userId, t.nextDueOn),

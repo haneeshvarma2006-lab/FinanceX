@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
 import { setParam } from '@/lib/navigation';
 import { PRIORITY_LABELS } from '@/modules/productivity/validators';
-import { SUPPORTED_FREQUENCIES } from '@/modules/productivity/recurrence';
+import { SUPPORTED_FREQUENCIES } from '@kylix/domain/productivity';
 import {
   completeTaskAction,
   createTaskAction,

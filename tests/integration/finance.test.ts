@@ -4,7 +4,7 @@ import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
-import { sum } from '@/lib/money';
+import { sum } from '@kylix/domain/money';
 
 const ctx = { ip: '203.0.113.40', userAgent: 'vitest' };
 

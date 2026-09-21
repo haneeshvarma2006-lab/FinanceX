@@ -1,0 +1,289 @@
+@import 'tailwindcss';
+
+/**
+ * KyliX design system.
+ *
+ * One source of truth for colour, type, space, radius, shadow and motion.
+ * Components reference tokens only — no component defines a raw hex, a
+ * one-off pixel value, or its own easing curve. That is what keeps a hundred
+ * screens looking like one product rather than a hundred templates.
+ *
+ * Colour is authored in OKLCH because it is perceptually uniform: two tokens
+ * with the same lightness read as equally bright regardless of hue, so the
+ * domain accents can differ in colour without one of them shouting.
+ */
+
+/* ========================================================== 1. PRIMITIVES */
+
+@theme {
+  /* ---- Typography -------------------------------------------------- */
+  --font-sans:
+    'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+
+  /**
+   * A restrained scale. Six sizes is enough for an information-dense product
+   * and forces hierarchy to come from weight, colour and space rather than
+   * from ever-larger text.
+   */
+  --text-2xs: 0.6875rem; /* 11px — dense metadata only */
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem; /* 12px — metadata, captions */
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem; /* 14px — body, the workhorse */
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1rem; /* 16px — lead paragraphs */
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem; /* 18px — card titles */
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.375rem; /* 22px — section headings */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem; /* 28px — page titles */
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.25rem; /* 36px — marketing only */
+  --text-3xl--line-height: 2.5rem;
+
+  --tracking-tight: -0.015em;
+  --tracking-wide: 0.08em;
+
+  /* ---- Radii ------------------------------------------------------- */
+  --radius-control: 0.5rem; /* inputs, buttons, chips */
+  --radius-card: 0.75rem; /* cards, panels */
+  --radius-sheet: 1rem; /* modals, sheets */
+
+  /* ---- Elevation ---------------------------------------------------
+   * Shadows on a dark surface must be near-black and generous, not grey and
+   * tight, or they read as a smudge. Each level pairs a contact shadow with
+   * a soft ambient one.
+   */
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-overlay: 0 4px 12px oklch(0% 0 0 / 0.35), 0 1px 3px oklch(0% 0 0 / 0.3);
+  --shadow-sheet: 0 16px 48px oklch(0% 0 0 / 0.5), 0 4px 12px oklch(0% 0 0 / 0.35);
+
+  /* ---- Motion -------------------------------------------------------
+   * Short, decelerating, and never decorative. Anything past ~200ms on a
+   * hover or a state change reads as latency rather than polish.
+   */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+
+  /* ---- Breakpoints --------------------------------------------------
+   * Named for the device class each one actually serves.
+   */
+  --breakpoint-sm: 40rem; /* 640 — large phone, stacked forms become 2-up */
+  --breakpoint-md: 48rem; /* 768 — tablet portrait */
+  --breakpoint-lg: 64rem; /* 1024 — the dashboard's two-column grid */
+  --breakpoint-xl: 80rem; /* 1280 — comfortable desktop */
+}
+
+/* ========================================================= 2. SEMANTICS */
+
+/**
+ * Dark is the primary theme, not an inversion applied afterwards.
+ *
+ * The foundation is a cinematic navy — a near-black with a measurable blue
+ * cast (hue 265) rather than neutral grey, so the surface has depth without
+ * any gradient doing the work.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, in ascending elevation. */
+  --surface-sunken: oklch(0.145 0.021 265);
+  --surface-base: oklch(0.175 0.023 265);
+  --surface-raised: oklch(0.212 0.024 265);
+  --surface-overlay: oklch(0.252 0.026 265);
+  --surface-inset: oklch(0.155 0.022 265);
+
+  /* Borders. Subtle is a hairline; strong appears on hover and focus. */
+  --border-subtle: oklch(0.29 0.022 265);
+  --border-strong: oklch(0.4 0.026 265);
+
+  /**
+   * Text. Three weights of emphasis, all meeting WCAG AA on surface-base:
+   * primary ~15:1, secondary ~7.5:1, muted ~4.6:1.
+   */
+  --text-primary: oklch(0.97 0.004 265);
+  --text-secondary: oklch(0.785 0.013 265);
+  --text-muted: oklch(0.635 0.016 265);
+
+  /* Domain accents — equal lightness, so none dominates the others. */
+  --accent-tasks: oklch(0.7 0.15 250); /* blue */
+  --accent-habits: oklch(0.72 0.13 175); /* mint */
+  --accent-finance: oklch(0.72 0.15 162); /* emerald */
+  --accent-trading: oklch(0.7 0.16 300); /* violet */
+
+  --accent: var(--accent-tasks);
+  --accent-contrast: oklch(0.145 0.021 265);
+  --accent-soft: oklch(0.7 0.15 250 / 0.14);
+
+  /* Status. Paired with a symbol or word everywhere — never colour alone. */
+  --positive: oklch(0.755 0.155 162);
+  --positive-soft: oklch(0.755 0.155 162 / 0.13);
+  --negative: oklch(0.685 0.185 22);
+  --negative-soft: oklch(0.685 0.185 22 / 0.13);
+  --warning: oklch(0.8 0.145 78);
+  --warning-soft: oklch(0.8 0.145 78 / 0.13);
+
+  --focus-ring: oklch(0.8 0.13 250);
+}
+
+/**
+ * Light theme. Defined alongside dark from the start rather than retrofitted,
+ * which is why every token has a considered value here rather than an
+ * automatic inversion.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --surface-sunken: oklch(0.955 0.005 265);
+  --surface-base: oklch(0.985 0.003 265);
+  --surface-raised: oklch(1 0 0);
+  --surface-overlay: oklch(1 0 0);
+  --surface-inset: oklch(0.968 0.005 265);
+
+  --border-subtle: oklch(0.905 0.008 265);
+  --border-strong: oklch(0.795 0.014 265);
+
+  --text-primary: oklch(0.215 0.02 265);
+  --text-secondary: oklch(0.435 0.018 265);
+  --text-muted: oklch(0.555 0.017 265);
+
+  --accent-tasks: oklch(0.545 0.175 253);
+  --accent-habits: oklch(0.545 0.115 178);
+  --accent-finance: oklch(0.525 0.145 162);
+  --accent-trading: oklch(0.545 0.195 300);
+
+  --accent: var(--accent-tasks);
+  --accent-contrast: oklch(1 0 0);
+  --accent-soft: oklch(0.545 0.175 253 / 0.1);
+
+  --positive: oklch(0.515 0.145 162);
+  --positive-soft: oklch(0.515 0.145 162 / 0.1);
+  --negative: oklch(0.535 0.195 25);
+  --negative-soft: oklch(0.535 0.195 25 / 0.1);
+  --warning: oklch(0.575 0.135 70);
+  --warning-soft: oklch(0.575 0.135 70 / 0.12);
+
+  --focus-ring: oklch(0.545 0.175 253);
+
+  --shadow-raised: 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-overlay: 0 4px 12px oklch(0% 0 0 / 0.08), 0 1px 3px oklch(0% 0 0 / 0.06);
+  --shadow-sheet: 0 16px 48px oklch(0% 0 0 / 0.12), 0 4px 12px oklch(0% 0 0 / 0.08);
+}
+
+/* Expose the semantic layer as Tailwind utilities. */
+@theme inline {
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-inset: var(--surface-inset);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-soft: var(--accent-soft);
+  --color-tasks: var(--accent-tasks);
+  --color-habits: var(--accent-habits);
+  --color-finance: var(--accent-finance);
+  --color-trading: var(--accent-trading);
+
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+}
+
+/* ============================================================== 3. BASE */
+
+* {
+  border-color: var(--border-subtle);
+}
+
+html {
+  /* The page sits on the sunken tone so raised cards read as lifted. */
+  background-color: var(--surface-sunken);
+}
+
+body {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: var(--tracking-tight);
+  /* Headings balance across lines instead of leaving one orphaned word. */
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/**
+ * Every number in this product is money, a count, or a time. Tabular figures
+ * stop columns twitching as digits change — the difference between a ledger
+ * and a novelty.
+ */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0;
+}
+
+/* One focus treatment, everywhere, so keyboard users are never lost. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+/* Remove the default focus ring only where we have replaced it above. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background-color: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+/* Scrollbars that belong to the surface rather than the operating system. */
+@supports (scrollbar-color: auto) {
+  * {
+    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+/* Respect the system setting rather than animating regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

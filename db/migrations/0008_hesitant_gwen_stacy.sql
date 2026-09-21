@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "client" varchar(16) DEFAULT 'web' NOT NULL;

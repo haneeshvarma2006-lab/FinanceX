@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SUPPORTED_CURRENCIES } from '@/lib/money';
+import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
 
 /** Bounded so an oversized payload is rejected before it reaches the database. */
 const shortText = z.string().trim().min(1).max(120);

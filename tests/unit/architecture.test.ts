@@ -104,7 +104,9 @@ describe('invariant: SQL lives only in the data layer', () => {
 
 describe('invariant: money never touches floating point', () => {
   it('uses no float parsing or float rounding in the money module', () => {
-    const source = readFileSync(join(ROOT, 'src/lib/money/index.ts'), 'utf8');
+    // The money module now lives in @kylix/domain so mobile can share it
+    // verbatim; the invariant follows the code rather than the old path.
+    const source = readFileSync(join(ROOT, 'packages/domain/src/money/index.ts'), 'utf8');
 
     expect(source).not.toMatch(/parseFloat/);
     expect(source).not.toMatch(/\.toFixed\(/);
@@ -112,7 +114,7 @@ describe('invariant: money never touches floating point', () => {
   });
 
   it('exposes no money helper that takes or returns a number amount', async () => {
-    const source = readFileSync(join(ROOT, 'src/lib/money/index.ts'), 'utf8');
+    const source = readFileSync(join(ROOT, 'packages/domain/src/money/index.ts'), 'utf8');
 
     // ratioToPercent returns a number on purpose (it is a percentage for a
     // progress bar, not an amount); every other export trades in bigint.
@@ -124,7 +126,7 @@ describe('invariant: money never touches floating point', () => {
   });
 
   it('has no float arithmetic on amounts anywhere in src', async () => {
-    const files = await sourceFiles('src/**/*.{ts,tsx}');
+    const files = await sourceFiles('{src,packages}/**/*.{ts,tsx}');
 
     const offenders = files.filter((file) => {
       if (file.endsWith('.test.ts')) return false;
@@ -133,6 +135,44 @@ describe('invariant: money never touches floating point', () => {
     });
 
     expect(offenders, `parseFloat found in: ${offenders.join(', ')}`).toEqual([]);
+  });
+});
+
+describe('invariant: the shared domain package stays portable', () => {
+  it('imports no framework, database, or network', async () => {
+    const files = await sourceFiles('packages/domain/src/**/*.ts');
+    expect(files.length).toBeGreaterThan(5);
+
+    const offenders = files.filter((file) => {
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      return (
+        /from ['"](react|next|react-native)/.test(source) ||
+        /from ['"]drizzle-orm/.test(source) ||
+        /from ['"]pg['"]/.test(source) ||
+        /\bfetch\s*\(/.test(source) ||
+        /from ['"]node:(fs|http|https|net)/.test(source) ||
+        /from ['"]@\//.test(source)
+      );
+    });
+
+    expect(
+      offenders,
+      `@kylix/domain must stay pure so every client can share it: ${offenders.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('reads no ambient clock', async () => {
+    const files = await sourceFiles('packages/domain/src/**/*.ts');
+
+    const offenders = files.filter((file) => {
+      if (file.endsWith('.test.ts')) return false;
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      // A function needing "now" takes it as an argument, so behaviour is
+      // testable at a boundary rather than dependent on when the suite runs.
+      return /Date\.now\(\)|new Date\(\s*\)/.test(source);
+    });
+
+    expect(offenders, `Pass time in rather than reading it: ${offenders.join(', ')}`).toEqual([]);
   });
 });
 
@@ -205,5 +245,53 @@ describe('invariant: the environment contract is real', () => {
 describe('invariant: relative paths in tests stay inside the repo', () => {
   it('resolves ROOT to the project root', () => {
     expect(relative(ROOT, join(ROOT, 'package.json'))).toBe('package.json');
+  });
+});
+
+/**
+ * Tokens live in `packages/tokens` so the future mobile client can import the
+ * same values. That only holds while nobody pastes a value back into the CSS.
+ */
+describe('invariant: design tokens have exactly one home', () => {
+  const globals = () => readFileSync(join(ROOT, 'src/app/globals.css'), 'utf8');
+
+  it('has globals.css consume the generated sheet', () => {
+    expect(globals()).toContain("@import './tokens.generated.css'");
+  });
+
+  it('declares no colour, radius or motion token by hand in globals.css', () => {
+    const body = globals().replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // Not anchored to the start of a line: a declaration squeezed onto one
+    // line with its selector is still a declaration. A `var(--x)` reference
+    // has no colon after the name, so reading tokens stays allowed.
+    const offenders = [...body.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(([, name]) => name!);
+
+    expect(
+      offenders,
+      `Change packages/tokens/src/index.ts and re-run \`pnpm tokens:build\` instead of declaring: ${offenders.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('keeps the generated sheet out of hand-editing', () => {
+    const generated = readFileSync(join(ROOT, 'src/app/tokens.generated.css'), 'utf8');
+    expect(generated).toContain('GENERATED FILE — do not edit');
+  });
+
+  it('never hard-codes a colour outside the token package', async () => {
+    const files = await sourceFiles('src/**/*.{ts,tsx,css}');
+
+    const offenders = files.filter((file) => {
+      if (file === 'src/app/tokens.generated.css') return false;
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      // A six- or three-digit hex colour in a style position. Tailwind classes
+      // and CSS variables are the supported way to reach a colour.
+      return /(?:color|background|border|fill|stroke)[^;:\n]*:\s*#[0-9a-f]{3,8}\b/i.test(source);
+    });
+
+    expect(
+      offenders,
+      `Use a design token instead of a raw colour: ${offenders.join(', ')}`,
+    ).toEqual([]);
   });
 });

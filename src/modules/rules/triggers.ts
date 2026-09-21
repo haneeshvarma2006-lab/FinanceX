@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parseAmount, type Currency } from '@/lib/money';
+import { parseAmount, type Currency } from '@kylix/domain/money';
 import type { NotificationKind } from '@/modules/productivity/notifications';
 import type { TodaySnapshot } from '@/modules/dashboard/service';
 

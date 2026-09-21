@@ -196,6 +196,16 @@ export const sessions = pgTable(
     ip: inet(),
     userAgent: varchar({ length: 512 }),
 
+    /**
+     * Which client holds this session: 'web' | 'mobile' | 'api'.
+     *
+     * Recorded so Settings → Security can distinguish "iPhone" from "Chrome on
+     * Mac" and revoke one without the other. A session is a session — mobile
+     * is not privileged — but a user cannot make a sensible revocation
+     * decision about rows that all look identical.
+     */
+    client: varchar({ length: 16 }).notNull().default('web'),
+
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

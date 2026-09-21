@@ -47,6 +47,7 @@ export const tradingAccounts = pgTable(
 
     archivedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('trading_accounts_user_id_idx').on(t.userId),
@@ -72,6 +73,7 @@ export const strategies = pgTable(
 
     archivedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('strategies_user_id_idx').on(t.userId),
@@ -165,6 +167,7 @@ export const tradeExecutions = pgTable(
 
     executedAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('trade_executions_trade_idx').on(t.tradeId, t.executedAt),
@@ -196,6 +199,7 @@ export const tradeNotes = pgTable(
     confidence: smallint(),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('trade_notes_trade_idx').on(t.tradeId, t.createdAt),

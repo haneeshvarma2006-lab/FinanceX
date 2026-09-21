@@ -38,6 +38,7 @@ export const projects = pgTable(
 
     archivedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('projects_user_id_idx').on(t.userId),
@@ -116,6 +117,7 @@ export const focusSessions = pgTable(
     plannedMinutes: integer().notNull().default(25),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('focus_sessions_user_started_idx').on(t.userId, t.startedAt)],
 );
@@ -139,6 +141,7 @@ export const habits = pgTable(
 
     archivedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('habits_user_id_idx').on(t.userId),
@@ -170,6 +173,7 @@ export const habitEntries = pgTable(
     note: varchar({ length: 500 }),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex('habit_entries_habit_date_key').on(t.habitId, t.onDate),
@@ -253,6 +257,7 @@ export const goalCheckpoints = pgTable(
     value: varchar({ length: 32 }).notNull(),
     note: varchar({ length: 500 }),
     recordedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('goal_checkpoints_goal_recorded_idx').on(t.goalId, t.recordedAt)],
 );
@@ -290,6 +295,7 @@ export const notifications = pgTable(
 
     readAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('notifications_user_created_idx').on(t.userId, t.createdAt),

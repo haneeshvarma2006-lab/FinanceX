@@ -1,5 +1,5 @@
-import { parseAmount, toDecimalString, type Currency } from '@/lib/money';
-import { parseDecimal, formatDecimal } from '@/modules/trading/decimal';
+import { parseAmount, toDecimalString, type Currency } from '../money/index';
+import { parseDecimal, formatDecimal } from '../trading/decimal';
 
 /**
  * Goal values, kept exact.

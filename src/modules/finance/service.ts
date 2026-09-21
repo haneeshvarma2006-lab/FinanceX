@@ -1,5 +1,5 @@
 import { invalid, notFound, ok, type Result } from '@/lib/result';
-import { parseAmount, type Currency } from '@/lib/money';
+import { parseAmount, type Currency } from '@kylix/domain/money';
 import type { Transaction } from './schema';
 import * as repo from './repository';
 import type { TransactionInput, TransferInput } from './validators';

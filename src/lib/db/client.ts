@@ -5,9 +5,10 @@ import * as finance from '@/modules/finance/schema';
 import * as identity from '@/modules/identity/schema';
 import * as productivity from '@/modules/productivity/schema';
 import * as rules from '@/modules/rules/schema';
+import * as sync from '@/modules/sync/schema';
 import * as trading from '@/modules/trading/schema';
 
-const schema = { ...identity, ...finance, ...trading, ...productivity, ...rules };
+const schema = { ...identity, ...finance, ...trading, ...productivity, ...rules, ...sync };
 
 declare global {
   // Reuse the pool across hot reloads in development, otherwise every edit

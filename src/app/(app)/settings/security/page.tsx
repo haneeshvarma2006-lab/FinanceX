@@ -10,14 +10,22 @@ import { RevokeSessionButton, RevokeOthersButton, UnlinkButton } from './control
 
 export const metadata: Metadata = { title: 'Security' };
 
-/** Shorten a user agent enough to recognise a device without parsing it. */
-function describeAgent(agent: string | null): string {
+/**
+ * Name a session well enough that a user can decide whether to revoke it.
+ *
+ * A native client sends the device name it was given at sign-in, which is far
+ * more useful than a user-agent string — so when the session came from one,
+ * that name is used verbatim rather than pattern-matched.
+ */
+function describeSession(client: string, agent: string | null): string {
+  if (client !== 'web') return agent ?? 'Mobile device';
+
   if (!agent) return 'Unknown device';
-  if (/android/i.test(agent)) return 'Android device';
-  if (/iphone|ipad/i.test(agent)) return 'iOS device';
-  if (/macintosh/i.test(agent)) return 'Mac';
-  if (/windows/i.test(agent)) return 'Windows PC';
-  if (/linux/i.test(agent)) return 'Linux device';
+  if (/android/i.test(agent)) return 'Android browser';
+  if (/iphone|ipad/i.test(agent)) return 'iOS browser';
+  if (/macintosh/i.test(agent)) return 'Mac browser';
+  if (/windows/i.test(agent)) return 'Windows browser';
+  if (/linux/i.test(agent)) return 'Linux browser';
   return 'Browser';
 }
 
@@ -54,7 +62,10 @@ export default async function SecuritySettingsPage() {
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm text-text-primary">{describeAgent(session.userAgent)}</p>
+                    <p className="flex flex-wrap items-center gap-2 text-sm text-text-primary">
+                      {describeSession(session.client, session.userAgent)}
+                      {session.client !== 'web' && <Badge tone="accent">{session.client}</Badge>}
+                    </p>
                     <p className="numeric mt-0.5 text-xs text-text-muted">
                       Started {session.createdAt.toISOString().slice(0, 16).replace('T', ' ')} UTC
                       {session.ip ? ` · ${session.ip}` : ''}
