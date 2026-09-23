@@ -43,9 +43,12 @@ says anything about a deployed origin, because nothing has been deployed.
 - [x] **Resolve the product name.** Renamed to **Nested Flow** on 2026-09-23,
       after `docs/NAME-RESEARCH.md` found an active "Kylix Finance" in the same
       sector plus a registered Borland mark.
-- [ ] **Clear the new name.** No conflict scan, trademark search, domain check
-      or app-store check has been run for "Nested Flow". Availability must not
-      be assumed. This is still blocking; only the old name's problem is solved.
+- [ ] **Clear the new name.** A preliminary web scan was run on 2026-09-23
+      (`docs/NAME-RESEARCH.md`): no same-sector collision, but "nested flow" is
+      a generic term of art in software and a NestedFlow test-automation tool
+      already exists. **No register search and no domain check were possible**
+      from the build environment. Still blocking: a real clearance search in
+      classes 9 and 36, in every intended market.
 - [ ] **Legal review** of `src/app/legal/terms` and `src/app/legal/privacy`.
       Both are drafts and say so.
 - [ ] **Confirm launch markets** and take advice on the age policy for each

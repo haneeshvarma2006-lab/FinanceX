@@ -162,11 +162,18 @@ Full detail in `docs/SECURITY.md`. Headlines:
 name, which `docs/NAME-RESEARCH.md` showed collided with an active _Kylix
 Finance_ in the same sector.
 
-**No research of any kind has been performed on "Nested Flow."** No conflict
-scan, no trademark register search, no domain check, no app-store check. That
-is still outstanding and still blocks public launch — renaming solved the old
-name's problem, not the general one. `docs/NAME-RESEARCH.md` states exactly
-what was and was not checked, and preserves the earlier research as evidence.
+A preliminary conflict scan for "Nested Flow" was run on 2026-09-23 and is
+recorded in `docs/NAME-RESEARCH.md`. **No same-sector collision was found** —
+the head-on conflict that forced the last rename is absent. Two things did
+turn up: "nested flow" is a standard term of art in software for a workflow
+inside a workflow, which makes it a weak mark; and a **NestedFlow** test-
+automation tool already trades under the compound word.
+
+**Still outstanding and still blocking public launch:** no trademark register
+was searched (the register site is blocked by this environment's egress
+proxy), no class-9 or class-36 search was run, and **no domain check was
+possible** — DNS does not resolve in this container at all, which was verified
+against `google.com`. Availability must not be inferred from any of this.
 
 The rename is cheap to repeat now. The name is written in `src/lib/brand.ts`
 and nowhere else in `src/`; two architecture tests enforce that, each verified
