@@ -1,4 +1,4 @@
-# @kylix/domain
+# @nestedflow/domain
 
 Pure domain logic, shared by every client.
 

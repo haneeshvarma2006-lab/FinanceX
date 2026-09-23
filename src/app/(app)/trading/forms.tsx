@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField } from '@/components/ui/form';
-import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
+import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
 import { ASSET_CLASSES, TRADE_ENVIRONMENTS } from '@/modules/trading/validators';
 import { addExecution, createTrade, createTradingAccount, type FormState } from './actions';
 

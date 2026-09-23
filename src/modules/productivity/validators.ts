@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
-import { SUPPORTED_FREQUENCIES } from '@kylix/domain/productivity';
+import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
+import { SUPPORTED_FREQUENCIES } from '@nestedflow/domain/productivity';
 
 const isoDate = z
   .string()

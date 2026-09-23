@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn';
-import { formatMoney, type Currency } from '@kylix/domain/money';
+import { formatMoney, type Currency } from '@nestedflow/domain/money';
 
 /**
  * Money on screen.

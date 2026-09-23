@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { Button } from '@/components/ui/button';
+import { brand } from '@/lib/brand';
 
 export default async function LandingPage() {
   if (await getCurrentUser()) redirect('/today');
@@ -15,9 +16,9 @@ export default async function LandingPage() {
           <span className="text-text-secondary">One system.</span>
         </h1>
         <p className="mt-5 max-w-lg text-pretty text-text-secondary">
-          Most tools track one of these well. KyliX treats them as one: a run of losing trades books
-          a review, a task can carry a goal, and a broken streak shows up tomorrow instead of
-          disappearing.
+          Most tools track one of these well. {brand.name} treats them as one: a run of losing
+          trades books a review, a task can carry a goal, and a broken streak shows up tomorrow
+          instead of disappearing.
         </p>
       </div>
 
@@ -31,8 +32,7 @@ export default async function LandingPage() {
       </div>
 
       <p className="text-xs text-text-muted">
-        KyliX is a working name. This is an early build — no bank, broker, or market-data
-        connections are available.
+        This is an early build — no bank, broker, or market-data connections are available.
       </p>
     </main>
   );

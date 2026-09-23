@@ -5,6 +5,7 @@ import * as emailRepo from '@/modules/email/repository';
 import * as financeRepo from '@/modules/finance/repository';
 import * as tradingRepo from '@/modules/trading/repository';
 import * as productivityRepo from '@/modules/productivity/repository';
+import { brand } from '@/lib/brand';
 
 /**
  * Full data export for the signed-in account.
@@ -55,8 +56,7 @@ export async function GET(): Promise<NextResponse> {
 
   const payload = {
     exportedAt: new Date().toISOString(),
-    notice:
-      'Data you entered into KyliX. Password and session credentials are deliberately excluded.',
+    notice: `Data you entered into ${brand.name}. Password and session credentials are deliberately excluded.`,
     profile: {
       email: user.email,
       displayName: user.displayName,
@@ -86,7 +86,7 @@ export async function GET(): Promise<NextResponse> {
   return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="kylix-export-${new Date().toISOString().slice(0, 10)}.json"`,
+      'Content-Disposition': `attachment; filename="${brand.slug}-export-${new Date().toISOString().slice(0, 10)}.json"`,
       'Cache-Control': 'no-store',
     },
   });

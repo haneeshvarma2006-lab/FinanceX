@@ -1,4 +1,4 @@
-# KyliX — Native Mobile Application Plan
+# Nested Flow — Native Mobile Application Plan
 
 > **Status: PLAN ONLY. No mobile code has been written, and none should be
 > until the prerequisites in §2 are done.**
@@ -117,7 +117,7 @@ You set a hard constraint: _do not duplicate financial calculations, permission
 logic, or critical business rules in multiple clients._ That constraint alone
 decides this, and it is worth being explicit about why.
 
-KyliX's correctness lives in pure, heavily-tested TypeScript modules:
+Nested Flow's correctness lives in pure, heavily-tested TypeScript modules:
 
 | Module                                | Tests            | What it guards                                    |
 | ------------------------------------- | ---------------- | ------------------------------------------------- |

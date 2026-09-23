@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/money';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Profile' };
 
@@ -34,7 +35,7 @@ export default async function ProfileSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <CardHeader title="Your profile" description="What KyliX knows about you." />
+        <CardHeader title="Your profile" description={`What ${brand.name} knows about you.`} />
         <CardBody className="p-0">
           <dl className="divide-y divide-border-subtle">
             {rows.map((row) => (

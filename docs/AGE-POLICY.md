@@ -1,22 +1,22 @@
-# KyliX — Age Policy
+# Nested Flow — Age Policy
 
 **Implemented in:** `src/modules/identity/age.ts`, enforced server-side in
 `src/modules/identity/service.ts`, covered by 12 unit tests and 2 E2E tests.
 
 ## The policy
 
-**Minimum age to hold a KyliX account: 18.**
+**Minimum age to hold a Nested Flow account: 18.**
 
 A self-declared date of birth is collected at sign-up and checked on the server
 before any account is created.
 
 ## Why 18
 
-KyliX stores personal financial records and a trading journal. Two things drive
+Nested Flow stores personal financial records and a trading journal. Two things drive
 the threshold:
 
 1. **India's DPDP Act, 2023** treats anyone under 18 as a child and requires
-   verifiable parental consent before processing their personal data. KyliX has
+   verifiable parental consent before processing their personal data. Nested Flow has
    no parental-consent mechanism, and building a half-working one would be worse
    than not admitting minors at all.
 2. The subject matter — spending, budgets, trading outcomes — is written for
@@ -29,13 +29,13 @@ than onboarded into a restricted mode.
 
 ## What this is NOT
 
-**This is not age verification, and KyliX does not claim it is.**
+**This is not age verification, and Nested Flow does not claim it is.**
 
 A date typed into a form proves nothing. Anyone can enter a different year. In
 every jurisdiction that mandates _age assurance_ — as opposed to an age
 declaration — a self-declared date of birth is explicitly insufficient.
 
-Specifically, KyliX makes **no claim** to satisfy:
+Specifically, Nested Flow makes **no claim** to satisfy:
 
 - the UK's Online Safety Act "highly effective age assurance" duties;
 - any age-verification requirement under US state law;
@@ -46,7 +46,7 @@ What the gate actually achieves: it stops casual under-age sign-up, it records
 a good-faith check, and it gives a clear, documented basis for refusing an
 account. That is its entire scope.
 
-## What KyliX deliberately does not collect
+## What Nested Flow deliberately does not collect
 
 - **No government identity documents.** None are requested and none are
   accepted. Collecting them would create a far more sensitive data store than

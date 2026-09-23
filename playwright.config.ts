@@ -59,7 +59,7 @@ export default defineConfig({
     env: {
       PORT: String(PORT),
       NODE_ENV: 'production',
-      DATABASE_URL: 'postgresql://kylix:kylix@localhost:5432/kylix_e2e',
+      DATABASE_URL: 'postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_e2e',
       AUTH_SECRET: 'e2e-secret-at-least-32-characters-long-for-playwright',
       APP_URL: baseURL,
       TRUST_PROXY_HEADERS: 'false',

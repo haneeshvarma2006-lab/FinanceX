@@ -1,7 +1,8 @@
 import { Client } from 'pg';
 
 const DATABASE_URL =
-  process.env.E2E_DATABASE_URL ?? 'postgresql://kylix:kylix@localhost:5432/kylix_e2e';
+  process.env.E2E_DATABASE_URL ??
+  'postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_e2e';
 
 /**
  * Rate-limit counters are global by design, so without a reset between specs
@@ -27,4 +28,17 @@ export async function openTaskOptions(page: import('@playwright/test').Page): Pr
   const details = page.locator('form details').first();
   const alreadyOpen = await details.evaluate((el) => (el as HTMLDetailsElement).open);
   if (!alreadyOpen) await details.locator('summary').click();
+}
+
+/**
+ * A date `offsetDays` from today, as `YYYY-MM-DD`.
+ *
+ * Recurrence successors are computed from the clock at completion time, not
+ * from the task's own scheduled date, so a test that pins an absolute date
+ * passes only on that one day. Two of them rotted exactly that way.
+ */
+export function isoDay(offsetDays = 0): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
 }

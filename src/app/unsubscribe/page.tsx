@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EMAIL_CATEGORIES, isEmailCategory } from '@/modules/email/categories';
 import { unsubscribeByToken } from '@/modules/email/service';
+import { brand } from '@/lib/brand';
+import { Wordmark } from '@/components/ui/wordmark';
 
 export const metadata: Metadata = { title: 'Unsubscribe', robots: { index: false } };
 
@@ -25,8 +27,8 @@ export default async function UnsubscribePage({
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-5 px-6 py-16">
-      <Link href="/" className="text-sm font-semibold tracking-tight">
-        Kyli<span className="text-accent">X</span>
+      <Link href="/">
+        <Wordmark className="text-sm" />
       </Link>
 
       {label ? (
@@ -36,8 +38,8 @@ export default async function UnsubscribePage({
           </h1>
           <p className="text-sm text-pretty text-text-secondary">
             You will no longer receive <strong className="text-text-primary">{label}</strong> from
-            KyliX. Your other email settings are unchanged, and essential account email continues
-            while your account is open.
+            {brand.name}. Your other email settings are unchanged, and essential account email
+            continues while your account is open.
           </p>
         </>
       ) : (

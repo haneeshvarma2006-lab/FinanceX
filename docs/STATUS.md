@@ -1,4 +1,4 @@
-# KyliX — Build Status
+# Nested Flow — Build Status
 
 Last verified: **2026-09-21**. Every result below was produced by running the
 command named, in this environment. Nothing is asserted from inspection alone.
@@ -27,7 +27,7 @@ regenerated from the runner now.
 
 The domain and token packages run their own suites (`pnpm test` runs all
 three), which is why the app total dropped while the overall total rose: the
-money, P&L, recurrence and streak tests moved into `@kylix/domain`.
+money, P&L, recurrence and streak tests moved into `@nestedflow/domain`.
 
 | Suite                                 | Count | Covers                                                     |
 | ------------------------------------- | ----- | ---------------------------------------------------------- |
@@ -50,14 +50,14 @@ money, P&L, recurrence and streak tests moved into `@kylix/domain`.
 | `src/modules/identity/oauth`          | 5     | Open-redirect defence, state hashing                       |
 | **App total**                         | 258   |                                                            |
 
-| Package suite                           | Count | Covers                                                 |
-| --------------------------------------- | ----- | ------------------------------------------------------ |
-| `@kylix/domain` trading/pnl             | 27    | P&L for long/short, fees, partial fills, statistics    |
-| `@kylix/domain` money                   | 22    | Integer arithmetic, parsing, allocation, precision     |
-| `@kylix/domain` productivity/recurrence | 17    | RRULE, DST, leap day, month-end, exhausted series      |
-| `@kylix/domain` productivity/streaks    | 15    | Streaks across backfill, deletion, timezone, leap year |
-| `@kylix/tokens` css                     | 9     | Generated CSS matches the pre-extraction design system |
-| **Package total**                       | 90    |                                                        |
+| Package suite                                | Count | Covers                                                 |
+| -------------------------------------------- | ----- | ------------------------------------------------------ |
+| `@nestedflow/domain` trading/pnl             | 27    | P&L for long/short, fees, partial fills, statistics    |
+| `@nestedflow/domain` money                   | 22    | Integer arithmetic, parsing, allocation, precision     |
+| `@nestedflow/domain` productivity/recurrence | 17    | RRULE, DST, leap day, month-end, exhausted series      |
+| `@nestedflow/domain` productivity/streaks    | 15    | Streaks across backfill, deletion, timezone, leap year |
+| `@nestedflow/tokens` css                     | 9     | Generated CSS matches the pre-extraction design system |
+| **Package total**                            | 90    |                                                        |
 
 | `tests/e2e` | 58  | Full journeys, security headers, real browser |
 | ----------- | --- | --------------------------------------------- |
@@ -156,20 +156,28 @@ Full detail in `docs/SECURITY.md`. Headlines:
 
 ---
 
-## ⚠️ Name conflict — needs a decision
+## Name — decided, but not cleared
 
-`docs/NAME-RESEARCH.md` records a preliminary search dated 2026-09-20. It found:
+**The product is Nested Flow.** Renamed on 2026-09-23 from the previous working
+name, which `docs/NAME-RESEARCH.md` showed collided with an active _Kylix
+Finance_ in the same sector.
 
-- **Kylix Finance** — an active DeFi lending protocol, _same word, same sector_
-- **Borland Kylix** — described in public sources as a registered trademark
-- A UK trademark record for "KYLIX", owner and status unverified
+**No research of any kind has been performed on "Nested Flow."** No conflict
+scan, no trademark register search, no domain check, no app-store check. That
+is still outstanding and still blocks public launch — renaming solved the old
+name's problem, not the general one. `docs/NAME-RESEARCH.md` states exactly
+what was and was not checked, and preserves the earlier research as evidence.
 
-**Recommendation: change the name before any public use.** It is currently
-confined to internal docs and renameable UI strings — no logo, no domain, no
-store listing — precisely so this stays cheap.
+The rename is cheap to repeat now. The name is written in `src/lib/brand.ts`
+and nowhere else in `src/`; two architecture tests enforce that, each verified
+by introducing the violation and watching it fail. What a future rename would
+still touch: that one file, the two SVG icons, and prose in `docs/`.
 
-This is **not** a clearance search. No register was searched, no class was
-checked, no domain availability was tested. A trademark attorney must do that.
+One deliberate exception: the Postgres function `kylix_log_change()` from
+migration `0007` keeps its name. Eighteen triggers reference it in an
+already-applied migration, and editing an applied migration breaks every
+existing database. It is invisible to users; changing it needs a new forward
+migration, not a rewrite of an old one.
 
 ---
 
@@ -392,8 +400,8 @@ client could not share. All five are done and verified in this environment.
 | W1 — JSON API beside the actions | 13 routes under `/api/v1`, 12 E2E tests driving them                |
 | W2 — Bearer sessions             | Same session store, Authorization header preferred over the cookie  |
 | W3 — Sync primitives             | Change log with a monotonic cursor, 18 DB triggers, 12 tests        |
-| W4 — `@kylix/domain`             | Money, P&L, recurrence and streaks moved out; 81 tests move with it |
-| W5 — `@kylix/tokens`             | Tokens authored as data, CSS generated; 9 tests                     |
+| W4 — `@nestedflow/domain`        | Money, P&L, recurrence and streaks moved out; 81 tests move with it |
+| W5 — `@nestedflow/tokens`        | Tokens authored as data, CSS generated; 9 tests                     |
 
 **iOS and Android remain untested.** This environment is Linux with no Xcode,
 no Android SDK and no emulator, so no claim about either platform is made here.

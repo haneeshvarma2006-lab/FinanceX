@@ -1,12 +1,12 @@
 import { invalid, notFound, ok, type Result } from '@/lib/result';
-import { exponentOf, parseAmount, type Currency } from '@kylix/domain/money';
-import { formatDecimal, parseDecimal } from '@kylix/domain/trading';
+import { exponentOf, parseAmount, type Currency } from '@nestedflow/domain/money';
+import { formatDecimal, parseDecimal } from '@nestedflow/domain/trading';
 import {
   computeStrategyStats,
   computeTradeMetrics,
   equityCurve,
   rMultiple,
-} from '@kylix/domain/trading';
+} from '@nestedflow/domain/trading';
 import * as repo from './repository';
 import type { Trade, TradeExecution, TradeNote } from './schema';
 import type { ExecutionInput, NoteInput, TradeInput } from './validators';

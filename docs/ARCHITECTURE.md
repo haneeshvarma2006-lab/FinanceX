@@ -1,12 +1,12 @@
-# KyliX — Architecture Proposal
+# Nested Flow — Architecture Proposal
 
 > Status: **PROPOSED — awaiting approval.** No application code has been written.
-> "KyliX" is a temporary working name. Domain and trademark availability have **not** been
+> "Nested Flow" is a temporary working name. Domain and trademark availability have **not** been
 > checked and must not be assumed. See `OPEN-DECISIONS.md` D-01.
 
 ## 1. Product thesis
 
-KyliX is not four dashboards behind one login. The product is the **connective tissue**:
+Nested Flow is not four dashboards behind one login. The product is the **connective tissue**:
 tasks generate discipline, finances generate stability, trading generates wealth, and the
 system observes all three and acts on the relationships between them.
 
@@ -28,7 +28,7 @@ Measured in this session, not assumed:
 | Chromium + Playwright   | Pre-installed at `/opt/pw-browsers`                                                  |
 | Disk / RAM              | ~30 GB free / 15 GB                                                                  |
 
-Note the name mismatch: the **repository** is `FinanceX`, the **product** is `KyliX`.
+Note the name mismatch: the **repository** is `FinanceX`, the **product** is `Nested Flow`.
 Resolve before any public artifact is produced (D-01).
 
 ## 3. Technology choices

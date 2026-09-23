@@ -3,12 +3,12 @@ import type { Metadata, Viewport } from 'next';
 // request ever leaves the origin for a font. See docs/LICENSES.md.
 import '@fontsource-variable/inter';
 import './globals.css';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  // Working name only — see docs/OPEN-DECISIONS.md D-01. No branding is
-  // committed to until the name is cleared.
-  title: { default: 'KyliX', template: '%s · KyliX' },
-  description: 'Tasks, habits, goals, finances and trading — connected.',
+  title: { default: brand.name, template: `%s · ${brand.name}` },
+  description: brand.description,
+  applicationName: brand.name,
   robots: { index: false, follow: false },
 };
 

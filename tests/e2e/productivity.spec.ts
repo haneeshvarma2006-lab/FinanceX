@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openTaskOptions, resetRateLimits } from './fixtures';
+import { isoDay, openTaskOptions, resetRateLimits } from './fixtures';
 
 /**
  * Acceptance tests for the productivity modules, driven through the real UI
@@ -84,7 +84,7 @@ test('a repeating task schedules exactly one successor on completion', async ({ 
 
   await page.getByLabel('What needs doing?').fill('Daily review');
   await openTaskOptions(page);
-  await page.getByLabel('Do it on').fill('2026-09-21');
+  await page.getByLabel('Do it on').fill(isoDay());
   await page.getByLabel('Repeat').selectOption('daily');
   await page.getByRole('button', { name: /add task/i }).click();
   await expect(page.getByText('Task added')).toBeVisible();
@@ -100,7 +100,7 @@ test('a repeating task schedules exactly one successor on completion', async ({ 
    */
   await expect(page.getByText('1 task')).toBeVisible();
   await expect(page.getByText('Daily review')).toHaveCount(1);
-  await expect(page.getByText('for 2026-09-22')).toBeVisible();
+  await expect(page.getByText(`for ${isoDay(1)}`)).toBeVisible();
   await expect(page.getByText('repeats')).toBeVisible();
 
   // And the completed one is in the done list, so nothing was lost.

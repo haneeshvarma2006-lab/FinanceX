@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { resetRateLimits } from './fixtures';
+import { isoDay, resetRateLimits } from './fixtures';
 
 /**
  * The JSON API a native client will consume.
@@ -122,7 +122,7 @@ test('creates a task and completes it, with recurrence handled server-side', asy
     data: {
       title: 'Daily review',
       priority: 3,
-      scheduledFor: '2026-09-21',
+      scheduledFor: isoDay(),
       repeat: 'daily',
       repeatInterval: 1,
     },
@@ -138,7 +138,7 @@ test('creates a task and completes it, with recurrence handled server-side', asy
   const body = await completed.json();
   // The successor is created by the shared service, not by the client.
   expect(body.task.status).toBe('done');
-  expect(body.nextOccurrence.scheduledFor).toBe('2026-09-22');
+  expect(body.nextOccurrence.scheduledFor).toBe(isoDay(1));
 });
 
 test('money crosses the wire exactly, never as a float', async ({ page, request }) => {

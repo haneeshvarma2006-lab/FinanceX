@@ -13,7 +13,7 @@ import {
   transactionSchema,
   transferSchema,
 } from '@/modules/finance/validators';
-import { parseAmount, type Currency } from '@kylix/domain/money';
+import { parseAmount, type Currency } from '@nestedflow/domain/money';
 
 export async function createAccount(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();

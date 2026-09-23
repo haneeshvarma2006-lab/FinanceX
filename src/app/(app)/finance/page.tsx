@@ -4,11 +4,12 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
-import { ratioToPercent, type Currency } from '@kylix/domain/money';
+import { ratioToPercent, type Currency } from '@nestedflow/domain/money';
 import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import { AddAccountForm, AddTransactionForm, AddTransferForm } from './forms';
 import { DeleteTransactionButton } from './forms';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Finance' };
 
@@ -42,7 +43,7 @@ export default async function FinancePage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Finance"
-        description="Everything here is entered by you. KyliX connects to no bank."
+        description={`Everything here is entered by you. ${brand.name} connects to no bank.`}
       />
 
       <Card>

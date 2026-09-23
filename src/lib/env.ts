@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { emailFrom } from './brand';
+
 /**
  * Environment contract. The process refuses to start when it is not satisfied,
  * which is deliberately louder than discovering a missing secret at the moment
@@ -67,7 +69,7 @@ const schema = z.object({
    * nothing, which is the honest default when no provider is configured.
    */
   EMAIL_TRANSPORT: z.enum(['console', 'none']).default('console'),
-  EMAIL_FROM: z.string().default('KyliX <no-reply@localhost>'),
+  EMAIL_FROM: z.string().default(emailFrom('no-reply@localhost')),
 
   /**
    * Only enable behind a proxy that overwrites X-Forwarded-For. With no such

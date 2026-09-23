@@ -80,8 +80,8 @@ describe('connection string validation', () => {
   });
 
   it.each([
-    'postgres://kylix:kylix@localhost:5432/kylix',
-    'postgresql://kylix:kylix@db.internal:5432/kylix?sslmode=require',
+    'postgres://nestedflow:nestedflow@localhost:5432/nestedflow',
+    'postgresql://nestedflow:nestedflow@db.internal:5432/nestedflow?sslmode=require',
   ])('accepts %s', (value) => {
     process.env.DATABASE_URL = value;
     expect(() => getEnv()).not.toThrow();

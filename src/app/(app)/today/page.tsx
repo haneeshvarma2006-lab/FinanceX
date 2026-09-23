@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -297,7 +298,7 @@ export default async function TodayPage() {
               <Blank
                 icon={<LineChart aria-hidden className="size-5" />}
                 title="No trading account yet"
-                body="Journal trades you placed elsewhere. KyliX places no orders."
+                body={`Journal trades you placed elsewhere. ${brand.name} places no orders.`}
                 href="/trading"
                 cta="Set up the journal"
               />
@@ -457,7 +458,7 @@ function FirstRun() {
     <Card>
       <CardHeader
         title="Nothing here yet — and that is correct"
-        description="KyliX will never invent a balance, a streak, or a win rate to make this page look busy."
+        description={`${brand.name} will never invent a balance, a streak, or a win rate to make this page look busy.`}
       />
       <CardBody>
         <p className="text-sm text-pretty text-text-secondary">

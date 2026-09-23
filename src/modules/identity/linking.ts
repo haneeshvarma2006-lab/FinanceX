@@ -55,7 +55,7 @@ export async function resolveGoogleIdentity(
   if (existing) {
     if (signedInUser && existing.userId !== signedInUser.id) {
       // This Google account belongs to somebody else; linking it here would
-      // give two KyliX accounts a claim on one identity.
+      // give two Nested Flow accounts a claim on one identity.
       return { kind: 'refused', reason: 'already_linked_elsewhere' };
     }
 

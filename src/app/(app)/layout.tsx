@@ -6,6 +6,7 @@ import { countUnreadNotifications } from '@/modules/productivity/repository';
 import { NotificationBell } from '@/components/ui/notification-bell';
 import { MainNav, type NavItem } from '@/components/ui/nav';
 import { signOutAction } from '../(auth)/actions';
+import { Wordmark } from '@/components/ui/wordmark';
 
 const ICON = 'size-4';
 
@@ -49,9 +50,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <Link
             href="/today"
-            className="shrink-0 rounded-[var(--radius-control)] text-sm font-semibold tracking-tight text-text-primary"
+            className="shrink-0 rounded-[var(--radius-control)] text-text-primary"
           >
-            Kyli<span className="text-accent">X</span>
+            <Wordmark className="text-sm" />
           </Link>
 
           <span aria-hidden className="hidden h-4 w-px shrink-0 bg-border-subtle sm:block" />

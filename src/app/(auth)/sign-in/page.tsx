@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { isGoogleConfigured } from '@/modules/identity/oauth';
 import { SignInForm } from './form';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
@@ -12,8 +13,7 @@ const ERRORS: Record<string, string> = {
   google_expired: 'That sign-in attempt expired. Please try again.',
   google_email_unverified:
     'Google has not verified that email address, so it cannot be used to sign in.',
-  google_already_linked_elsewhere:
-    'That Google account is already connected to a different KyliX account.',
+  google_already_linked_elsewhere: `That Google account is already connected to a different ${brand.name} account.`,
   google_local_account_unverified:
     'An account already uses that address but has never confirmed it. Sign in with your password, then connect Google from Settings.',
 };

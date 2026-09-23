@@ -1,4 +1,4 @@
-# KyliX — Release Checklist
+# Nested Flow — Release Checklist
 
 Run before any deployment. An item is ticked only when the command was actually
 run and its output read.
@@ -40,9 +40,12 @@ says anything about a deployed origin, because nothing has been deployed.
 
 ### Blocking
 
-- [ ] **Resolve the product name.** `docs/NAME-RESEARCH.md` found an active
-      "Kylix Finance" in the same sector plus a registered Borland mark. The
-      recommendation is to rename.
+- [x] **Resolve the product name.** Renamed to **Nested Flow** on 2026-09-23,
+      after `docs/NAME-RESEARCH.md` found an active "Kylix Finance" in the same
+      sector plus a registered Borland mark.
+- [ ] **Clear the new name.** No conflict scan, trademark search, domain check
+      or app-store check has been run for "Nested Flow". Availability must not
+      be assumed. This is still blocking; only the old name's problem is solved.
 - [ ] **Legal review** of `src/app/legal/terms` and `src/app/legal/privacy`.
       Both are drafts and say so.
 - [ ] **Confirm launch markets** and take advice on the age policy for each

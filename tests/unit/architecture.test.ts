@@ -104,7 +104,7 @@ describe('invariant: SQL lives only in the data layer', () => {
 
 describe('invariant: money never touches floating point', () => {
   it('uses no float parsing or float rounding in the money module', () => {
-    // The money module now lives in @kylix/domain so mobile can share it
+    // The money module now lives in @nestedflow/domain so mobile can share it
     // verbatim; the invariant follows the code rather than the old path.
     const source = readFileSync(join(ROOT, 'packages/domain/src/money/index.ts'), 'utf8');
 
@@ -157,7 +157,7 @@ describe('invariant: the shared domain package stays portable', () => {
 
     expect(
       offenders,
-      `@kylix/domain must stay pure so every client can share it: ${offenders.join(', ')}`,
+      `@nestedflow/domain must stay pure so every client can share it: ${offenders.join(', ')}`,
     ).toEqual([]);
   });
 
@@ -313,5 +313,52 @@ describe('invariant: design tokens have exactly one home', () => {
       offenders,
       `Use a design token instead of a raw colour: ${offenders.join(', ')}`,
     ).toEqual([]);
+  });
+});
+
+/**
+ * The last rename touched sixty files, several of which a search for the
+ * product name could not even find because the wordmark was split across two
+ * JSX nodes. These make the next one a one-file change.
+ */
+describe('invariant: the brand name has exactly one home', () => {
+  // Assembled at runtime so this file does not itself contain the literal,
+  // which would make the test fail on itself.
+  const NAME = ['Nested', 'Flow'].join(' ');
+
+  it('is written in src/lib/brand.ts and nowhere else in src', async () => {
+    const files = await sourceFiles('src/**/*.{ts,tsx}');
+
+    const offenders = files.filter((file) => {
+      if (file === 'src/lib/brand.ts') return false;
+      // Comments may name the product; they never reach a user, and forcing
+      // an interpolation into a sentence of prose helps nobody.
+      const source = readFileSync(join(ROOT, file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/[^\n]*/g, '');
+      return source.includes(NAME);
+    });
+
+    expect(
+      offenders,
+      `Read the name from \`brand\` in @/lib/brand instead of writing it: ${offenders.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('leaves no trace of the previous name in src', async () => {
+    const files = await sourceFiles('src/**/*.{ts,tsx,css}');
+    const previous = ['Kyli', 'X'].join('');
+
+    const offenders = files.filter((file) => {
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      return source.toLowerCase().includes(previous.toLowerCase());
+    });
+
+    expect(offenders, `Stale branding in: ${offenders.join(', ')}`).toEqual([]);
+  });
+
+  it('builds the wordmark from the same string as the name', async () => {
+    const { brand } = await import('../../src/lib/brand');
+    expect(brand.wordmark.lead + brand.wordmark.accent).toBe(brand.name.replace(/\s/g, ''));
   });
 });

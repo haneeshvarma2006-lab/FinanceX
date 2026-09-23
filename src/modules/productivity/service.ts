@@ -1,8 +1,8 @@
 import { addDays, differenceInCalendarDays, parseISO } from 'date-fns';
 import { conflict, invalid, notFound, ok, type Result } from '@/lib/result';
 import * as repo from './repository';
-import { buildRule, nextOccurrence, RecurrenceError } from '@kylix/domain/productivity';
-import { summarise, type StreakSummary } from '@kylix/domain/productivity';
+import { buildRule, nextOccurrence, RecurrenceError } from '@nestedflow/domain/productivity';
+import { summarise, type StreakSummary } from '@nestedflow/domain/productivity';
 import {
   formatValue,
   isAchieved,
@@ -11,7 +11,7 @@ import {
   requiredDailyRate,
   GoalValueError,
   type GoalKind,
-} from '@kylix/domain/productivity';
+} from '@nestedflow/domain/productivity';
 import { notify } from './notifications';
 import type { Goal, Habit, Project, Task } from './schema';
 import type { CheckpointInput, GoalInput, HabitInput, ProjectInput, TaskInput } from './validators';

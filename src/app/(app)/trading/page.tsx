@@ -4,10 +4,11 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader } from '@/components/ui/money';
-import type { Currency } from '@kylix/domain/money';
+import type { Currency } from '@nestedflow/domain/money';
 import * as repo from '@/modules/trading/repository';
 import * as trading from '@/modules/trading/service';
 import { AddExecutionForm, AddTradeForm, AddTradingAccountForm } from './forms';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Trading journal' };
 
@@ -31,7 +32,7 @@ export default async function TradingPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Trading journal"
-        description="A record of trades you placed elsewhere. KyliX cannot place orders."
+        description={`A record of trades you placed elsewhere. ${brand.name} cannot place orders.`}
       />
 
       {/* Required disclosure, not a footnote. */}
@@ -39,8 +40,8 @@ export default async function TradingPage() {
         <CardBody>
           <p className="text-sm text-pretty text-text-secondary">
             <strong className="text-text-primary">Every figure here is yours.</strong> All prices
-            and quantities were entered by you; KyliX fetches no market data and connects to no
-            broker. Statistics describe trades you have already recorded and say nothing about
+            and quantities were entered by you; {brand.name} fetches no market data and connects to
+            no broker. Statistics describe trades you have already recorded and say nothing about
             future results — past performance does not indicate future performance. Nothing here is
             financial advice.
           </p>

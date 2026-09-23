@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import * as repo from '@/modules/identity/repository';
 import { DeleteAccountForm } from './delete-form';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Privacy & data' };
 
@@ -15,7 +16,7 @@ export default async function PrivacySettingsPage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader
-          title="What KyliX stores"
+          title={`What ${brand.name} stores`}
           description="Plainly, so you can decide whether you are comfortable with it."
         />
         <CardBody>
@@ -24,7 +25,7 @@ export default async function PrivacySettingsPage() {
             <li>Your date of birth, used only for the age check at sign-up and not shared.</li>
             <li>
               Everything you enter: accounts, transactions, budgets, trades and notes. All of it is
-              entered by you — KyliX connects to no bank, broker or data provider.
+              entered by you — {brand.name} connects to no bank, broker or data provider.
             </li>
             <li>
               A security log of sign-ins, sign-outs and account changes, with the IP address and
@@ -66,7 +67,7 @@ export default async function PrivacySettingsPage() {
       <Card>
         <CardHeader
           title="Export your data"
-          description="Everything KyliX holds about you, as JSON."
+          description={`Everything ${brand.name} holds about you, as JSON.`}
         />
         <CardBody className="flex flex-col gap-3">
           <p className="text-sm text-pretty text-text-secondary">

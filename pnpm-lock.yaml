@@ -14,10 +14,10 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.3.0
         version: 5.3.0
-      '@kylix/domain':
+      '@nestedflow/domain':
         specifier: workspace:*
         version: link:packages/domain
-      '@kylix/tokens':
+      '@nestedflow/tokens':
         specifier: workspace:*
         version: link:packages/tokens
       '@node-rs/argon2':

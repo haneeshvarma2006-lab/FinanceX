@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import * as emailRepo from '@/modules/email/repository';
 import { EMAIL_CATEGORIES, EMAIL_CATEGORY_KEYS } from '@/modules/email/categories';
 import { PreferenceToggle } from './toggle';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Email preferences' };
 
@@ -18,7 +19,7 @@ export default async function EmailSettingsPage() {
       <Card>
         <CardHeader
           title="Email preferences"
-          description="Choose what KyliX may send you. Changes take effect immediately."
+          description={`Choose what ${brand.name} may send you. Changes take effect immediately.`}
         />
         <CardBody className="p-0">
           <ul className="divide-y divide-border-subtle">
@@ -51,7 +52,7 @@ export default async function EmailSettingsPage() {
             </li>
             <li>
               Whether your mail client shows its own unsubscribe button is decided by that client,
-              not by KyliX. We supply the header; Gmail and others decide how to present it.
+              not by {brand.name}. We supply the header; Gmail and others decide how to present it.
             </li>
             <li>
               Unsubscribing from one category never changes the others, and essential account email

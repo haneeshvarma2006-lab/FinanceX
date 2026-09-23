@@ -1,12 +1,13 @@
 import Link from 'next/link';
+import { Wordmark } from '@/components/ui/wordmark';
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh">
       <header className="border-b border-border-subtle">
         <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            Kyli<span className="text-accent">X</span>
+          <Link href="/">
+            <Wordmark className="text-sm" />
           </Link>
         </div>
       </header>

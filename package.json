@@ -1,5 +1,5 @@
 {
-  "name": "kylix",
+  "name": "nestedflow",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,16 +14,16 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run && pnpm -r --filter @kylix/domain --filter @kylix/tokens test",
+    "test": "vitest run && pnpm -r --filter @nestedflow/domain --filter @nestedflow/tokens test",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/lib/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "db:migrate:e2e": "DATABASE_URL=postgresql://kylix:kylix@localhost:5432/kylix_e2e tsx src/lib/db/migrate.ts",
+    "db:migrate:e2e": "DATABASE_URL=postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_e2e tsx src/lib/db/migrate.ts",
     "audit": "pnpm audit --audit-level=high",
-    "tokens:build": "pnpm --filter @kylix/tokens build:css"
+    "tokens:build": "pnpm --filter @nestedflow/tokens build:css"
   },
   "dependencies": {
     "@node-rs/argon2": "2.2.1",
@@ -42,8 +42,8 @@
     "arctic": "3.7.0",
     "jose": "6.2.12",
     "rrule": "2.8.1",
-    "@kylix/domain": "workspace:*",
-    "@kylix/tokens": "workspace:*"
+    "@nestedflow/domain": "workspace:*",
+    "@nestedflow/tokens": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

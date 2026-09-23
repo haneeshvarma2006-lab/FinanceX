@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /**
- * KyliX design system.
+ * Nested Flow design system.
  *
  * The token values are NOT here. They live as data in `packages/tokens`, which
  * generates `tokens.generated.css` below, because the mobile client cannot
@@ -85,7 +85,7 @@ p {
  * short enough that a user moving quickly never waits on it. The
  * reduced-motion block below collapses it to nothing.
  */
-@keyframes kylix-enter {
+@keyframes nestedflow-enter {
   from {
     opacity: 0;
     transform: translate3d(0, 8px, 0);
@@ -97,7 +97,7 @@ p {
 }
 
 .enter {
-  animation: kylix-enter var(--duration-base) var(--ease-out-soft) both;
+  animation: nestedflow-enter var(--duration-base) var(--ease-out-soft) both;
 }
 
 /**

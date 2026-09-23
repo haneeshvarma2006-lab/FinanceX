@@ -1,4 +1,4 @@
-# KyliX — Domain Model
+# Nested Flow — Domain Model
 
 How the data is shaped, who owns it, and which rules the database enforces
 rather than trusting the application to remember.

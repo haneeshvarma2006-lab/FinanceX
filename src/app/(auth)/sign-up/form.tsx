@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CheckboxField, Field, FormAlert } from '@/components/ui/form';
 import { signUpAction, type FormState } from '../actions';
+import { brand } from '@/lib/brand';
 
 export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signUpAction, {});
@@ -63,7 +64,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
           type="date"
           autoComplete="bday"
           required
-          hint="KyliX is for people aged 18 and over."
+          hint={`${brand.name} is for people aged 18 and over.`}
           error={state.fieldErrors?.dateOfBirth}
         />
 

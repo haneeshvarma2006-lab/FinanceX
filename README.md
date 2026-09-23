@@ -1,9 +1,9 @@
-# KyliX
+# Nested Flow
 
 > A personal operating system for tasks, habits, goals, finances and trading —
 > connected, not merely co-located.
 
-**⚠️ "KyliX" is a working name with a known conflict.** A preliminary search
+**⚠️ "Nested Flow" is a working name with a known conflict.** A preliminary search
 found an active _Kylix Finance_ in the same sector and a registered Borland
 mark. See [`docs/NAME-RESEARCH.md`](docs/NAME-RESEARCH.md). No trademark
 clearance or domain availability has been established, and the recommendation
@@ -71,7 +71,7 @@ Full evidence in [`docs/STATUS.md`](docs/STATUS.md).
 ```bash
 pnpm install
 cp .env.example .env          # then fill in DATABASE_URL and AUTH_SECRET
-createdb kylix
+createdb nestedflow
 pnpm db:migrate
 pnpm dev
 ```
@@ -96,7 +96,7 @@ fail honestly and the button is not rendered.
 
 ## This is not financial advice
 
-KyliX records what you tell it. It places no orders, fetches no prices, and
+Nested Flow records what you tell it. It places no orders, fetches no prices, and
 connects to no institution. Statistics describe trades you have already
 recorded and say nothing about future results.
 

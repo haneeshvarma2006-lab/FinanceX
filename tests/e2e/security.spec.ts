@@ -52,7 +52,7 @@ test('issues an httpOnly, sameSite session cookie', async ({ page, context }) =>
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
 
-  const session = (await context.cookies()).find((c) => c.name.includes('kylix_session'));
+  const session = (await context.cookies()).find((c) => c.name.includes('nestedflow_session'));
 
   expect(session).toBeDefined();
   // httpOnly is what stops an XSS payload from reading the session token.
@@ -75,7 +75,7 @@ test('does not leak the session token into the HTML', async ({ page, context }) 
   await page.getByRole('button', { name: /create account/i }).click();
   await expect(page).toHaveURL(/\/today$/);
 
-  const session = (await context.cookies()).find((c) => c.name.includes('kylix_session'));
+  const session = (await context.cookies()).find((c) => c.name.includes('nestedflow_session'));
   const html = await page.content();
 
   expect(html).not.toContain(session!.value);

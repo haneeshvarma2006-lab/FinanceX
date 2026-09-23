@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nested Flow">
+  <title>Nested Flow</title>
+  <!--
+    The maskable variant. Launchers crop this to their own shape, so the mark
+    is scaled into the central 80% safe zone and the background runs edge to
+    edge with no corner radius of its own.
+  -->
+  <rect width="64" height="64" fill="#11151f"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(0.72) translate(-32 -32)">
+    <rect x="13" y="13" width="38" height="38" rx="11" stroke="#4ba3f7" stroke-opacity="0.35" stroke-width="2.5"/>
+    <rect x="22" y="22" width="20" height="20" rx="6" stroke="#4ba3f7" stroke-opacity="0.6" stroke-width="2.5"/>
+    <path d="M14 44c8 0 10-24 18-24s10 24 18 24" stroke="#4ba3f7" stroke-width="3.5"/>
+  </g>
+</svg>

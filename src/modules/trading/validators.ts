@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
+import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
 
 const decimalString = z
   .string()

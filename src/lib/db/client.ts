@@ -13,7 +13,7 @@ const schema = { ...identity, ...finance, ...trading, ...productivity, ...rules,
 declare global {
   // Reuse the pool across hot reloads in development, otherwise every edit
   // leaks a fresh set of connections until Postgres refuses new ones.
-  var __kylixPool: Pool | undefined;
+  var __nestedFlowPool: Pool | undefined;
 }
 
 function createPool(): Pool {
@@ -25,10 +25,10 @@ function createPool(): Pool {
   });
 }
 
-export const pool: Pool = globalThis.__kylixPool ?? createPool();
+export const pool: Pool = globalThis.__nestedFlowPool ?? createPool();
 
 if (getEnv().NODE_ENV !== 'production') {
-  globalThis.__kylixPool = pool;
+  globalThis.__nestedFlowPool = pool;
 }
 
 export const db = drizzle(pool, { schema, casing: 'snake_case' });

@@ -1,4 +1,67 @@
-# KyliX — Preliminary Name Conflict Research
+# Nested Flow — Name Status
+
+## Current name
+
+**Nested Flow.** Chosen by the product owner on 2026-09-23 and adopted
+throughout the codebase. This is the permanent product name, not a working
+name.
+
+> ## ⚠️ No conflict research has been performed on this name
+>
+> **Nothing has been checked for "Nested Flow."** No web scan, no trademark
+> register search, no domain availability check, no app store search, no
+> company register search. No clearance is claimed and none should be
+> inferred.
+>
+> The name was adopted as a product decision. Whether it is legally available
+> is an open question that this document does not answer.
+
+## Before any public use
+
+1. Run a preliminary conflict scan (public web, app stores, company registers)
+   and record the date, the sources and the findings in this file — the same
+   way the previous name's scan was recorded below.
+2. Instruct a trademark attorney for a proper clearance search in every
+   intended market, in **class 9** (software) and **class 36** (financial
+   services).
+3. Only after clearance: register domains and social handles, and commission a
+   wordmark.
+
+Steps 1 and 2 have not been done. Step 3 must not begin until they have.
+
+## What adopting the name already cost
+
+Unlike last time, the name is no longer scattered through the codebase. It now
+lives in one file:
+
+| Location                                | Notes                                                                  |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| `src/lib/brand.ts`                      | **The only place the name is written.** Everything else reads from it. |
+| `src/components/ui/wordmark.tsx`        | Renders the wordmark from `brand.wordmark`                             |
+| `src/app/manifest.ts`                   | PWA manifest, generated from `brand`                                   |
+| `public/icon.svg`, `icon-maskable.svg`  | The mark. Original artwork; replaceable in isolation                   |
+| `docs/*`                                | Prose, which a rename would still have to sweep                        |
+| Postgres role and database `nestedflow` | Local development only; a deployment sets its own `DATABASE_URL`       |
+
+An architecture test fails if the literal name appears anywhere in `src/`
+outside `src/lib/brand.ts`, so a future rename stays a one-file change plus the
+icon and the docs. That is the lesson from the last rename, encoded.
+
+The database function `kylix_log_change()` created by migration `0007` was
+**deliberately not renamed**: it is referenced by eighteen triggers in an
+already-applied migration, and renaming an applied migration breaks every
+existing database. It is invisible to users. If it ever needs to change, it
+needs a new forward migration, not an edit to an old one.
+
+---
+
+# Appendix — why the previous name was dropped
+
+The research below is preserved verbatim. It was performed on the previous
+working name and is the evidence for abandoning it. **It says nothing about
+"Nested Flow."**
+
+## KyliX — Preliminary Name Conflict Research
 
 **Search date: 2026-09-20.** Performed by automated web search from this build
 session.
@@ -11,7 +74,7 @@ session.
 > be inferred.** A qualified trademark attorney must run a proper clearance
 > search in every intended market before this name is used publicly.
 
-## Headline finding
+### Headline finding
 
 **"Kylix" is in active use as a brand in the financial-services sector, and is
 a registered trademark elsewhere. Adopting it for a personal finance product
@@ -19,7 +82,7 @@ carries material risk.**
 
 The recommendation below is to change the name.
 
-## Conflicts found
+### Conflicts found
 
 ### 1. Kylix Finance — direct sector conflict 🔴
 
@@ -81,13 +144,13 @@ A _kylix_ is an ancient Greek drinking cup. A common dictionary word is
 generally weaker as a trademark than an invented one, which cuts both ways: it
 is harder to own, and easier for others to adopt.
 
-## Domains
+### Domains
 
 `kylix.online` resolves to an active company site. **No domain availability
 check was performed** — that needs registrar or WHOIS queries, which were not
 run. Nothing about `.com`, `.in`, `.app` or any other TLD is known.
 
-## Not searched
+### Not searched
 
 For completeness, none of the following was done:
 
@@ -101,7 +164,7 @@ For completeness, none of the following was done:
 - No domain availability or WHOIS check.
 - No social media handle check.
 
-## Recommendation
+### Recommendation
 
 **Change the working name before any public use.** The Kylix Finance conflict is
 in the same sector as this product, which is the worst kind of overlap, and the
@@ -121,7 +184,7 @@ every week it is deferred.
 4. Only after clearance: register domains and social handles, commission a
    wordmark, and update every reference in this repository.
 
-## Where the name currently appears
+### Where the name currently appears
 
 | Location                                                | Notes                               |
 | ------------------------------------------------------- | ----------------------------------- |

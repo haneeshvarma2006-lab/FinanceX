@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
 import { Badge, Progress } from '@/components/ui/money';
-import { SUPPORTED_CURRENCIES } from '@kylix/domain/money';
+import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
 import { GOAL_KINDS } from '@/modules/productivity/validators';
 import {
   createGoalAction,

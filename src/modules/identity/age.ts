@@ -1,4 +1,5 @@
 import { differenceInYears, isValid, parseISO } from 'date-fns';
+import { brand } from '@/lib/brand';
 
 /**
  * Age gating policy.
@@ -14,7 +15,7 @@ import { differenceInYears, isValid, parseISO } from 'date-fns';
 /**
  * Minimum age to hold an account at all.
  *
- * 18 is chosen because KyliX handles personal financial records and a trading
+ * 18 is chosen because Nested Flow handles personal financial records and a trading
  * journal, and because India's DPDP Act treats everyone under 18 as a child
  * requiring verifiable parental consent — machinery this product does not have.
  * Rather than build a half-working consent flow, under-18s are not onboarded.
@@ -61,7 +62,7 @@ export function ageRejectionMessage(
 ): string {
   switch (reason) {
     case 'underage':
-      return `You need to be ${MINIMUM_AGE_YEARS} or over to use KyliX.`;
+      return `You need to be ${MINIMUM_AGE_YEARS} or over to use ${brand.name}.`;
     case 'future':
       return 'That date is in the future.';
     case 'implausible':

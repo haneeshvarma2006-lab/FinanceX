@@ -1,4 +1,4 @@
-# KyliX — Security Controls
+# Nested Flow — Security Controls
 
 Every control below is implemented and covered by tests. Where something is
 **not** done, it says so rather than being omitted.
@@ -31,7 +31,7 @@ Built on `arctic` (MIT), a reviewed OAuth library, rather than hand-rolled.
 **Account-linking takeover defence:** auto-linking a Google identity to an
 existing local account requires `email_verified: true` from Google. Without that
 check, anyone able to create a Google account asserting `victim@example.com`
-could seize the KyliX account with that address. This is the pre-account-linking
+could seize the Nested Flow account with that address. This is the pre-account-linking
 attack and the verified flag is the whole defence. See
 `src/modules/identity/linking.ts`.
 

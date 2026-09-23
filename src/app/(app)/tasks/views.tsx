@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
 import { setParam } from '@/lib/navigation';
 import { PRIORITY_LABELS } from '@/modules/productivity/validators';
-import { SUPPORTED_FREQUENCIES } from '@kylix/domain/productivity';
+import { SUPPORTED_FREQUENCIES } from '@nestedflow/domain/productivity';
 import {
   completeTaskAction,
   createTaskAction,
@@ -211,11 +211,11 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
             const value = event.target.value;
             // Debounced by the browser's own input cadence is not enough; a
             // short timer keeps this from firing a navigation per keystroke.
-            window.clearTimeout((window as unknown as { __kylixSearch?: number }).__kylixSearch);
-            (window as unknown as { __kylixSearch?: number }).__kylixSearch = window.setTimeout(
-              () => update('q', value),
-              300,
+            window.clearTimeout(
+              (window as unknown as { __nestedFlowSearch?: number }).__nestedFlowSearch,
             );
+            (window as unknown as { __nestedFlowSearch?: number }).__nestedFlowSearch =
+              window.setTimeout(() => update('q', value), 300);
           }}
           className={controlClass()}
         />

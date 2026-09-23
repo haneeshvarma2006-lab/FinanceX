@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/states';
 import { PageHeader } from '@/components/ui/money';
 import * as repo from '@/modules/productivity/repository';
 import { MarkAllReadButton, MarkReadButton } from './views';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Notifications' };
 
@@ -40,7 +41,7 @@ export default async function NotificationsPage() {
             <EmptyState
               icon={<Bell aria-hidden className="size-5" />}
               title="Nothing yet"
-              description="KyliX raises a notification when something in your own records changes state — a streak at risk, a budget passed, a run of losing trades."
+              description={`${brand.name} raises a notification when something in your own records changes state — a streak at risk, a budget passed, a run of losing trades.`}
             />
           ) : (
             <ul className="divide-y divide-border-subtle">

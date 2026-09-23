@@ -1,5 +1,5 @@
 /**
- * KyliX design tokens — the single source of truth.
+ * Nested Flow design tokens — the single source of truth.
  *
  * Authored as data, not as CSS, because React Native has no CSS. The web's
  * custom properties are *generated* from this file; a future mobile client

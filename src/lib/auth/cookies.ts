@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { brand } from '@/lib/brand';
 import { getEnv } from '@/lib/env';
 
 /**
@@ -10,7 +11,8 @@ import { getEnv } from '@/lib/env';
  * It requires HTTPS, so plain-HTTP local development uses the unprefixed name.
  */
 export function sessionCookieName(): string {
-  return getEnv().APP_URL.startsWith('https://') ? '__Host-kylix_session' : 'kylix_session';
+  const name = `${brand.slug}_session`;
+  return getEnv().APP_URL.startsWith('https://') ? `__Host-${name}` : name;
 }
 
 export async function setSessionCookie(token: string, expiresAt: Date): Promise<void> {
@@ -44,8 +46,8 @@ export async function clearSessionCookie(): Promise<void> {
  * the victim's browser. Requiring a matching cookie is what actually ties the
  * callback to the browser that began the flow.
  */
-const OAUTH_STATE_COOKIE = 'kylix_oauth_state';
-const PENDING_REGISTRATION_COOKIE = 'kylix_pending_registration';
+const OAUTH_STATE_COOKIE = `${brand.slug}_oauth_state`;
+const PENDING_REGISTRATION_COOKIE = `${brand.slug}_pending_registration`;
 
 function handshakeCookieOptions(maxAgeSeconds: number) {
   return {

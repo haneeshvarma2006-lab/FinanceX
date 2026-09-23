@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: postgresql://kylix:kylix@localhost:5432/kylix_test
+  DATABASE_URL: postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_test
   AUTH_SECRET: ci-secret-at-least-32-characters-long-for-github-actions
   APP_URL: http://127.0.0.1:3100
   TRUST_PROXY_HEADERS: 'false'
@@ -24,9 +24,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: kylix
-          POSTGRES_PASSWORD: kylix
-          POSTGRES_DB: kylix_test
+          POSTGRES_USER: nestedflow
+          POSTGRES_PASSWORD: nestedflow
+          POSTGRES_DB: nestedflow_test
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
@@ -76,9 +76,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: kylix
-          POSTGRES_PASSWORD: kylix
-          POSTGRES_DB: kylix_e2e
+          POSTGRES_USER: nestedflow
+          POSTGRES_PASSWORD: nestedflow
+          POSTGRES_DB: nestedflow_e2e
         ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
@@ -105,7 +105,7 @@ jobs:
       - name: Apply migrations to the e2e database
         run: pnpm db:migrate
         env:
-          DATABASE_URL: postgresql://kylix:kylix@localhost:5432/kylix_e2e
+          DATABASE_URL: postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_e2e
 
       - run: pnpm test:e2e
 

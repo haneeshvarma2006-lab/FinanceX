@@ -1,4 +1,4 @@
-# KyliX — Open Decisions, Defaults & Risks
+# Nested Flow — Open Decisions, Defaults & Risks
 
 Each entry is either **BLOCKING** (needs an answer before the affected milestone) or has a
 **documented reversible default** already applied so work is not stalled.
@@ -7,15 +7,22 @@ Each entry is either **BLOCKING** (needs an answer before the affected milestone
 
 ## Blocking decisions
 
-### D-01 — Product name and repository name
+### D-01 — Product name — DECIDED (2026-09-23)
 
-The product is called "KyliX"; the repository is `FinanceX`. **Domain availability,
-trademark clearance, and app-store name availability have not been checked and must not be
-assumed.** No such check has been performed in this session.
+**The product is called Nested Flow.** Decided by the product owner; this is the permanent
+name, not a working name. It replaced "KyliX", which was dropped because a preliminary scan
+found an active _Kylix Finance_ in the same sector — see `docs/NAME-RESEARCH.md`.
+
+**Still open, and still blocking public launch:** no conflict scan, trademark clearance,
+domain check or app-store availability check has been performed for "Nested Flow". None
+may be assumed. `docs/NAME-RESEARCH.md` records exactly what was and was not checked.
+
+The repository is still named `FinanceX` on GitHub. Renaming it is the owner's call and
+costs nothing but a redirect; the mismatch is cosmetic.
 
 _Impact:_ branding, package name, PWA manifest, any public artifact.
-_Default until answered:_ the name appears only in internal docs and UI copy that is
-trivially renameable — no logo, domain, or store listing is produced.
+_Now applied:_ the name lives in `src/lib/brand.ts` alone, enforced by an architecture
+test. A future rename is one file, plus the icon and the prose in `docs/`.
 
 ### D-02 — Single-user or multi-user
 
@@ -148,12 +155,12 @@ unless it is actually performed and its output shown:
 
 Answered by the project owner. These supersede the corresponding defaults above.
 
-| ID        | Decision                                                                               | Consequence                                                                                                                                                 |
-| --------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **D-01**  | **Working name only.** "KyliX" stays in internal docs and trivially renameable UI copy | No logo, no domain, no PWA manifest branding until availability is cleared by the owner. Still unchecked — no trademark or domain search has been performed |
-| **D-02**  | **Multi-user with self-registration**, full per-user isolation                         | Open sign-up in M1; cross-user horizontal access tests are a hard M1 gate                                                                                   |
-| **D-03**  | **Single base currency, INR.** Stored per row                                          | `base_currency` defaults to `INR`; amounts in paise. FX conversion remains a designed-for later extension                                                   |
-| **Scope** | **Build M0 + M1, then pause for review**                                               | Foundation plus identity and the security baseline. Feature modules M2–M4 do not start until auth and tenancy isolation are reviewed                        |
+| ID        | Decision                                                                                     | Consequence                                                                                                                                                 |
+| --------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D-01**  | **Working name only.** "Nested Flow" stays in internal docs and trivially renameable UI copy | No logo, no domain, no PWA manifest branding until availability is cleared by the owner. Still unchecked — no trademark or domain search has been performed |
+| **D-02**  | **Multi-user with self-registration**, full per-user isolation                               | Open sign-up in M1; cross-user horizontal access tests are a hard M1 gate                                                                                   |
+| **D-03**  | **Single base currency, INR.** Stored per row                                                | `base_currency` defaults to `INR`; amounts in paise. FX conversion remains a designed-for later extension                                                   |
+| **Scope** | **Build M0 + M1, then pause for review**                                                     | Foundation plus identity and the security baseline. Feature modules M2–M4 do not start until auth and tenancy isolation are reviewed                        |
 
 ---
 

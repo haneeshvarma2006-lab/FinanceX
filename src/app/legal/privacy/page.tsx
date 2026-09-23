@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Privacy notice' };
 
@@ -39,8 +40,8 @@ export default function PrivacyPage() {
       <h2>What is not collected</h2>
       <ul>
         <li>
-          No bank, card or brokerage credentials. KyliX connects to no financial institution and has
-          no mechanism to do so.
+          No bank, card or brokerage credentials. {brand.name} connects to no financial institution
+          and has no mechanism to do so.
         </li>
         <li>No government identity documents. None are requested and none are accepted.</li>
         <li>No analytics, advertising or third-party tracking.</li>
@@ -49,9 +50,9 @@ export default function PrivacyPage() {
 
       <h2>Who it is shared with</h2>
       <p>
-        Nobody. KyliX has no third-party processors configured — no analytics provider, no email
-        provider, no payment provider. If that changes, this notice changes with it and its version
-        is bumped.
+        Nobody. {brand.name} has no third-party processors configured — no analytics provider, no
+        email provider, no payment provider. If that changes, this notice changes with it and its
+        version is bumped.
       </p>
 
       <h2>Email</h2>

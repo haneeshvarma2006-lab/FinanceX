@@ -8,6 +8,7 @@ import * as repo from '@/modules/rules/repository';
 import { TRIGGERS, isTriggerType } from '@/modules/rules/triggers';
 import { ACTIONS, isActionType } from '@/modules/rules/actions';
 import { AddRuleForm, PruneButton, RuleRow } from './views';
+import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Rules' };
 
@@ -50,7 +51,7 @@ export default async function RulesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Rules"
-        description="What KyliX watches for, and what it does about it. All of it yours to change."
+        description={`What ${brand.name} watches for, and what it does about it. All of it yours to change.`}
       />
 
       <Card>

@@ -136,7 +136,7 @@ export function utilitiesCss(): string {
 export const GENERATED_HEADER = `/**
  * GENERATED FILE — do not edit.
  *
- * Produced by \`packages/tokens\` (\`pnpm --filter @kylix/tokens build:css\`).
+ * Produced by \`packages/tokens\` (\`pnpm --filter @nestedflow/tokens build:css\`).
  * Edit \`packages/tokens/src/index.ts\` instead; a test fails if this file
  * falls out of step with it.
  */`;

@@ -119,7 +119,7 @@ export async function canSend(
  *
  * List-Unsubscribe plus List-Unsubscribe-Post is what lets a mail client offer
  * one-click unsubscribe (RFC 8058). Note what this does NOT do: it does not
- * give KyliX any control over Gmail's own interface. Gmail decides whether and
+ * give Nested Flow any control over Gmail's own interface. Gmail decides whether and
  * how to surface it; all a sender can do is supply a correct header and honour
  * what comes back.
  */

@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Google, generateCodeVerifier, generateState } from 'arctic';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { brand } from '@/lib/brand';
 import { getEnv } from '@/lib/env';
 
 /**
@@ -144,7 +145,7 @@ export async function completeGoogleSignIn(
  * Only same-origin, path-only redirects are allowed after sign-in.
  *
  * Without this, `?redirectTo=https://evil.example` turns the callback into an
- * open redirect that borrows KyliX's credibility for a phishing page.
+ * open redirect that borrows the product's credibility for a phishing page.
  */
 export function safeRedirectPath(candidate: string | null | undefined): string {
   const FALLBACK = '/today';
@@ -168,7 +169,7 @@ export function safeRedirectPath(candidate: string | null | undefined): string {
 
   // Resolve against a throwaway origin and confirm it stayed on that origin.
   try {
-    const base = 'https://kylix.invalid';
+    const base = `https://${brand.slug}.invalid`;
     const resolved = new URL(cleaned, base);
     if (resolved.origin !== base) return FALLBACK;
     return `${resolved.pathname}${resolved.search}${resolved.hash}`;
