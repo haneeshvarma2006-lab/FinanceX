@@ -1,13 +1,49 @@
 # Deploying Nested Flow to Vercel
 
-**Nothing here has been deployed.** This document was written against the
-Vercel documentation and a local production build. No Vercel project exists,
-no deployment has been run, and no step below has been executed end to end.
-Treat it as a checklist to follow, not a report of something that worked.
+**No successful deployment has happened yet.** The `kylix` project on Vercel
+has six failed production deployments, every one of them at the build step
+with `Command "pnpm build" exited with 1`. The cause was found and fixed — see
+below — but the fix has not yet been confirmed by a green deployment. Treat
+this as a checklist, not a report of something that worked end to end.
 
-What _was_ verified locally: the production build succeeds with the
-configuration in this repository, argon2 still runs after being marked
+What _was_ verified locally: the production build now succeeds with **no
+environment variables at all**, and with every variable set to a blank string.
+It exited 1 in both cases before the fix. argon2 still runs after being marked
 external, and the migrations apply to an empty database.
+
+## The build used to fail, and why
+
+The database pool was constructed at module scope. `next build` imports every
+route module to read its exported configuration, so that construction ran
+during the build — and it calls `getEnv()`:
+
+```
+Failed to collect configuration for /api/auth/google/callback
+  [cause]: Invalid environment configuration.
+    - DATABASE_URL: Invalid input: expected string, received undefined
+    - AUTH_SECRET: AUTH_SECRET must be at least 32 characters
+```
+
+The build therefore demanded production secrets on a step that never touches a
+database. The OAuth callback was simply the first route Next happened to
+collect; any of them would have done it.
+
+Two changes fix it, and `tests/unit/build-independence.test.ts` fails if either
+is undone:
+
+1. The pool and the Drizzle client are built on first use, not at import time.
+2. A blank environment variable is treated as unset. A platform creates
+   variables with empty values when you add a key and leave the field blank,
+   and `z.default()` only fires on `undefined` — so a blank
+   `TRUST_PROXY_HEADERS` failed the enum, and a blank `SESSION_IDLE_HOURS`
+   coerced to `0` and failed its bound. That alone would have failed the build
+   even with the three required secrets set correctly.
+
+**Check your Vercel project for blank variables.** It currently defines
+`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, `SESSION_ABSOLUTE_DAYS`,
+`SESSION_IDLE_HOURS` and `TRUST_PROXY_HEADERS`. Their values are secret and
+could not be read from here, but the last three have sensible defaults and are
+better deleted than left blank.
 
 ---
 
