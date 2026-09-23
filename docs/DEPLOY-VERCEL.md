@@ -148,7 +148,25 @@ no rollback path — see `docs/OPEN-DECISIONS.md` D-15, which is still open.
 
 ---
 
-## 5. After the first deploy, check these
+## 5. If the site shows "This page couldn't load"
+
+Open **`/api/health`** on the deployment. It checks the three things behind
+nearly every first-deploy failure and says which one it is, by name, without
+ever printing a value:
+
+| It says                                        | Meaning and fix                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `environment FAIL invalid or missing: X`       | Every page errors. Set `X` properly in Project Settings, then redeploy.                 |
+| `database FAIL ...` with a localhost hint      | `DATABASE_URL` points at `localhost` — on Vercel that is the function, not a database.  |
+| `database FAIL connection refused / not found` | The connection string is wrong or the database is not reachable from Vercel.            |
+| `migrations FAIL never been run`               | Pages load, but sign-up and sign-in error. Run `pnpm db:migrate` against that database. |
+| `status: ok`                                   | Configuration is fine; the fault is elsewhere.                                          |
+
+Which pages break tells you the same thing. A bad environment breaks every
+page, the homepage included. A database problem leaves the homepage and the
+sign-up form loading, and fails when the form is submitted.
+
+## 6. After the first deploy, check these
 
 Do not assume any of them:
 
@@ -164,7 +182,7 @@ Do not assume any of them:
 
 ---
 
-## 6. What is still missing
+## 7. What is still missing
 
 Deploying does not make this launch-ready. From `docs/RELEASE-CHECKLIST.md`,
 still outstanding:

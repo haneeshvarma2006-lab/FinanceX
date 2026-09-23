@@ -100,24 +100,24 @@ export type Env = z.infer<typeof schema>;
 
 let cached: Env | undefined;
 
+/**
+ * An empty string means "not set", not "set to nothing".
+ *
+ * Hosting platforms create variables with blank values when you add a key and
+ * leave the field empty, and a blank value otherwise defeats every default
+ * above: `z.default()` only fires on `undefined`, so a blank
+ * TRUST_PROXY_HEADERS fails the enum and a blank SESSION_IDLE_HOURS coerces to
+ * 0 and fails the bound. The result is a build that dies on variables the
+ * operator never meant to set.
+ */
+function presentVariables(): Record<string, string | undefined> {
+  return Object.fromEntries(Object.entries(process.env).filter(([, value]) => value !== ''));
+}
+
 export function getEnv(): Env {
   if (cached) return cached;
 
-  /**
-   * An empty string means "not set", not "set to nothing".
-   *
-   * Hosting platforms create variables with blank values when you add a key
-   * and leave the field empty, and a blank value otherwise defeats every
-   * default below: `z.default()` only fires on `undefined`, so a blank
-   * TRUST_PROXY_HEADERS fails the enum and a blank SESSION_IDLE_HOURS coerces
-   * to 0 and fails the bound. The result is a build that dies on variables
-   * the operator never meant to set.
-   */
-  const present = Object.fromEntries(
-    Object.entries(process.env).filter(([, value]) => value !== ''),
-  );
-
-  const parsed = schema.safeParse(present);
+  const parsed = schema.safeParse(presentVariables());
 
   if (!parsed.success) {
     const issues = parsed.error.issues
@@ -131,6 +131,37 @@ export function getEnv(): Env {
 
   cached = parsed.data;
   return cached;
+}
+
+/**
+ * Which variables are wrong, by NAME only — never by value.
+ *
+ * For diagnostics that must work precisely when `getEnv()` would throw. The
+ * names are safe to show; the values are secrets, and a message like "must be
+ * at least 32 characters" is as far as this goes.
+ */
+export function inspectEnv(): { ok: true } | { ok: false; invalid: string[] } {
+  const parsed = schema.safeParse(presentVariables());
+  if (parsed.success) return { ok: true };
+  const invalid = [...new Set(parsed.error.issues.map((i) => i.path.join('.') || '(root)'))];
+  return { ok: false, invalid: invalid.sort() };
+}
+
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
+/**
+ * Whether DATABASE_URL names this machine. Non-throwing, for diagnostics.
+ *
+ * On a hosting platform "localhost" is the function instance, never the
+ * database, and a connection string copied from a developer's `.env` is the
+ * most common first-deploy failure there is.
+ */
+export function databaseUrlIsLoopback(): boolean {
+  try {
+    return LOOPBACK_HOSTS.has(new URL(process.env.DATABASE_URL ?? '').hostname);
+  } catch {
+    return false;
+  }
 }
 
 /** Test-only: forget the memoised value so a test can vary the environment. */
