@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/trading/repository';
@@ -8,8 +8,8 @@ import * as trading from '@/modules/trading/service';
 const ctx = { ip: '203.0.113.60', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits');
 }
 
 async function makeTrader(email = 'trader@example.com', environment = 'live') {
@@ -40,7 +40,7 @@ async function makeTrader(email = 'trader@example.com', environment = 'live') {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('trade lifecycle', () => {

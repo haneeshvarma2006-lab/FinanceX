@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/finance/repository';
@@ -16,8 +16,8 @@ import * as finance from '@/modules/finance/service';
 const ctx = { ip: '203.0.113.50', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits');
 }
 
 async function makeUserWithData(email: string) {
@@ -58,7 +58,7 @@ async function makeUserWithData(email: string) {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('reading another account data', () => {
@@ -228,12 +228,12 @@ describe('cascade on account deletion', () => {
     const alice = await makeUserWithData('alice@example.com');
     const bob = await makeUserWithData('bob@example.com');
 
-    await pool.query('delete from users where id = $1', [alice.user.id]);
+    await getPool().query('delete from users where id = $1', [alice.user.id]);
 
     expect(await repo.countTransactions(bob.user.id)).toBe(1);
     expect(await repo.listAccounts(bob.user.id)).toHaveLength(1);
 
-    const { rows } = await pool.query<{ c: string }>(
+    const { rows } = await getPool().query<{ c: string }>(
       'select count(*)::text as c from transactions where user_id = $1',
       [alice.user.id],
     );

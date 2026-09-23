@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { addDays, addHours, subDays, subHours } from 'date-fns';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import * as repo from '@/modules/identity/repository';
 import { hashToken } from '@/lib/security/tokens';
@@ -20,13 +20,13 @@ function signUpInput(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 async function reset() {
-  await pool.query('truncate table audit_log, sessions, rate_limits, users cascade');
+  await getPool().query('truncate table audit_log, sessions, rate_limits, users cascade');
 }
 
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('sign up', () => {
@@ -50,7 +50,7 @@ describe('sign up', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const { rows } = await pool.query<{ password_hash: string }>(
+    const { rows } = await getPool().query<{ password_hash: string }>(
       'select password_hash from users where id = $1',
       [result.user.id],
     );
@@ -72,7 +72,7 @@ describe('sign up', () => {
     const result = await identity.signUp(signUpInput(), ctx);
     expect(result.ok).toBe(true);
 
-    const { rows } = await pool.query<{ action: string }>(
+    const { rows } = await getPool().query<{ action: string }>(
       "select action from audit_log where action = 'auth.signup.success'",
     );
     expect(rows).toHaveLength(1);
@@ -84,7 +84,7 @@ describe('sign in', () => {
 
   beforeEach(async () => {
     await identity.signUp(signUpInput({ password }), ctx);
-    await pool.query('truncate table rate_limits');
+    await getPool().query('truncate table rate_limits');
   });
 
   it('accepts the correct password', async () => {
@@ -139,7 +139,7 @@ describe('rate limiting', () => {
 
   beforeEach(async () => {
     await identity.signUp(signUpInput({ password }), ctx);
-    await pool.query('truncate table rate_limits');
+    await getPool().query('truncate table rate_limits');
   });
 
   it('blocks a brute-force run against one account', async () => {
@@ -177,7 +177,7 @@ describe('rate limiting', () => {
 
     expect((await identity.signIn({ email: 'alice@example.com', password }, ctx)).ok).toBe(true);
 
-    const { rows } = await pool.query(
+    const { rows } = await getPool().query(
       "select key from rate_limits where key = 'signin:account:alice@example.com'",
     );
     expect(rows).toHaveLength(0);
@@ -192,7 +192,7 @@ describe('rate limiting', () => {
       ),
     );
 
-    const { rows } = await pool.query<{ count: number }>(
+    const { rows } = await getPool().query<{ count: number }>(
       "select count from rate_limits where key = 'signin:account:alice@example.com'",
     );
     expect(rows[0]?.count).toBe(10);
@@ -205,7 +205,9 @@ describe('sessions', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const { rows } = await pool.query<{ token_hash: string }>('select token_hash from sessions');
+    const { rows } = await getPool().query<{ token_hash: string }>(
+      'select token_hash from sessions',
+    );
 
     expect(rows[0]?.token_hash).toBe(hashToken(result.token));
     expect(rows[0]?.token_hash).not.toBe(result.token);
@@ -219,7 +221,7 @@ describe('sessions', () => {
     const result = await identity.signUp(signUpInput(), ctx);
     if (!result.ok) throw new Error('setup failed');
 
-    await pool.query('update sessions set expires_at = $1', [subHours(new Date(), 1)]);
+    await getPool().query('update sessions set expires_at = $1', [subHours(new Date(), 1)]);
 
     expect(await identity.resolveSession(result.token)).toBeUndefined();
   });
@@ -228,7 +230,7 @@ describe('sessions', () => {
     const result = await identity.signUp(signUpInput(), ctx);
     if (!result.ok) throw new Error('setup failed');
 
-    await pool.query('update sessions set expires_at = $1, idle_expires_at = $2', [
+    await getPool().query('update sessions set expires_at = $1, idle_expires_at = $2', [
       addDays(new Date(), 30),
       subHours(new Date(), 1),
     ]);
@@ -242,11 +244,11 @@ describe('sessions', () => {
 
     // Push it close to expiry so the throttled refresh actually triggers.
     const nearlyStale = addHours(new Date(), 1);
-    await pool.query('update sessions set idle_expires_at = $1', [nearlyStale]);
+    await getPool().query('update sessions set idle_expires_at = $1', [nearlyStale]);
 
     expect(await identity.resolveSession(result.token)).toBeDefined();
 
-    const { rows } = await pool.query<{ idle_expires_at: Date }>(
+    const { rows } = await getPool().query<{ idle_expires_at: Date }>(
       'select idle_expires_at from sessions',
     );
     expect(rows[0]!.idle_expires_at.getTime()).toBeGreaterThan(nearlyStale.getTime());
@@ -259,7 +261,7 @@ describe('sessions', () => {
     await identity.signOut(result.token, ctx);
 
     // The row is gone, so a captured cookie is worthless afterwards.
-    const { rows } = await pool.query('select id from sessions');
+    const { rows } = await getPool().query('select id from sessions');
     expect(rows).toHaveLength(0);
     expect(await identity.resolveSession(result.token)).toBeUndefined();
   });
@@ -268,7 +270,7 @@ describe('sessions', () => {
     const result = await identity.signUp(signUpInput(), ctx);
     if (!result.ok) throw new Error('setup failed');
 
-    await pool.query('update sessions set expires_at = $1', [subDays(new Date(), 1)]);
+    await getPool().query('update sessions set expires_at = $1', [subDays(new Date(), 1)]);
 
     expect(await repo.deleteExpiredSessions(new Date())).toBe(1);
   });
@@ -301,7 +303,7 @@ describe('unattributed traffic', () => {
     const limit = RULES.signUpUnattributed.limit;
 
     // Drive the counter straight to the ceiling rather than hashing 120 passwords.
-    await pool.query(
+    await getPool().query(
       'insert into rate_limits (key, count, window_started_at) values ($1, $2, now())',
       ['signup:unattributed', limit],
     );
@@ -351,7 +353,7 @@ describe('age gate at signup', () => {
     expect(result.error.kind).toBe('age_restricted');
 
     // No account was created.
-    const { rows } = await pool.query('select id from users where email = $1', [
+    const { rows } = await getPool().query('select id from users where email = $1', [
       'child@example.com',
     ]);
     expect(rows).toHaveLength(0);
@@ -363,7 +365,7 @@ describe('age gate at signup', () => {
       ctx,
     );
 
-    const { rows } = await pool.query<{ metadata: { reason: string } }>(
+    const { rows } = await getPool().query<{ metadata: { reason: string } }>(
       "select metadata from audit_log where action = 'auth.signup.age_restricted'",
     );
     expect(rows[0]?.metadata.reason).toBe('underage');

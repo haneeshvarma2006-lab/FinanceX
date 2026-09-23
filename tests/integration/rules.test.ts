@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as productivity from '@/modules/productivity/service';
@@ -13,8 +13,8 @@ import { TRIGGER_TYPES } from '@/modules/rules/triggers';
 const ctx = { ip: '203.0.113.90', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits');
 }
 
 async function makeUser(email = 'rules@example.com') {
@@ -39,7 +39,7 @@ function snapshotFor(user: { id: string; timezone: string; baseCurrency: string 
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('starter rules', () => {
@@ -178,7 +178,7 @@ describe('evaluation', () => {
     const user = await makeUser();
 
     // Simulate a stored rule whose config is no longer acceptable.
-    await pool.query(
+    await getPool().query(
       `update automation_rules set trigger_config = '{"count": -5}'::jsonb where name = 'Overdue work' and user_id = $1`,
       [user.id],
     );
@@ -192,7 +192,7 @@ describe('evaluation', () => {
 
   it('records an error for an unknown trigger type', async () => {
     const user = await makeUser();
-    await pool.query(
+    await getPool().query(
       `update automation_rules set trigger_type = 'does_not_exist' where name = 'Overdue work' and user_id = $1`,
       [user.id],
     );
@@ -208,7 +208,7 @@ describe('thresholds', () => {
 
     const rules = await repo.listRules(user.id);
     const overdueRule = rules.find((r) => r.name === 'Overdue work')!;
-    await pool.query(
+    await getPool().query(
       `update automation_rules set trigger_config = '{"count": 3}'::jsonb where id = $1`,
       [overdueRule.id],
     );

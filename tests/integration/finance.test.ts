@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/finance/repository';
@@ -9,8 +9,8 @@ import { sum } from '@nestedflow/domain/money';
 const ctx = { ip: '203.0.113.40', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits');
 }
 
 async function makeUser(email: string) {
@@ -51,7 +51,7 @@ async function setup() {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('transaction amounts', () => {

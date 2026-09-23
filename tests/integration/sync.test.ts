@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as productivity from '@/modules/productivity/service';
@@ -11,8 +11,8 @@ import * as sync from '@/modules/sync/repository';
 const ctx = { ip: '203.0.113.99', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits, change_log');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits, change_log');
 }
 
 async function makeUser(email = 'sync@example.com') {
@@ -33,7 +33,7 @@ async function makeUser(email = 'sync@example.com') {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('change log completeness', () => {
@@ -95,12 +95,12 @@ describe('change log completeness', () => {
     const user = await makeUser();
     const start = await sync.latestCursor(user.id);
 
-    await pool.query(
+    await getPool().query(
       `insert into tasks (id, user_id, title, priority, status, sort_key)
        values ('11111111-1111-1111-1111-111111111111', $1, 'Raw insert', 3, 'todo', 0)`,
       [user.id],
     );
-    await pool.query(`delete from tasks where id = '11111111-1111-1111-1111-111111111111'`);
+    await getPool().query(`delete from tasks where id = '11111111-1111-1111-1111-111111111111'`);
 
     const changes = await sync.changesSince(user.id, start);
     expect(changes.map((c) => c.op)).toEqual(['created', 'deleted']);
@@ -227,7 +227,7 @@ describe('account deletion', () => {
 
     expect(await sync.changesSince(user.id, 0n, 500)).toEqual([]);
 
-    const { rows } = await pool.query('select id from users where id = $1', [user.id]);
+    const { rows } = await getPool().query('select id from users where id = $1', [user.id]);
     expect(rows).toHaveLength(0);
   });
 

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import * as repo from '@/modules/identity/repository';
 import { signUpSchema } from '@/modules/identity/validators';
@@ -17,7 +17,7 @@ const ctxA = { ip: '203.0.113.10', userAgent: 'alice-agent' };
 const ctxB = { ip: '198.51.100.20', userAgent: 'bob-agent' };
 
 async function reset() {
-  await pool.query('truncate table audit_log, sessions, rate_limits, users cascade');
+  await getPool().query('truncate table audit_log, sessions, rate_limits, users cascade');
 }
 
 async function makeUser(email: string, ctx: { ip: string; userAgent: string }) {
@@ -38,7 +38,7 @@ async function makeUser(email: string, ctx: { ip: string; userAgent: string }) {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('session isolation', () => {
@@ -80,7 +80,7 @@ describe('session isolation', () => {
     const alice = await makeUser('alice@example.com', ctxA);
     const bob = await makeUser('bob@example.com', ctxB);
 
-    await pool.query('delete from users where id = $1', [alice.user.id]);
+    await getPool().query('delete from users where id = $1', [alice.user.id]);
 
     // The FK cascades, so no orphaned session is left behind to be replayed.
     expect(await identity.resolveSession(alice.token)).toBeUndefined();
@@ -90,7 +90,7 @@ describe('session isolation', () => {
   it('hides a soft-deleted account from lookups and its own live session', async () => {
     const alice = await makeUser('alice@example.com', ctxA);
 
-    await pool.query('update users set deleted_at = now() where id = $1', [alice.user.id]);
+    await getPool().query('update users set deleted_at = now() where id = $1', [alice.user.id]);
 
     expect(await repo.findUserById(alice.user.id)).toBeUndefined();
     expect(await repo.findUserByEmail('alice@example.com')).toBeUndefined();
@@ -102,7 +102,7 @@ describe('rate limit isolation', () => {
   it('does not let one account lock another out', async () => {
     await makeUser('alice@example.com', ctxA);
     await makeUser('bob@example.com', ctxB);
-    await pool.query('truncate table rate_limits');
+    await getPool().query('truncate table rate_limits');
 
     // Exhaust Alice's per-account budget from a different IP than Bob's.
     for (let i = 0; i < 8; i += 1) {
@@ -123,7 +123,7 @@ describe('audit log attribution', () => {
     const alice = await makeUser('alice@example.com', ctxA);
     const bob = await makeUser('bob@example.com', ctxB);
 
-    const { rows } = await pool.query<{ user_id: string; action: string }>(
+    const { rows } = await getPool().query<{ user_id: string; action: string }>(
       "select user_id, action from audit_log where action = 'auth.signup.success' order by created_at",
     );
 

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import * as repo from '@/modules/identity/repository';
 import { signUpSchema } from '@/modules/identity/validators';
@@ -16,8 +16,8 @@ import type { GoogleIdentity } from '@/modules/identity/oauth';
 const ctx = { ip: '203.0.113.70', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits, oauth_states, pending_registrations');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits, oauth_states, pending_registrations');
 }
 
 function googleIdentity(overrides: Partial<GoogleIdentity> = {}): GoogleIdentity {
@@ -49,7 +49,7 @@ async function makeLocalUser(email: string) {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('pre-account-linking takeover', () => {
@@ -169,7 +169,7 @@ describe('pending registration', () => {
       expiresAt: new Date(Date.now() + 60_000),
     });
 
-    const { rows } = await pool.query<{ token_hash: string }>(
+    const { rows } = await getPool().query<{ token_hash: string }>(
       'select token_hash from pending_registrations',
     );
     expect(rows[0]?.token_hash).toBe(tokenHash);
@@ -211,7 +211,7 @@ describe('pending registration', () => {
     expect(result.error.kind).toBe('age_restricted');
 
     // Signing in with Google must not be a way around the age gate.
-    const { rows } = await pool.query('select id from users where email = $1', [
+    const { rows } = await getPool().query('select id from users where email = $1', [
       'child@example.com',
     ]);
     expect(rows).toHaveLength(0);
@@ -325,7 +325,7 @@ describe('oauth handshake state', () => {
       expiresAt: new Date(Date.now() + 60_000),
     });
 
-    const { rows } = await pool.query<{ state_hash: string }>(
+    const { rows } = await getPool().query<{ state_hash: string }>(
       'select state_hash from oauth_states',
     );
     expect(rows[0]?.state_hash).not.toBe('secret-state');

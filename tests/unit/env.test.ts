@@ -118,3 +118,25 @@ describe('database pool sizing', () => {
     expect(() => getEnv()).toThrow(/DATABASE_MAX_CONNECTIONS/);
   });
 });
+
+describe('blank values from a hosting platform', () => {
+  it('treats an empty string as unset, so the default applies', () => {
+    // A platform variable added with the value left blank. Without this, the
+    // enum rejects '' and the whole build fails on a variable nobody set.
+    process.env.TRUST_PROXY_HEADERS = '';
+    process.env.SESSION_IDLE_HOURS = '';
+    process.env.DATABASE_MAX_CONNECTIONS = '';
+    resetEnvCache();
+
+    const env = getEnv();
+    expect(env.TRUST_PROXY_HEADERS).toBe(false);
+    expect(env.SESSION_IDLE_HOURS).toBe(72);
+    expect(env.DATABASE_MAX_CONNECTIONS).toBe(10);
+  });
+
+  it('still refuses a blank value where there is no default', () => {
+    process.env.DATABASE_URL = '';
+    resetEnvCache();
+    expect(() => getEnv()).toThrow(/DATABASE_URL/);
+  });
+});

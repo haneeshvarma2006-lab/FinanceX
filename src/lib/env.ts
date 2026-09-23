@@ -103,7 +103,21 @@ let cached: Env | undefined;
 export function getEnv(): Env {
   if (cached) return cached;
 
-  const parsed = schema.safeParse(process.env);
+  /**
+   * An empty string means "not set", not "set to nothing".
+   *
+   * Hosting platforms create variables with blank values when you add a key
+   * and leave the field empty, and a blank value otherwise defeats every
+   * default below: `z.default()` only fires on `undefined`, so a blank
+   * TRUST_PROXY_HEADERS fails the enum and a blank SESSION_IDLE_HOURS coerces
+   * to 0 and fails the bound. The result is a build that dies on variables
+   * the operator never meant to set.
+   */
+  const present = Object.fromEntries(
+    Object.entries(process.env).filter(([, value]) => value !== ''),
+  );
+
+  const parsed = schema.safeParse(present);
 
   if (!parsed.success) {
     const issues = parsed.error.issues

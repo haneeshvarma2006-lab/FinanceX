@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { subHours } from 'date-fns';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as email from '@/modules/email/service';
@@ -10,7 +10,7 @@ import { EMAIL_CATEGORY_KEYS, OPTIONAL_CATEGORIES } from '@/modules/email/catego
 const ctx = { ip: '203.0.113.30', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query(
+  await getPool().query(
     'truncate table email_log, email_tokens, email_preferences, email_suppressions, audit_log, sessions, rate_limits, users cascade',
   );
 }
@@ -38,7 +38,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 function recorder() {
@@ -178,7 +178,7 @@ describe('send gating', () => {
       { subject: 'Confirm', text: 'SECRET-BODY-CONTENT', category: 'essential' },
     );
 
-    const { rows } = await pool.query<{ c: string }>(
+    const { rows } = await getPool().query<{ c: string }>(
       `select count(*)::text as c from email_log where subject like '%SECRET-BODY%'`,
     );
     expect(rows[0]?.c).toBe('0');
@@ -260,7 +260,7 @@ describe('unsubscribe tokens', () => {
     const user = await makeUser();
     const token = await email.createUnsubscribeToken(user.id, 'marketing');
 
-    const { rows } = await pool.query<{ token_hash: string }>(
+    const { rows } = await getPool().query<{ token_hash: string }>(
       'select token_hash from email_tokens',
     );
     expect(rows[0]?.token_hash).not.toBe(token);
@@ -281,7 +281,7 @@ describe('verification tokens', () => {
     const user = await makeUser();
     const token = await email.createVerificationToken(user.id);
 
-    await pool.query('update email_tokens set expires_at = $1', [subHours(new Date(), 1)]);
+    await getPool().query('update email_tokens set expires_at = $1', [subHours(new Date(), 1)]);
 
     expect(await email.redeemVerificationToken(token)).toBeUndefined();
   });

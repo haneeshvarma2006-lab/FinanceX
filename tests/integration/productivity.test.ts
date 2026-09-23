@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { pool } from '@/lib/db/client';
+import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/productivity/repository';
@@ -9,8 +9,8 @@ import { notify, seedNotificationPreferences } from '@/modules/productivity/noti
 const ctx = { ip: '203.0.113.80', userAgent: 'vitest' };
 
 async function reset() {
-  await pool.query('truncate table users cascade');
-  await pool.query('truncate table rate_limits');
+  await getPool().query('truncate table users cascade');
+  await getPool().query('truncate table rate_limits');
 }
 
 async function makeUser(email = 'doer@example.com') {
@@ -31,7 +31,7 @@ async function makeUser(email = 'doer@example.com') {
 beforeEach(reset);
 afterAll(async () => {
   await reset();
-  await pool.end();
+  await getPool().end();
 });
 
 describe('tasks', () => {
@@ -83,7 +83,7 @@ describe('tasks', () => {
 
     // A done task with no completion time would make history and streaks lie.
     await expect(
-      pool.query("update tasks set status = 'done' where id = $1", [created.value.id]),
+      getPool().query("update tasks set status = 'done' where id = $1", [created.value.id]),
     ).rejects.toThrow();
   });
 
