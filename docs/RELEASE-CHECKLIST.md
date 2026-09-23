@@ -62,6 +62,10 @@ says anything about a deployed origin, because nothing has been deployed.
 
 ### Configuration
 
+Deploying to Vercel specifically: follow `docs/DEPLOY-VERCEL.md`, which covers
+the serverless connection-pool trap, `TRUST_PROXY_HEADERS`, and why migrations
+are not run from the build.
+
 - [ ] Generate a fresh `AUTH_SECRET` (`openssl rand -base64 48`). Never reuse
       the development value.
 - [ ] Separate databases and separate credentials for staging and production.

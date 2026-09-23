@@ -19,7 +19,7 @@ declare global {
 function createPool(): Pool {
   return new Pool({
     connectionString: getEnv().DATABASE_URL,
-    max: 10,
+    max: getEnv().DATABASE_MAX_CONNECTIONS,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
   });

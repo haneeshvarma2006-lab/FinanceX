@@ -1,0 +1,10 @@
+# Nothing here is needed to run the application, and everything here is
+# uploaded on every deployment if it is not excluded.
+tests
+playwright.config.ts
+playwright-report
+test-results
+docs
+.github
+packages/tokens/src/__fixtures__
+**/*.test.ts

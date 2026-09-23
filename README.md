@@ -63,6 +63,7 @@ Full evidence in [`docs/STATUS.md`](docs/STATUS.md).
 | [`docs/NAME-RESEARCH.md`](docs/NAME-RESEARCH.md)         | Name conflicts found, with sources and dates     |
 | [`docs/LICENSES.md`](docs/LICENSES.md)                   | Dependency and asset licence inventory           |
 | [`docs/RELEASE-CHECKLIST.md`](docs/RELEASE-CHECKLIST.md) | What must happen before deploying                |
+| [`docs/DEPLOY-VERCEL.md`](docs/DEPLOY-VERCEL.md)         | Deploying to Vercel, and the traps in doing so   |
 | [`docs/OPEN-DECISIONS.md`](docs/OPEN-DECISIONS.md)       | Open questions, defaults, risk register          |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md)                     | Milestones and acceptance criteria               |
 

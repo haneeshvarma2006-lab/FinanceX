@@ -72,6 +72,21 @@ const schema = z.object({
   EMAIL_FROM: z.string().default(emailFrom('no-reply@localhost')),
 
   /**
+   * Maximum Postgres connections held by ONE instance of this process.
+   *
+   * This matters far more on a serverless host than on a server. A long-lived
+   * server is one process holding one pool; a serverless platform runs many
+   * instances concurrently, and each one opens its own pool, so the real
+   * connection count is this number times however many instances are warm.
+   * Ten of those against a default `max_connections` of 100 exhausts the
+   * database at ten instances.
+   *
+   * Behind a transaction-mode pooler (PgBouncer, or a provider's pooled
+   * endpoint) set this low — 1 or 2 — and let the pooler do the multiplexing.
+   */
+  DATABASE_MAX_CONNECTIONS: z.coerce.number().int().min(1).max(100).default(10),
+
+  /**
    * Only enable behind a proxy that overwrites X-Forwarded-For. With no such
    * proxy, a caller can set the header themselves and walk past per-IP limits.
    */

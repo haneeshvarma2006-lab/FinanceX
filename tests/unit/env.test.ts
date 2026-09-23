@@ -92,3 +92,29 @@ describe('connection string validation', () => {
     expect(() => getEnv()).toThrow(/APP_URL/);
   });
 });
+
+describe('database pool sizing', () => {
+  it('defaults to a size suited to a long-lived server', () => {
+    delete process.env.DATABASE_MAX_CONNECTIONS;
+    resetEnvCache();
+    expect(getEnv().DATABASE_MAX_CONNECTIONS).toBe(10);
+  });
+
+  it('accepts a serverless-sized pool', () => {
+    process.env.DATABASE_MAX_CONNECTIONS = '1';
+    resetEnvCache();
+    expect(getEnv().DATABASE_MAX_CONNECTIONS).toBe(1);
+  });
+
+  it('refuses a pool of zero, which would deadlock every query', () => {
+    process.env.DATABASE_MAX_CONNECTIONS = '0';
+    resetEnvCache();
+    expect(() => getEnv()).toThrow(/DATABASE_MAX_CONNECTIONS/);
+  });
+
+  it('refuses a non-numeric value rather than silently defaulting', () => {
+    process.env.DATABASE_MAX_CONNECTIONS = 'lots';
+    resetEnvCache();
+    expect(() => getEnv()).toThrow(/DATABASE_MAX_CONNECTIONS/);
+  });
+});
