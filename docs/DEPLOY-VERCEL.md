@@ -1,15 +1,18 @@
 # Deploying Nested Flow to Vercel
 
-**No successful deployment has happened yet.** The `kylix` project on Vercel
-has six failed production deployments, every one of them at the build step
-with `Command "pnpm build" exited with 1`. The cause was found and fixed — see
-below — but the fix has not yet been confirmed by a green deployment. Treat
-this as a checklist, not a report of something that worked end to end.
+**Live at <https://nested-flow.vercel.app>** — Vercel project `nested-flow`,
+functions in `bom1`, database on Neon (project `rough-voice-18829501`,
+`aws-ap-southeast-1`, pooled endpoint).
 
-What _was_ verified locally: the production build now succeeds with **no
-environment variables at all**, and with every variable set to a blank string.
-It exited 1 in both cases before the fix. argon2 still runs after being marked
-external, and the migrations apply to an empty database.
+Verified end to end on 2026-09-25 by a real sign-up through the production
+site: the user row was written with an `$argon2id$` hash (so the native module
+runs on Vercel), a live session was created, and onboarding wrote its consents,
+preferences, starter rules and an `auth.signup.success` audit entry.
+
+The database schema was checked against a database migrated by
+`pnpm db:migrate`: identical fingerprint across all 574 columns, indexes,
+constraints, triggers and migration records. Future `pnpm db:migrate` runs
+against it will see all 9 migrations as applied.
 
 ## The build used to fail, and why
 
