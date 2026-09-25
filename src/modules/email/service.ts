@@ -1,11 +1,18 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { addHours } from 'date-fns';
+import { addHours, addMinutes } from 'date-fns';
 import { getEnv } from '@/lib/env';
 import * as repo from './repository';
+import { createResendTransport, EmailDeliveryError } from './resend';
 import { EMAIL_CATEGORIES, isMarketing, type EmailCategory } from './categories';
 
 /** Verification links are short-lived; an old link in an inbox is a liability. */
 export const VERIFY_TOKEN_TTL_HOURS = 24;
+/**
+ * Reset links are the shortest-lived of all: whoever holds one can take the
+ * account. Thirty minutes covers a slow inbox without leaving a usable link
+ * lying around for a day.
+ */
+export const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 /** Unsubscribe links must keep working long after the email was sent. */
 export const UNSUBSCRIBE_TOKEN_TTL_HOURS = 24 * 365;
 
@@ -20,7 +27,10 @@ export type Message = {
 
 export type SendOutcome =
   | { sent: true }
-  | { sent: false; reason: 'suppressed' | 'unsubscribed' | 'unverified' | 'no_transport' };
+  | {
+      sent: false;
+      reason: 'suppressed' | 'unsubscribed' | 'unverified' | 'no_transport' | 'delivery_failed';
+    };
 
 function hash(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -74,6 +84,45 @@ export async function redeemUnsubscribeToken(
   const row = await repo.redeemToken(hash(token), 'unsubscribe', now);
   if (!row?.category) return undefined;
   return { userId: row.userId, category: row.category as EmailCategory };
+}
+
+export async function createPasswordResetToken(
+  userId: string,
+  now: Date = new Date(),
+): Promise<string> {
+  // Only the newest link works. See deleteUnusedTokens.
+  await repo.deleteUnusedTokens(userId, 'password_reset');
+
+  const token = newToken();
+  await repo.insertToken({
+    userId,
+    kind: 'password_reset',
+    tokenHash: hash(token),
+    category: null,
+    expiresAt: addMinutes(now, PASSWORD_RESET_TOKEN_TTL_MINUTES),
+  });
+  return token;
+}
+
+/** Whether a reset link is still usable, without using it. */
+export async function isPasswordResetTokenLive(
+  token: string,
+  now: Date = new Date(),
+): Promise<boolean> {
+  return Boolean(await repo.findLiveToken(hash(token), 'password_reset', now));
+}
+
+/** Single use: a second redemption of the same token finds nothing. */
+export async function redeemPasswordResetToken(
+  token: string,
+  now: Date = new Date(),
+): Promise<{ userId: string } | undefined> {
+  const row = await repo.redeemToken(hash(token), 'password_reset', now);
+  return row ? { userId: row.userId } : undefined;
+}
+
+export function passwordResetUrl(token: string): string {
+  return new URL(`/reset-password?token=${token}`, getEnv().APP_URL).toString();
 }
 
 export function unsubscribeUrl(token: string): string {
@@ -157,7 +206,33 @@ export function setTransport(next: Transport | undefined): void {
 
 function activeTransport(): Transport | undefined {
   if (transport) return transport;
-  return getEnv().EMAIL_TRANSPORT === 'console' ? consoleTransport : undefined;
+
+  const env = getEnv();
+  switch (env.EMAIL_TRANSPORT) {
+    case 'resend':
+      // Presence is enforced at boot by the env schema.
+      return createResendTransport({ apiKey: env.RESEND_API_KEY!, from: env.EMAIL_FROM });
+    case 'console':
+      return consoleTransport;
+    case 'none':
+      return undefined;
+  }
+}
+
+/**
+ * Whether email can actually reach a person.
+ *
+ * The console transport "sends" into a server log, which is fine for seeing
+ * what would go out and useless for anything a user is waiting on. Features
+ * whose whole value is an email arriving — password reset — ask this rather
+ * than whether a transport exists. Outside production the console counts, so
+ * the flow can be exercised locally by reading the link off the terminal.
+ */
+export function canDeliverToUsers(): boolean {
+  if (transport) return true;
+  const env = getEnv();
+  if (env.EMAIL_TRANSPORT === 'resend') return true;
+  return env.EMAIL_TRANSPORT === 'console' && env.NODE_ENV !== 'production';
 }
 
 export async function send(
@@ -201,7 +276,21 @@ export async function send(
     url = unsubscribeUrl(await createUnsubscribeToken(recipient.userId, message.category));
   }
 
-  await active({ ...message, to: recipient.email, unsubscribeUrl: url }, listHeaders(url));
+  try {
+    await active({ ...message, to: recipient.email, unsubscribeUrl: url }, listHeaders(url));
+  } catch (error) {
+    // Recorded rather than thrown: the caller is usually mid-request for a
+    // user who must not see a provider outage as a crash. The log row is what
+    // an operator will look for.
+    await repo.insertLog({
+      userId: recipient.userId,
+      category: message.category,
+      subject: message.subject,
+      status: 'failed',
+      skipReason: error instanceof EmailDeliveryError ? `http_${error.status}` : 'transport_error',
+    });
+    return { sent: false, reason: 'delivery_failed' };
+  }
 
   await repo.insertLog({
     userId: recipient.userId,

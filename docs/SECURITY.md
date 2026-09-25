@@ -138,8 +138,16 @@ inventory in `docs/LICENSES.md`.
   code.
 - **No compliance certification** — not SOC 2, PCI DSS, ISO 27001, GDPR, or
   India's DPDP Act. None is held, none is in progress, none is implied.
-- **No password reset**, because there is no email provider — a reset flow that
-  cannot deliver mail is security theatre.
+- **Password reset** (`src/modules/identity/password-reset.ts`): 256-bit single-use tokens
+  stored only as SHA-256, 30-minute lifetime, redeemed atomically so two simultaneous
+  submissions cannot both succeed, and a new request kills every older link. Viewing a link
+  never consumes it, so mail scanners cannot break it. Completion ends **every** session,
+  including one an attacker may hold, and emails the owner. The request reveals nothing about
+  which addresses have accounts: identical response and identical rate limits for unknown
+  addresses, with all account-dependent work deferred until after the response is sent. Per-
+  address limits stop the form being used to flood someone's inbox. It is only offered when a
+  transport that reaches users is configured. Each of these properties has a test that was
+  shown to fail when the property was removed.
 - **No MFA.**
 - **No encryption of individual fields at rest** beyond whatever the deployment
   target provides at disk or database level (open decision D-10).

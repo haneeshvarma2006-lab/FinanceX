@@ -190,11 +190,30 @@ Do not assume any of them:
 Deploying does not make this launch-ready. From `docs/RELEASE-CHECKLIST.md`,
 still outstanding:
 
-- **No password reset and no email provider.** A user who forgets their
-  password is locked out permanently. This alone rules out a public launch.
+- **Password reset needs a verified sending domain.** It is built and live
+  behind `EMAIL_TRANSPORT=resend`, but Resend delivers only to the account
+  owner until a domain is verified. See _Email_ below.
 - **The name is not cleared** — see `docs/NAME-RESEARCH.md`.
 - **Legal pages are drafts** and say so on their face.
 - **No backups, no monitoring, no external security review.**
 - **CI has never run.**
 
 A private staging deployment is reasonable now. A public one is not.
+
+## Email (password reset)
+
+Password reset is offered only when email can reach users. To turn it on:
+
+1. Create a Resend account and an API key: <https://resend.com>.
+2. In Vercel set `EMAIL_TRANSPORT=resend`, `RESEND_API_KEY=<key>`, and
+   `EMAIL_FROM`, then redeploy.
+3. `EMAIL_FROM` decides who can receive mail:
+   - `Nested Flow <onboarding@resend.dev>` needs no domain, but Resend delivers
+     it **only to the address that owns the Resend account**. Good for proving
+     the flow, useless for real users.
+   - `Nested Flow <no-reply@your-domain>` reaches everyone, once that domain is
+     verified in Resend (SPF and DKIM records). `nested-flow.vercel.app` cannot
+     be verified: the DNS belongs to Vercel, not to you.
+
+A delivery failure is recorded in `email_log` with the provider's HTTP status
+and never crashes the request. `/api/health` does not check email.

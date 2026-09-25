@@ -27,8 +27,8 @@ pnpm test:e2e        # production build, real browser
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ no known vulnerabilities                               |
-| `pnpm test`         | ✅ **348 passing** (258 app + 81 domain + 9 tokens)       |
-| `pnpm test:e2e`     | ✅ **58 passing**, Chromium, production build             |
+| `pnpm test`         | ✅ **386 passing** (296 app + 81 domain + 9 tokens)       |
+| `pnpm test:e2e`     | ✅ **64 passing**, Chromium, production build             |
 | `pnpm build`        | ✅ 24 routes                                              |
 | Migrations          | ✅ 9 applied to a clean database                          |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
@@ -87,13 +87,12 @@ are not run from the build.
 
 ### If enabling email
 
-- [ ] Choose a provider, verify a sending domain, configure SPF, DKIM and DMARC.
-- [ ] Implement the transport against `Transport` in
-      `src/modules/email/service.ts` — the interface exists; no provider is wired.
+- [x] Choose a provider — Resend, wired in `src/modules/email/resend.ts`.
+- [ ] Verify a sending domain in Resend; configure SPF, DKIM and DMARC.
 - [ ] Wire bounce and complaint webhooks into `emailSuppressions`.
 - [ ] Verify `List-Unsubscribe` survives the provider (some rewrite headers).
 - [ ] Send a real test to each category and confirm gating behaves.
-- [ ] Only then enable password reset, which currently does not exist.
+- [x] Password reset is built. It is offered only when a real transport is configured.
 
 ### Backup and recovery
 
@@ -127,8 +126,10 @@ are not run from the build.
 These are real and should appear in release notes rather than being discovered
 by users:
 
-1. **No password reset.** No email provider.
-2. **No email is sent at all.** The console transport logs and discards.
+1. **Password reset reaches only verified-domain senders' recipients.** Built and tested,
+   but until a sending domain is verified in Resend it can email only the Resend account
+   owner. Without `EMAIL_TRANSPORT=resend` it is hidden entirely.
+2. **No email verification flow for sign-up yet.** Completing a reset does verify an address.
 3. **Google sign-in is inert** unless credentials are configured.
 4. **Single base currency.** Foreign-currency rows are stored faithfully but not
    converted; cross-currency transfers are refused rather than guessed at.

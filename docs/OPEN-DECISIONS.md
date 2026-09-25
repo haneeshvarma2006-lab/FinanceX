@@ -76,11 +76,12 @@ terms. **No key is held and none is assumed.**
 
 ### D-07 — Transactional email
 
-**Default:** M1 ships without email. Password reset is therefore deferred, because a reset
-flow that cannot deliver mail is security theatre.
+**Decided:** Resend, over its HTTP API (`src/modules/email/resend.ts`, no SDK). Selected
+with `EMAIL_TRANSPORT=resend` and `RESEND_API_KEY`.
 
-Requires a provider (Resend/Postmark/SES) plus a verified sending domain — neither exists.
-This is an accepted, stated limitation of M1, not an oversight.
+**Still open:** a verified sending domain. Without one, Resend delivers only to the address
+that owns the Resend account, so password reset works for the owner and nobody else. A
+domain is the one remaining step to email every user; none is owned yet.
 
 ### D-08 — Hosting and deployment
 

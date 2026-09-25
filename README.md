@@ -87,8 +87,9 @@ pnpm test:e2e    # production build, real browser
 
 ## Deliberate limitations
 
-No bank, broker or market-data integration. No payment provider. No email
-provider — so no password reset and no email verification. No compliance
+No bank, broker or market-data integration. No payment provider. Email and password
+reset go through Resend, but reach every user only once a sending domain is verified —
+none is owned yet. No sign-up email verification. No compliance
 certification. These require credentials, commercial agreements or approvals
 that do not exist, and **none of them are designed in as though they did**.
 

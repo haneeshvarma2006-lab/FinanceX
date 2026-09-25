@@ -92,6 +92,50 @@ export async function insertToken(input: {
 }
 
 /**
+ * Delete a user's unredeemed tokens of one kind.
+ *
+ * Issuing a new password-reset link calls this first, so only the most recent
+ * email in an inbox works. An older link that surfaces later — forwarded, or
+ * read over someone's shoulder — is dead.
+ */
+export async function deleteUnusedTokens(userId: string, kind: string): Promise<void> {
+  await db
+    .delete(emailTokens)
+    .where(
+      and(eq(emailTokens.userId, userId), eq(emailTokens.kind, kind), isNull(emailTokens.usedAt)),
+    );
+}
+
+/**
+ * Read a live token without redeeming it.
+ *
+ * For showing "this link has expired" before someone types a new password.
+ * Deliberately NOT a redemption: mail scanners and link previews open every
+ * URL in a message, and a GET that burned the token would break the link
+ * before its owner ever clicked it.
+ */
+export async function findLiveToken(
+  tokenHash: string,
+  kind: string,
+  now: Date,
+): Promise<typeof emailTokens.$inferSelect | undefined> {
+  const [row] = await db
+    .select()
+    .from(emailTokens)
+    .where(
+      and(
+        eq(emailTokens.tokenHash, tokenHash),
+        eq(emailTokens.kind, kind),
+        isNull(emailTokens.usedAt),
+        sql`${emailTokens.expiresAt} > ${now.toISOString()}::timestamptz`,
+      ),
+    )
+    .limit(1);
+
+  return row;
+}
+
+/**
  * Redeem a token atomically.
  *
  * The update sets `usedAt` and returns the row in one statement, and the

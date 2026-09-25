@@ -1,5 +1,6 @@
 'use server';
 
+import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import { getRequestContext } from '@/lib/auth/request-context';
 import {
@@ -10,8 +11,12 @@ import {
   setSessionCookie,
 } from '@/lib/auth/cookies';
 import * as identity from '@/modules/identity/service';
+import * as passwordReset from '@/modules/identity/password-reset';
+import { PASSWORD_RESET_TOKEN_TTL_MINUTES } from '@/modules/email/service';
 import {
   completeOAuthSignUpSchema,
+  completePasswordResetSchema,
+  requestPasswordResetSchema,
   signInSchema,
   signUpSchema,
 } from '@/modules/identity/validators';
@@ -19,6 +24,8 @@ import {
 export type FormState = {
   /** Message shown above the form. */
   message?: string;
+  /** Whether `message` reports success rather than a problem. */
+  tone?: 'error' | 'success';
   /** Per-field messages, keyed by field name. */
   fieldErrors?: Record<string, string>;
 };
@@ -95,6 +102,68 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
   await setSessionCookie(result.token, result.expiresAt);
   redirect('/today');
 }
+
+/**
+ * Ask for a reset link.
+ *
+ * The success message is identical whether or not the address has an account,
+ * and the account-dependent work runs in `after()`, once this response has
+ * been sent — so neither the wording nor the timing says which it was.
+ */
+export async function requestPasswordResetAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const parsed = requestPasswordResetSchema.safeParse({ email: formData.get('email') });
+  if (!parsed.success) return { fieldErrors: firstIssuePerField(parsed.error.issues) };
+
+  const result = await passwordReset.requestPasswordReset(
+    parsed.data,
+    await getRequestContext(),
+    new Date(),
+    after,
+  );
+
+  if (!result.ok) {
+    return result.error.kind === 'rate_limited'
+      ? { message: 'Too many reset requests. Please wait an hour and try again.' }
+      : { message: 'Password reset by email is not available on this deployment.' };
+  }
+
+  return {
+    tone: 'success',
+    message: `If an account uses that address, a reset link is on its way. It works once and expires in ${PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes — check your spam folder if it does not arrive.`,
+  };
+}
+
+/** Set a new password from a reset link, then sign in with it. */
+export async function completePasswordResetAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const parsed = completePasswordResetSchema.safeParse({
+    token: formData.get('token'),
+    password: formData.get('password'),
+  });
+
+  if (!parsed.success) {
+    const fieldErrors = firstIssuePerField(parsed.error.issues);
+    // A malformed token is not something the user can fix in a form field.
+    if (fieldErrors.token) return { message: EXPIRED_LINK };
+    return { fieldErrors };
+  }
+
+  const ctx = await getRequestContext();
+  const result = await passwordReset.completePasswordReset(parsed.data, ctx, new Date(), after);
+
+  if (!result.ok) return { message: EXPIRED_LINK };
+
+  await setSessionCookie(result.token, result.expiresAt);
+  redirect('/today');
+}
+
+const EXPIRED_LINK =
+  'This reset link has expired or has already been used. Request a new one below.';
 
 export async function signOutAction(): Promise<void> {
   const token = await readSessionCookie();

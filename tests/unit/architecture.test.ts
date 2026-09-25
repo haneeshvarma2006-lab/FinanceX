@@ -232,12 +232,20 @@ describe('invariant: the environment contract is real', () => {
     const env = readFileSync(join(ROOT, 'src/lib/env.ts'), 'utf8');
     const example = readFileSync(join(ROOT, '.env.example'), 'utf8');
 
-    const declared = [...env.matchAll(/^\s{2}([A-Z][A-Z0-9_]+):/gm)].map(([, name]) => name!);
+    // Keyed on `NAME: z` rather than on indentation, which a formatter is free
+    // to change — and did, silently emptying this list once.
+    const declared = [...env.matchAll(/^\s+([A-Z][A-Z0-9_]+): z\b/gm)].map(([, name]) => name!);
 
-    expect(declared.length).toBeGreaterThan(3);
+    // An actual `NAME=` line. A bare substring match was satisfied by the
+    // variable being mentioned in a comment, which documents nothing.
+    const documented = new Set(
+      [...example.matchAll(/^([A-Z][A-Z0-9_]+)=/gm)].map(([, name]) => name!),
+    );
+
+    expect(declared.length).toBeGreaterThan(10);
     for (const name of declared) {
       if (name === 'NODE_ENV') continue;
-      expect(example, `.env.example is missing ${name}`).toContain(name);
+      expect(documented.has(name), `.env.example has no ${name}= line`).toBe(true);
     }
   });
 });

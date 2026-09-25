@@ -15,8 +15,8 @@ const email = z
   .string()
   .trim()
   .toLowerCase()
-  .min(3)
-  .max(320)
+  .min(1, 'Enter your email address')
+  .max(320, 'That address is too long')
   .email('That does not look like an email address');
 
 export const signUpSchema = z.object({
@@ -58,7 +58,18 @@ export const signInSchema = z.object({
   password: z.string().min(1, 'Enter your password').max(256),
 });
 
+export const requestPasswordResetSchema = z.object({ email });
+
+export const completePasswordResetSchema = z.object({
+  // base64url of 32 random bytes is 43 characters; anything else is not ours.
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'This reset link is not valid'),
+  // The full strength rule: a reset is a new password, unlike sign-in.
+  password,
+});
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
+export type CompletePasswordResetInput = z.infer<typeof completePasswordResetSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 
 /**

@@ -321,6 +321,28 @@ export async function insertOAuthUser(input: {
 /** A sentinel that no argon2 verification can ever match. */
 export const NO_PASSWORD = 'oauth-only-account-no-local-password';
 
+/**
+ * Replace a user's password.
+ *
+ * Also marks the address verified if it was not already: completing a reset
+ * means the person clicked a link that was only ever sent to that address,
+ * which is the same proof a verification link gives.
+ */
+export async function setPasswordHash(
+  userId: string,
+  passwordHash: string,
+  now: Date,
+): Promise<void> {
+  await db
+    .update(users)
+    .set({
+      passwordHash,
+      updatedAt: now,
+      emailVerifiedAt: sql`coalesce(${users.emailVerifiedAt}, ${now.toISOString()}::timestamptz)`,
+    })
+    .where(eq(users.id, userId));
+}
+
 export async function setUserVerifiedEmail(userId: string, at: Date): Promise<void> {
   await db.update(users).set({ emailVerifiedAt: at, updatedAt: at }).where(eq(users.id, userId));
 }

@@ -34,7 +34,23 @@ export const RULES = {
    */
   signInUnattributed: { limit: 600, windowSeconds: 300 },
   signUpUnattributed: { limit: 120, windowSeconds: 3600 },
+
+  /**
+   * Password reset sends an email to an address the requester need not own,
+   * so the per-address limit is the one that matters: without it the form is
+   * a way to flood someone's inbox. It applies whether or not an account
+   * exists, so hitting it reveals nothing.
+   */
+  resetPerIp: { limit: 10, windowSeconds: 3600 },
+  resetPerAddress: { limit: 3, windowSeconds: 3600 },
+  resetUnattributed: { limit: 300, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>;
+
+const NETWORK_RULES = {
+  signin: { perIp: RULES.signInPerIp, unattributed: RULES.signInUnattributed },
+  signup: { perIp: RULES.signUpPerIp, unattributed: RULES.signUpUnattributed },
+  reset: { perIp: RULES.resetPerIp, unattributed: RULES.resetUnattributed },
+} as const;
 
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };
 
@@ -45,20 +61,12 @@ export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };
  * limit at all, so the choice is made in one place instead of at each call site.
  */
 export function networkScope(
-  action: 'signin' | 'signup',
+  action: keyof typeof NETWORK_RULES,
   ip: string | null,
 ): { key: string; rule: RateLimitRule } {
-  if (ip) {
-    return {
-      key: `${action}:ip:${ip}`,
-      rule: action === 'signin' ? RULES.signInPerIp : RULES.signUpPerIp,
-    };
-  }
-
-  return {
-    key: `${action}:unattributed`,
-    rule: action === 'signin' ? RULES.signInUnattributed : RULES.signUpUnattributed,
-  };
+  return ip
+    ? { key: `${action}:ip:${ip}`, rule: NETWORK_RULES[action].perIp }
+    : { key: `${action}:unattributed`, rule: NETWORK_RULES[action].unattributed };
 }
 
 export async function consume(

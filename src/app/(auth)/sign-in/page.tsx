@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { isGoogleConfigured } from '@/modules/identity/oauth';
+import { canDeliverToUsers } from '@/modules/email/service';
 import { SignInForm } from './form';
 import { brand } from '@/lib/brand';
 
@@ -35,6 +36,16 @@ export default async function SignInPage({
       </p>
 
       <SignInForm googleEnabled={isGoogleConfigured()} initialMessage={message} />
+
+      {/* Only offered where it can work: a reset email that cannot be sent
+          would leave someone waiting on a message that never comes. */}
+      {canDeliverToUsers() && (
+        <p className="mt-4 text-center text-sm">
+          <Link href="/forgot-password" className="text-text-secondary hover:text-text-primary">
+            Forgot your password?
+          </Link>
+        </p>
+      )}
 
       <p className="mt-6 text-center text-sm text-text-secondary">
         New here?{' '}

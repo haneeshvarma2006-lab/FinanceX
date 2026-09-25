@@ -11,8 +11,8 @@ command named, in this environment. Nothing is asserted from inspection alone.
 | `pnpm format:check` | ✅ clean                                                  |
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ **no known vulnerabilities**                           |
-| `pnpm test`         | ✅ **348 passing** (258 app + 90 package)                 |
-| `pnpm test:e2e`     | ✅ **58 passing**, Chromium, production build             |
+| `pnpm test`         | ✅ **386 passing** (296 app + 90 package)                 |
+| `pnpm test:e2e`     | ✅ **64 passing**, Chromium, production build             |
 | `pnpm build`        | ✅ 24 routes                                              |
 | Migrations          | ✅ 9 applied to clean databases                           |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |
@@ -196,8 +196,9 @@ migration, not a rewrite of an old one.
   held, none in progress, none implied.
 - **Age verification is NOT claimed.** A self-declared date of birth is not
   legal age assurance anywhere. See `docs/AGE-POLICY.md`.
-- **No email is sent.** No provider is configured; the console transport logs
-  and discards. Consequently **no password reset and no email verification**.
+- **Email goes through Resend when configured**, and password reset is built on it.
+  Until a sending domain is verified in Resend it delivers only to the Resend account
+  owner. There is still **no sign-up email verification flow**.
 - **Google sign-in is inert** unless credentials are configured. None are
   invented; the routes fail honestly and the button is hidden.
 - **No bank, broker or market-data connection.** Every figure is user-entered.
