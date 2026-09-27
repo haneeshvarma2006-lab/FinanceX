@@ -45,7 +45,11 @@ export function Analytics() {
         <FadeUp>
           <SectionHeader
             eyebrow="Analytics"
-            title="See the whole picture."
+            title={
+              <>
+                See the <em>whole</em> picture.
+              </>
+            }
             body="Your net worth, your savings rate, your follow-through and your edge — measured side by side, because they were never really separate."
           />
         </FadeUp>

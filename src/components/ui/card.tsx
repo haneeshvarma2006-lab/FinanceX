@@ -60,18 +60,23 @@ export function Card({
   /** Lights the top edge in a domain colour. */
   accent?: Accent;
 }) {
-  const toneBorder = tone
-    ? { warning: 'border-warning/35', negative: 'border-negative/35', accent: 'border-accent/35' }[
-        tone
-      ]
-    : 'border-border-subtle';
+  // A toned card keeps a plain tinted border, so the warning reads at once;
+  // every other card gets the gradient hairline.
+  const surface = tone
+    ? cn(
+        'border bg-surface-raised/75',
+        {
+          warning: 'border-warning/35',
+          negative: 'border-negative/35',
+          accent: 'border-accent/35',
+        }[tone],
+      )
+    : 'ui-card';
 
   return (
     <Tag
       className={cn(
-        'group/card relative isolate rounded-2xl border bg-surface-raised/75 backdrop-blur-sm',
-        // A whisper of light from above, so the panel reads as material.
-        'bg-linear-to-b from-text-primary/3 to-transparent',
+        'group/card relative isolate rounded-2xl backdrop-blur-sm',
         'shadow-[var(--shadow-raised),var(--shadow-edge)]',
         'transition-[border-color,box-shadow] duration-[var(--duration-base)] ease-(--ease-out-soft)',
         'hover:shadow-[var(--shadow-overlay),var(--shadow-edge)]',
@@ -81,7 +86,7 @@ export function Card({
             'before:bg-linear-to-r before:from-transparent before:to-transparent',
             ACCENT_EDGE[accent],
           ),
-        toneBorder,
+        surface,
         className,
       )}
     >

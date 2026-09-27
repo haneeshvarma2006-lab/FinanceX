@@ -59,7 +59,11 @@ export default async function TodayPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         eyebrow={longDate(snapshot.today)}
-        title={`Good to see you, ${user.displayName}`}
+        title={
+          <>
+            Good to see you, <em>{user.displayName}</em>
+          </>
+        }
         description="Everything below is from your own records."
       />
 

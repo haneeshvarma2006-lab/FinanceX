@@ -70,7 +70,7 @@ export function ScrollProgress() {
     <motion.div
       aria-hidden
       style={{ scaleX }}
-      className="absolute inset-x-0 -bottom-px h-px origin-left bg-linear-to-r from-brand-tasks via-brand-trading to-brand-finance"
+      className="fixed inset-x-0 top-0 z-70 h-0.5 origin-left bg-linear-to-r from-brand-tasks via-brand-trading to-brand-finance"
     />
   );
 }
@@ -142,10 +142,8 @@ export function GlowCard({
         } as unknown as CSSProperties
       }
       className={cn(
-        'lp-glow lp-tilt group relative overflow-hidden rounded-2xl border border-brand-line',
-        'bg-brand-card/60 backdrop-blur-sm',
-        'transition-colors duration-[var(--duration-base)] hover:border-brand-line/0',
-        'hover:shadow-[var(--shadow-overlay)]',
+        'lp-card lp-glow lp-tilt group relative overflow-hidden rounded-3xl backdrop-blur-sm',
+        'transition-shadow duration-[var(--duration-base)] hover:shadow-[var(--shadow-sheet)]',
         className,
       )}
     >

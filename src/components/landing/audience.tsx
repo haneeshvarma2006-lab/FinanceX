@@ -21,7 +21,11 @@ export function Audience() {
         <FadeUp>
           <SectionHeader
             eyebrow="Who it is for"
-            title="Built for people building wealth."
+            title={
+              <>
+                Built for people <em>building wealth.</em>
+              </>
+            }
             body={`${brand.name} is for anyone who treats their time, money and risk as one portfolio — and wants the tools to agree.`}
           />
         </FadeUp>

@@ -533,6 +533,217 @@ p {
   animation: lp-nav-in 700ms var(--ease-out-soft) both;
 }
 
+/* ============================================= LANDING ART DIRECTION */
+
+/**
+ * Film grain over the whole page: the difference between a flat digital
+ * black and a surface with depth. Fixed and inert, far below the level where
+ * it reads as texture rather than as quality.
+ */
+.lp-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme='light'] .lp-noise {
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+}
+
+/**
+ * One light source: a wide, soft horizon glow above the hero, cool at the
+ * centre and warming to violet at the edge. Everything else stays dark.
+ */
+.lp-horizon {
+  /* Every ellipse is fully transparent before it reaches the box edge, so
+     the light never shows the rectangle it is painted in. */
+  background:
+    radial-gradient(
+      44% 55% at 50% 0%,
+      color-mix(in oklch, var(--brand-tasks) 24%, transparent),
+      transparent 100%
+    ),
+    radial-gradient(
+      22% 38% at 74% 4%,
+      color-mix(in oklch, var(--brand-trading) 18%, transparent),
+      transparent 100%
+    ),
+    radial-gradient(
+      22% 34% at 26% 6%,
+      color-mix(in oklch, var(--brand-finance) 12%, transparent),
+      transparent 100%
+    );
+}
+
+@keyframes lp-breathe {
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+.lp-breathe {
+  transform-origin: 50% 0%;
+  animation: lp-breathe 12s ease-in-out infinite;
+}
+
+/**
+ * Headline ink: full strength at the top of each line, easing a little
+ * toward the bottom, so large type has weight without a flat slab of white.
+ */
+.lp-ink {
+  background-image: linear-gradient(
+    180deg,
+    var(--brand-ink) 35%,
+    color-mix(in oklch, var(--brand-ink) 62%, transparent)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/**
+ * Cards with a gradient hairline: brighter along the top edge where light
+ * would catch it, fading down the sides. A solid 1px border cannot do this.
+ */
+.lp-card {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+        color-mix(in oklch, var(--brand-card) 88%, transparent),
+        color-mix(in oklch, var(--brand-card) 70%, transparent)
+      )
+      padding-box,
+    linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--brand-ink) 16%, transparent),
+        color-mix(in oklch, var(--brand-ink) 5%, transparent) 60%
+      )
+      border-box;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--brand-ink) 6%, transparent),
+    0 1px 2px oklch(0 0 0 / 0.3);
+}
+
+/* The hero's light beam: a bright line that switches on above the product. */
+@keyframes lp-beam-on {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+.lp-beam {
+  transform-origin: center;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--brand-tasks) 80%, var(--brand-ink)) 30%,
+    var(--brand-ink) 50%,
+    color-mix(in oklch, var(--brand-trading) 80%, var(--brand-ink)) 70%,
+    transparent
+  );
+  animation: lp-beam-on 1.4s var(--ease-out-soft) 0.6s both;
+}
+.lp-beam-glow {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--brand-tasks) 30%, transparent),
+    transparent
+  );
+  animation: lp-fade-in 1.8s ease 0.9s both;
+}
+
+/* A pill whose border has a slow light travelling round it. */
+.lp-pill {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.lp-pill::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -2;
+  width: 200%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    transparent 0% 70%,
+    var(--brand-tasks) 80%,
+    var(--brand-trading) 90%,
+    transparent 100%
+  );
+  animation: lp-orbit 5s linear infinite;
+}
+.lp-pill::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--brand-canvas);
+}
+
+/* The primary button's halo, in its own ink, brightening on hover. */
+.lp-btn-glow {
+  box-shadow: 0 0.5rem 2rem -0.5rem color-mix(in oklch, var(--brand-ink) 45%, transparent);
+}
+.lp-btn-glow:hover {
+  box-shadow: 0 0.75rem 2.75rem -0.375rem color-mix(in oklch, var(--brand-ink) 60%, transparent);
+}
+
+/* The footer's giant wordmark: ink at the top, gone by the baseline. */
+.lp-footer-mark {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--brand-ink) 14%, transparent),
+    transparent 85%
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/* Product shots fade into the page instead of ending at a hard edge. */
+.lp-fade-bottom {
+  mask-image: linear-gradient(to bottom, black 62%, transparent 98%);
+}
+
+/* ======================================================== APP SURFACES */
+
+/**
+ * The app's cards and floating bar share the landing page's gradient
+ * hairline, built from the app's own tokens so both themes get it.
+ * Registered as utilities so they take responsive variants.
+ */
+@utility ui-card {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+        color-mix(in oklch, var(--surface-raised) 86%, transparent),
+        color-mix(in oklch, var(--surface-raised) 72%, transparent)
+      )
+      padding-box,
+    linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--text-primary) 15%, transparent),
+        color-mix(in oklch, var(--text-primary) 5%, transparent) 60%
+      )
+      border-box;
+}
+
+/* Page titles: full ink at the top of the line, easing toward the bottom. */
+.ui-ink {
+  background-image: linear-gradient(
+    180deg,
+    var(--text-primary) 40%,
+    color-mix(in oklch, var(--text-primary) 66%, transparent)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
 /* ================================================================ APP MOTION */
 
 /* Cards catch a soft light under the pointer, in their section's colour. */

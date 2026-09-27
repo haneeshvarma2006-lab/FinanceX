@@ -106,8 +106,7 @@ export function ConnectedFlows() {
             eyebrow="How it connects"
             title={
               <>
-                Everything talks to
-                <br className="hidden sm:block" /> everything else.
+                Everything talks to <em>everything else.</em>
               </>
             }
             body={`Separate apps stop at their own edge. In ${brand.name}, something that happens in one part of your life becomes action in another — automatically, through rules you can read and change.`}

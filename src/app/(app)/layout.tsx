@@ -31,17 +31,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="relative isolate flex min-h-dvh flex-col">
-      {/* The landing page's atmosphere, turned down for daily use: the grid
-          fades out within the first screen, and two domain glows sit behind
-          the header rather than across the work. */}
+      {/* The landing page's light, turned down for daily use: one soft
+          horizon above the work, and the same fine grain over the page. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 overflow-hidden"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-160 overflow-hidden opacity-70"
       >
-        <div className="lp-grid absolute inset-0 opacity-60" />
-        <div className="absolute -top-40 left-1/4 size-96 rounded-full bg-tasks/8 blur-3xl" />
-        <div className="absolute -top-48 right-1/4 size-96 rounded-full bg-trading/8 blur-3xl" />
+        <div className="lp-horizon lp-breathe absolute inset-0" />
       </div>
+      <div aria-hidden className="lp-noise" />
 
       <a
         href="#main"
@@ -53,14 +51,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header
         className={cn(
           'chrome sticky top-0 z-40 border-b border-border-subtle/70 bg-surface-sunken',
-          // The blur starts at sm on purpose. A backdrop-filter makes an
-          // element the containing block for its `position: fixed`
+          // From sm up the bar floats: a glass pill over the page. The blur
+          // lives on the pill and starts at sm on purpose — a backdrop-filter
+          // makes an element the containing block for its `position: fixed`
           // descendants, which on a phone would pin the bottom nav to the
           // bottom of this header instead of the viewport.
-          'sm:bg-surface-sunken/70 sm:backdrop-blur-xl sm:backdrop-saturate-150',
+          'sm:border-0 sm:bg-transparent sm:px-4 sm:pt-3 sm:shadow-none',
         )}
       >
-        <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 sm:h-14 sm:rounded-full sm:pr-2 sm:pl-5 sm:shadow-(--shadow-overlay) sm:ui-card sm:backdrop-blur-xl sm:backdrop-saturate-150">
           <Link
             href="/today"
             className="shrink-0 rounded-[var(--radius-control)] text-text-primary"

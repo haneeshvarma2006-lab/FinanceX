@@ -11,7 +11,7 @@ test('the landing page states the promise and runs without errors', async ({ pag
   page.on('pageerror', (e) => problems.push(e.message));
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('One system for');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your work');
   await expect(page.getByRole('heading', { name: /everything talks to/i })).toBeAttached();
   expect(problems).toEqual([]);
 });
@@ -49,7 +49,7 @@ test('a signed-in visitor still sees the landing page, with a way into the app',
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('One system for');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your work');
   await expect(page.getByRole('link', { name: 'Get early access' })).toHaveCount(0);
 
   await page.getByRole('banner').getByRole('link', { name: 'Open app' }).click();
@@ -102,7 +102,7 @@ test('with reduced motion the page renders whole and still', async ({ browser, b
   // Scrolling must not detach anything: a server/client tree mismatch would
   // make React re-render the page and drop these nodes.
   await page.locator('#analytics').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('One system for');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Your work');
 
   // No chart is left hidden waiting for an entrance that will never play.
   const hidden = await page.evaluate(

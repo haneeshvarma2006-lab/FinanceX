@@ -79,7 +79,14 @@ function Card({
           ))}
         </ul>
       </div>
-      <div className={cn('relative mt-auto', large ? 'px-7 pb-7 sm:px-8 sm:pb-8' : 'px-6 pb-6')}>
+      <div
+        className={cn(
+          'relative mt-auto',
+          // The large card's visual grows to fill the card, so a tall row
+          // shows more chart rather than an empty band.
+          large ? 'flex flex-1 flex-col px-7 pb-7 sm:px-8 sm:pb-8' : 'px-6 pb-6',
+        )}
+      >
         {visual}
       </div>
     </GlowCard>
@@ -100,18 +107,20 @@ const JOURNAL_ROWS = [
 
 function JournalVisual() {
   return (
-    <div className="rounded-xl border border-brand-line/80 bg-brand-canvas/60 p-4">
+    <div className="flex flex-1 flex-col rounded-xl border border-brand-line/80 bg-brand-canvas/60 p-4">
       <div className="mb-3 flex items-center justify-between text-2xs text-brand-ink-subtle">
         <span>Equity curve · last 12 trades</span>
         <span className="font-figures tabular-nums">Example</span>
       </div>
-      <AreaChart
-        values={equityCurve}
-        tone="trading"
-        height={160}
-        className="h-40"
-        label="Cumulative profit and loss over the last twelve example trades, ending higher despite a losing streak"
-      />
+      <div className="min-h-40 flex-1">
+        <AreaChart
+          values={equityCurve}
+          tone="trading"
+          height={160}
+          className="h-full min-h-40"
+          label="Cumulative profit and loss over the last twelve example trades, ending higher despite a losing streak"
+        />
+      </div>
       <dl className="mt-4 grid grid-cols-3 gap-3 border-y border-brand-line/60 py-3">
         {[
           ['Win rate', `${tradeStats.winRate}%`],
@@ -231,7 +240,11 @@ export function FeatureBento() {
         <FadeUp>
           <SectionHeader
             eyebrow="The product"
-            title="Three tools, one mind."
+            title={
+              <>
+                Three tools. <em>One mind.</em>
+              </>
+            }
             body="A trading journal, a finance tracker and a task manager — built as one system, so each makes the others smarter."
           />
         </FadeUp>

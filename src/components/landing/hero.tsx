@@ -1,12 +1,10 @@
-import type { CSSProperties } from 'react';
-import { ArrowRight, BellRing, CandlestickChart, Flame, ListChecks, Wallet } from 'lucide-react';
+import { ArrowRight, BellRing, Flame, ListChecks, Wallet } from 'lucide-react';
 import { brand } from '@/lib/brand';
 import { DashboardMockup } from './dashboard-mockup';
-import { EXAMPLE_NOTE, replaces } from './data';
+import { EXAMPLE_NOTE } from './data';
 import {
   EventStream,
   FadeUp,
-  Float,
   Magnetic,
   Spotlight,
   TiltStage,
@@ -14,9 +12,6 @@ import {
   type StreamEvent,
 } from './motion';
 import { ButtonLink, Container, Eyebrow, TONE_SOFT } from './primitives';
-import type { Tone } from './charts';
-
-const sheen = (tone: Tone) => ({ '--sheen': `var(--brand-${tone})` }) as CSSProperties;
 
 /**
  * Events the product raises, cycling in one slot beside the dashboard. Each
@@ -54,116 +49,120 @@ const EVENTS: readonly StreamEvent[] = [
   },
 ];
 
+const INK = 'lp-ink';
+const SERIF = 'lp-ink pr-1 font-serif font-normal italic tracking-normal';
+
+/**
+ * The hero, centred and quiet: one light source above, one sentence set
+ * large with a single serif accent, and the product rising into view below
+ * it in perspective. Everything moves once, on arrival, then gets out of
+ * the way.
+ */
 export function Hero({ signedIn = false }: { signedIn?: boolean }) {
   return (
-    <section className="relative overflow-hidden pt-16 pb-24 sm:pt-24 lg:pb-32">
-      {/* Aurora: three domain lights drifting behind everything, very slowly. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="lp-aurora-a absolute top-10 right-0 size-120 rounded-full bg-brand-trading/14 blur-3xl" />
-        <div className="lp-aurora-b absolute top-72 right-80 size-96 rounded-full bg-brand-tasks/14 blur-3xl" />
-        <div className="lp-aurora-c absolute -top-20 left-10 size-80 rounded-full bg-brand-finance/10 blur-3xl" />
+    // Pulled up under the floating nav so the light starts at the very top
+    // of the window rather than at a line below the bar.
+    <section className="relative -mt-18 overflow-hidden pt-38 sm:-mt-19 sm:pt-48">
+      {/* One light source: a soft horizon glow that breathes very slowly. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-240">
+        <div className="lp-horizon lp-breathe absolute inset-0" />
       </div>
-      <div aria-hidden className="lp-grid pointer-events-none absolute inset-0" />
       <Spotlight />
 
-      <Container className="relative grid items-center gap-16 lg:grid-cols-12 lg:gap-10">
-        <div className="flex flex-col items-start gap-7 lg:col-span-6 xl:col-span-5">
-          <FadeUp onMount>
-            <Eyebrow>
-              <span aria-hidden className="flex gap-1">
-                <span className="size-1.5 animate-pulse rounded-full bg-brand-tasks" />
-                <span className="size-1.5 animate-pulse rounded-full bg-brand-finance [animation-delay:300ms]" />
-                <span className="size-1.5 animate-pulse rounded-full bg-brand-trading [animation-delay:600ms]" />
-              </span>
-              {brand.category}
-            </Eyebrow>
-          </FadeUp>
+      <Container className="relative flex flex-col items-center text-center">
+        <FadeUp onMount>
+          <Eyebrow>
+            <span aria-hidden className="flex gap-1">
+              <span className="size-1.5 rounded-full bg-brand-tasks" />
+              <span className="size-1.5 rounded-full bg-brand-finance" />
+              <span className="size-1.5 rounded-full bg-brand-trading" />
+            </span>
+            {brand.category}
+          </Eyebrow>
+        </FadeUp>
 
-          <h1 className="text-4xl leading-[1.05] font-semibold tracking-tighter text-balance text-brand-ink sm:text-6xl lg:text-5xl xl:text-6xl">
-            <WordReveal
-              delay={0.1}
-              lines={[
-                [{ text: 'One' }, { text: 'system' }, { text: 'for' }],
-                [
-                  { text: 'Tasks,', className: 'lp-sheen', style: sheen('tasks') },
-                  { text: 'Money', className: 'lp-sheen', style: sheen('finance') },
-                  { text: '&' },
-                  { text: 'Trading.', className: 'lp-sheen', style: sheen('trading') },
-                ],
-              ]}
-            />
-          </h1>
+        <h1 className="mt-8 max-w-5xl text-5xl leading-[0.98] font-semibold tracking-tighter text-balance text-brand-ink sm:text-7xl lg:text-8xl">
+          <WordReveal
+            delay={0.15}
+            lines={[
+              [
+                { text: 'Your', className: INK },
+                { text: 'work,', className: INK },
+                { text: 'money', className: INK },
+                { text: '&', className: INK },
+                { text: 'trades', className: INK },
+              ],
+              [
+                { text: 'in', className: INK },
+                { text: 'one', className: SERIF },
+                { text: 'calm', className: SERIF },
+                { text: 'flow.', className: SERIF },
+              ],
+            ]}
+          />
+        </h1>
 
-          <FadeUp onMount delay={0.55}>
-            <p className="max-w-md text-lg text-pretty text-brand-ink-muted">
-              Stop switching between apps. Manage your work, finances, and trading performance from
-              a single intelligent command center.
-            </p>
-          </FadeUp>
+        <FadeUp onMount delay={0.7}>
+          <p className="mt-7 max-w-2xl text-lg text-pretty text-brand-ink-muted sm:text-xl">
+            A task manager, a finance tracker and a trading journal, built as one system — so what
+            happens in one part of your life becomes action in the others.
+          </p>
+        </FadeUp>
 
-          <FadeUp onMount delay={0.7} className="flex flex-wrap gap-3">
-            <Magnetic>
-              <ButtonLink href={signedIn ? '/today' : '/sign-up'} className="group">
-                {signedIn ? 'Open your dashboard' : 'Get early access'}{' '}
-                <ArrowRight
-                  aria-hidden
-                  className="size-4 transition-transform duration-[var(--duration-base)] group-hover:translate-x-1"
-                />
-              </ButtonLink>
-            </Magnetic>
-            <Magnetic>
-              <ButtonLink href="#connected" variant="secondary">
-                See how it works
-              </ButtonLink>
-            </Magnetic>
-          </FadeUp>
+        <FadeUp onMount delay={0.85} className="mt-10 flex flex-wrap justify-center gap-3">
+          <Magnetic>
+            <ButtonLink href={signedIn ? '/today' : '/sign-up'} className="group h-12 px-6">
+              {signedIn ? 'Open your dashboard' : 'Get early access'}
+              <ArrowRight
+                aria-hidden
+                className="size-4 transition-transform duration-[var(--duration-base)] group-hover:translate-x-1"
+              />
+            </ButtonLink>
+          </Magnetic>
+          <Magnetic>
+            <ButtonLink href="#connected" variant="secondary" className="h-12 px-6">
+              See how it works
+            </ButtonLink>
+          </Magnetic>
+        </FadeUp>
 
-          <FadeUp onMount delay={0.85} className="flex flex-col gap-3 pt-2">
-            <p className="text-xs text-brand-ink-subtle">Replaces the stack you juggle today</p>
-            <ul className="flex flex-wrap gap-2">
-              {replaces.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-full border border-brand-line/80 px-2.5 py-1 text-2xs text-brand-ink-muted line-through decoration-brand-ink-subtle/60"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </FadeUp>
-        </div>
+        <FadeUp onMount delay={1}>
+          <p className="mt-6 text-xs text-brand-ink-subtle">
+            No card required · Your data, exportable any time · Black &amp; White themes
+          </p>
+        </FadeUp>
+      </Container>
 
-        <FadeUp onMount delay={0.3} className="relative lg:col-span-6 xl:col-span-7">
-          <TiltStage>
-            <Float>
-              <DashboardMockup />
-            </Float>
-          </TiltStage>
-
-          {/* Wide screens only: on a phone it would cover the dashboard it
-              is annotating. It sits over the bottom-left corner, beside the
-              insight it echoes. */}
+      {/* The product, rising into place under a beam of light. */}
+      <Container className="relative mt-16 sm:mt-24">
+        <FadeUp onMount delay={0.5} className="relative mx-auto max-w-6xl">
           <div
             aria-hidden
-            className="pointer-events-none absolute -left-8 bottom-24 z-10 hidden lg:block"
+            className="pointer-events-none absolute inset-x-0 -top-px z-20 flex justify-center"
+          >
+            <div className="lp-beam h-px w-3/4" />
+          </div>
+          <div
+            aria-hidden
+            className="lp-beam-glow pointer-events-none absolute inset-x-0 -top-24 h-72"
+          />
+
+          <div className="lp-fade-bottom">
+            <TiltStage>
+              <DashboardMockup />
+            </TiltStage>
+          </div>
+
+          {/* Wide screens only: on a phone it would cover the dashboard. It
+              sits over the faded lower edge, where it hides nothing. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-10 bottom-14 z-20 hidden lg:block"
           >
             <EventStream events={EVENTS} />
           </div>
-
-          <div className="mt-6 flex items-center justify-center gap-5 text-2xs text-brand-ink-subtle">
-            <span className="inline-flex items-center gap-1.5">
-              <ListChecks aria-hidden className="size-3.5 text-brand-tasks" /> Tasks
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Wallet aria-hidden className="size-3.5 text-brand-finance" /> Money
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CandlestickChart aria-hidden className="size-3.5 text-brand-trading" /> Trading
-            </span>
-            <span aria-hidden>·</span>
-            <span>{EXAMPLE_NOTE}</span>
-          </div>
         </FadeUp>
+        <p className="mt-2 pb-6 text-center text-2xs text-brand-ink-subtle">{EXAMPLE_NOTE}</p>
       </Container>
     </section>
   );

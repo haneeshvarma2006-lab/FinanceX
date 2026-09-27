@@ -60,6 +60,15 @@ export function SiteFooter({ signedIn = false }: { signedIn?: boolean }) {
           ))}
         </div>
 
+        {/* The name, set enormous and fading into the page: the last thing
+            on the page is the brand, quietly. */}
+        <p
+          aria-hidden
+          className="lp-footer-mark -mb-6 overflow-hidden text-center text-[12.5vw] leading-[0.9] font-semibold tracking-tighter whitespace-nowrap select-none sm:-mb-10"
+        >
+          {brand.name}
+        </p>
+
         <div className="flex flex-col gap-3 border-t border-brand-line/60 pt-6 text-xs text-brand-ink-subtle sm:flex-row sm:items-start sm:justify-between">
           <p>
             © {new Date().getFullYear()} {brand.name}

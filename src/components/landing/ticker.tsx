@@ -40,11 +40,11 @@ const ITEMS: readonly { icon: LucideIcon; label: string; tone: Tone | 'neutral' 
 
 function Row({ hidden = false }: { hidden?: boolean }) {
   return (
-    <ul aria-hidden={hidden || undefined} className="flex shrink-0 items-center gap-3 pr-3">
+    <ul aria-hidden={hidden || undefined} className="flex shrink-0 items-center">
       {ITEMS.map(({ icon: Icon, label, tone }) => (
         <li
           key={label}
-          className="inline-flex items-center gap-2 rounded-full border border-brand-line/80 bg-brand-card/50 px-3.5 py-1.5 text-xs whitespace-nowrap text-brand-ink-muted"
+          className="inline-flex items-center gap-2.5 px-6 text-sm whitespace-nowrap text-brand-ink-subtle transition-colors hover:text-brand-ink"
         >
           <Icon
             aria-hidden
@@ -59,7 +59,7 @@ function Row({ hidden = false }: { hidden?: boolean }) {
 
 export function Ticker() {
   return (
-    <section aria-label="What it does" className="border-y border-brand-line/60 py-5">
+    <section aria-label="What it does" className="py-10">
       <div className="lp-ticker-wrap overflow-hidden">
         <div className="lp-ticker flex w-max">
           <Row />

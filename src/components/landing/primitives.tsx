@@ -59,7 +59,7 @@ export const TONE_DOT: Record<Tone, string> = {
 };
 
 export function Container({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('mx-auto w-full max-w-6xl px-5 sm:px-8', className)}>{children}</div>;
+  return <div className={cn('mx-auto w-full max-w-7xl px-5 sm:px-8', className)}>{children}</div>;
 }
 
 /** A tinted square holding an icon, in its domain's colour. */
@@ -91,8 +91,8 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   return (
     <p
       className={cn(
-        'inline-flex items-center gap-2 rounded-full border border-brand-line bg-brand-card/60',
-        'px-3 py-1 text-xs text-brand-ink-muted backdrop-blur',
+        'lp-pill inline-flex items-center gap-2 rounded-full px-3.5 py-1.5',
+        'text-xs text-brand-ink-muted',
         className,
       )}
     >
@@ -113,14 +113,26 @@ export function SectionHeader({
   align?: 'center' | 'left';
 }) {
   return (
-    <div className={cn('flex flex-col gap-4', align === 'center' && 'items-center text-center')}>
-      <p className="text-xs font-medium tracking-brand text-brand-ink-subtle uppercase">
+    <div className={cn('flex flex-col gap-5', align === 'center' && 'items-center text-center')}>
+      <p className="inline-flex items-center gap-3 text-xs font-medium tracking-brand text-brand-ink-subtle uppercase">
+        <span
+          aria-hidden
+          className="h-px w-8 bg-linear-to-r from-transparent to-brand-ink-subtle"
+        />
         {eyebrow}
+        <span
+          aria-hidden
+          className="h-px w-8 bg-linear-to-l from-transparent to-brand-ink-subtle"
+        />
       </p>
-      <h2 className="max-w-3xl text-3xl font-semibold tracking-tighter text-brand-ink sm:text-5xl">
+      {/* An <em> in the title is set in the serif italic: the one word that
+          carries the feeling, against Geist's engineering. */}
+      <h2 className="lp-ink max-w-4xl pb-1 text-4xl leading-[1.02] font-semibold tracking-tighter text-balance sm:text-6xl [&_em]:pr-1 [&_em]:font-serif [&_em]:font-normal [&_em]:tracking-normal">
         {title}
       </h2>
-      {body && <p className="max-w-xl text-base text-pretty text-brand-ink-muted">{body}</p>}
+      {body && (
+        <p className="max-w-2xl text-base text-pretty text-brand-ink-muted sm:text-lg">{body}</p>
+      )}
     </div>
   );
 }
@@ -145,12 +157,13 @@ export function ButtonLink({
     <Link
       href={href as '/'}
       className={cn(
-        'inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium',
+        'inline-flex h-11 items-center justify-center gap-2 rounded-full px-5.5 text-sm font-medium',
         'transition-[background-color,border-color,color,box-shadow] duration-[var(--duration-fast)]',
         'ease-(--ease-out-soft) focus-visible:outline-offset-4',
         variant === 'primary'
-          ? 'bg-brand-ink text-brand-canvas hover:bg-brand-ink/90 hover:shadow-[var(--shadow-overlay)]'
-          : 'border border-brand-line bg-brand-card/40 text-brand-ink backdrop-blur hover:border-brand-ink-subtle hover:bg-brand-card',
+          ? // A soft halo of the ink itself: the button glows rather than floats.
+            'lp-btn-glow bg-brand-ink text-brand-canvas hover:bg-brand-ink/90'
+          : 'lp-card text-brand-ink backdrop-blur hover:text-brand-ink',
         className,
       )}
     >
