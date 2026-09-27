@@ -131,7 +131,7 @@ test('search and filtering narrow the list and reset paging', async ({ page }) =
 
 test('logs a habit, builds a streak, and the toggle is idempotent', async ({ page }) => {
   await register(page, 'habit');
-  await page.goto('/habits');
+  await page.goto('/lifestyle');
 
   await page.getByLabel('Habit', { exact: true }).fill('Morning walk');
   await page.getByRole('button', { name: /add habit/i }).click();
@@ -278,7 +278,7 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
 
   for (const [link, heading] of [
     ['Tasks', /tasks/i],
-    ['Habits', /habits/i],
+    ['Lifestyle', /lifestyle/i],
     ['Goals', /goals/i],
     ['Finance', /finance/i],
     ['Trading', /trading journal/i],
@@ -287,6 +287,13 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
     await page.getByRole('link', { name: link, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(heading);
   }
+});
+
+test('the old habits address lands on Lifestyle', async ({ page }) => {
+  await register(page, 'lifestyle');
+  await page.goto('/habits');
+  await expect(page).toHaveURL(/\/lifestyle$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Lifestyle');
 });
 
 test('adding several in a row creates all of them', async ({ page }) => {
@@ -299,7 +306,7 @@ test('adding several in a row creates all of them', async ({ page }) => {
    * holds exactly what was submitted.
    */
   await register(page, 'rapid');
-  await page.goto('/habits');
+  await page.goto('/lifestyle');
 
   const field = page.getByLabel('Habit', { exact: true });
 
@@ -328,7 +335,7 @@ test('text typed during a submit is not discarded', async ({ page }) => {
    * wiped it; the new clear is conditional on the field being unchanged.
    */
   await register(page, 'typing');
-  await page.goto('/habits');
+  await page.goto('/lifestyle');
 
   const field = page.getByLabel('Habit', { exact: true });
 

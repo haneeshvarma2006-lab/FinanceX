@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/ui/money';
 import * as productivity from '@/modules/productivity/service';
 import { AddHabitForm, HabitRow } from './views';
 
-export const metadata: Metadata = { title: 'Habits' };
+export const metadata: Metadata = { title: 'Lifestyle' };
 
 /** The user's calendar day, which is what a streak is measured in. */
 function todayFor(timezone: string): string {
@@ -23,10 +23,10 @@ export default async function HabitsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Routine"
+        eyebrow="Daily life"
         accent="habits"
-        title="Habits"
-        description={`Streaks are counted in your own timezone (${user.timezone}).`}
+        title="Lifestyle"
+        description={`The habits that make up your days. Streaks are counted in your own timezone (${user.timezone}).`}
       />
 
       <Card accent="habits">

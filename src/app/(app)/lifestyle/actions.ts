@@ -10,7 +10,7 @@ import { habitEntrySchema, habitSchema } from '@/modules/productivity/validators
 export type { FormState };
 
 function revalidateAll() {
-  revalidatePath('/habits');
+  revalidatePath('/lifestyle');
   revalidatePath('/today');
 }
 

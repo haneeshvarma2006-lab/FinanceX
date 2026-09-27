@@ -10,6 +10,10 @@ const config: NextConfig = {
    * and is traced into the deployment as a real file.
    */
   serverExternalPackages: ['@node-rs/argon2'],
+  /** Habits became Lifestyle; old links and bookmarks keep working. */
+  async redirects() {
+    return [{ source: '/habits', destination: '/lifestyle', permanent: true }];
+  },
   experimental: {
     // Server Actions already enforce an Origin check; this narrows it explicitly.
     serverActions: { bodySizeLimit: '2mb' },

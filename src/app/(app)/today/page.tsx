@@ -90,7 +90,7 @@ export default async function TodayPage() {
               {snapshot.habits.atRisk.map((habit) => (
                 <Attention
                   key={habit.id}
-                  href="/habits"
+                  href="/lifestyle"
                   accent="habits"
                   icon={<Flame aria-hidden className="size-4" />}
                   title={`${habit.name}: ${habit.streak.current}-day streak`}
@@ -194,7 +194,7 @@ export default async function TodayPage() {
         {/* --------------------------------------------------------- habits */}
         <Card accent="habits">
           <CardHeader
-            title="Habits"
+            title="Lifestyle"
             accent="habits"
             icon={<Flame aria-hidden className="size-4" />}
             description={
@@ -202,7 +202,7 @@ export default async function TodayPage() {
                 ? `${snapshot.habits.doneToday} of ${snapshot.habits.items.length} done today`
                 : undefined
             }
-            action={<CardAction href="/habits">All habits</CardAction>}
+            action={<CardAction href="/lifestyle">Lifestyle</CardAction>}
           />
           <CardBody className="p-0">
             {!snapshot.habits.hasData ? (
@@ -210,7 +210,7 @@ export default async function TodayPage() {
                 icon={<Flame aria-hidden className="size-5" />}
                 title="No habits yet"
                 body="Pick one you could do on your worst day."
-                href="/habits"
+                href="/lifestyle"
                 accent="habits"
                 cta="Add your first habit"
               />
@@ -372,7 +372,7 @@ function Attention({
   title,
   detail,
 }: {
-  href: '/tasks' | '/habits' | '/goals' | '/finance' | '/trading';
+  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading';
   icon: React.ReactNode;
   /** The domain the item came from, so the row matches its section. */
   accent: Accent;
@@ -440,7 +440,7 @@ function Blank({
   icon: React.ReactNode;
   title: string;
   body: string;
-  href: '/tasks' | '/habits' | '/goals' | '/finance' | '/trading';
+  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading';
   cta: string;
   accent: Accent;
 }) {
