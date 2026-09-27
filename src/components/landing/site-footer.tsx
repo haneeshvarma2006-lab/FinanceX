@@ -3,6 +3,17 @@ import { brand } from '@/lib/brand';
 import { Wordmark } from '@/components/ui/wordmark';
 import { Container } from './primitives';
 
+const ACCOUNT_LINKS = {
+  signedOut: [
+    { href: '/sign-up', label: 'Get early access' },
+    { href: '/sign-in', label: 'Sign in' },
+  ],
+  signedIn: [
+    { href: '/today', label: 'Open app' },
+    { href: '/settings', label: 'Settings' },
+  ],
+} as const;
+
 const COLUMNS = [
   {
     title: 'Product',
@@ -12,13 +23,7 @@ const COLUMNS = [
       { href: '#analytics', label: 'Analytics' },
     ],
   },
-  {
-    title: 'Account',
-    links: [
-      { href: '/sign-up', label: 'Get early access' },
-      { href: '/sign-in', label: 'Sign in' },
-    ],
-  },
+  { title: 'Account', links: ACCOUNT_LINKS.signedOut },
   {
     title: 'Legal',
     links: [
@@ -28,7 +33,7 @@ const COLUMNS = [
   },
 ] as const;
 
-export function SiteFooter() {
+export function SiteFooter({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <footer className="border-t border-brand-line/60">
       <Container className="flex flex-col gap-12 py-14">
@@ -40,15 +45,17 @@ export function SiteFooter() {
           {COLUMNS.map((column) => (
             <nav key={column.title} aria-label={column.title} className="flex flex-col gap-3">
               <p className="text-xs font-medium text-brand-ink">{column.title}</p>
-              {column.links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href as '/'}
-                  className="text-sm text-brand-ink-muted transition-colors hover:text-brand-ink"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {(column.title === 'Account' && signedIn ? ACCOUNT_LINKS.signedIn : column.links).map(
+                (link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href as '/'}
+                    className="text-sm text-brand-ink-muted transition-colors hover:text-brand-ink"
+                  >
+                    {link.label}
+                  </Link>
+                ),
+              )}
             </nav>
           ))}
         </div>

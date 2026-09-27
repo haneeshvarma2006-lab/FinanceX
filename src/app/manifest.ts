@@ -42,8 +42,8 @@ export default function manifest(): MetadataRoute.Manifest {
  * somewhere else, and a test asserts the pair stays in step.
  */
 export const MANIFEST_SRGB: Record<string, string> = {
-  [dark.surfaceSunken]: '#0c1018',
-  [dark.surfaceBase]: '#11151f',
+  [dark.surfaceSunken]: '#09090f',
+  [dark.surfaceBase]: '#0d0f19',
   [light.surfaceSunken]: '#f2f3f7',
   [light.surfaceBase]: '#fbfbfd',
 };

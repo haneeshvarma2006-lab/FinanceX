@@ -13,14 +13,19 @@
  */
 
 export const typography = {
+  /**
+   * Geist first, everywhere — the app and the marketing page are one product
+   * and read as one. Inter stays as the fallback while Geist loads and for
+   * any glyph Geist does not cover.
+   */
   fontSans:
-    "'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    "var(--font-geist-sans), 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   fontMono: "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace",
 
   /**
    * Geist, self-hosted from the `geist` package (SIL OFL 1.1) through
-   * next/font/local — no request leaves the origin. Marketing headlines and
-   * the landing page; the app itself stays on Inter.
+   * next/font/local — no request leaves the origin. The whole product is
+   * set in it; these aliases exist so the landing components can name intent.
    */
   fontDisplay: "var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif",
   /**
@@ -111,33 +116,35 @@ export const breakpoints = {
 /**
  * Dark is primary, not an inversion applied afterwards.
  *
- * The foundation is a cinematic navy — a near-black with a measurable blue
- * cast (hue 265) rather than neutral grey, so the surface has depth without
- * any gradient doing the work.
+ * Built on the brand palette below, so the app and the marketing page are
+ * the same surface: the page sits on the brand canvas (#09090F), cards on the
+ * brand card (#111827), hairlines in the brand line (#1F2937), and the three
+ * domain accents are the brand's own blue, emerald and violet.
  */
 export const dark = {
-  surfaceSunken: 'oklch(0.145 0.021 265)',
-  surfaceBase: 'oklch(0.175 0.023 265)',
-  surfaceRaised: 'oklch(0.212 0.024 265)',
-  surfaceOverlay: 'oklch(0.252 0.026 265)',
-  surfaceInset: 'oklch(0.155 0.022 265)',
+  surfaceSunken: 'oklch(0.143 0.013 284.6)',
+  surfaceBase: 'oklch(0.172 0.02 272)',
+  surfaceRaised: 'oklch(0.21 0.032 264.7)',
+  surfaceOverlay: 'oklch(0.248 0.032 262)',
+  surfaceInset: 'oklch(0.158 0.018 276)',
 
-  borderSubtle: 'oklch(0.29 0.022 265)',
-  borderStrong: 'oklch(0.4 0.026 265)',
+  borderSubtle: 'oklch(0.278 0.03 256.8)',
+  borderStrong: 'oklch(0.373 0.034 259.7)',
 
-  // Contrast on surfaceBase: primary ~15:1, secondary ~7.5:1, muted ~4.6:1.
-  textPrimary: 'oklch(0.97 0.004 265)',
-  textSecondary: 'oklch(0.785 0.013 265)',
-  textMuted: 'oklch(0.635 0.016 265)',
+  // Contrast on surfaceRaised: primary ~16:1, secondary ~11:1, muted ~6.9:1.
+  textPrimary: 'oklch(0.984 0.003 247.9)',
+  textSecondary: 'oklch(0.869 0.022 252.9)',
+  textMuted: 'oklch(0.711 0.035 256.8)',
 
-  // Equal lightness, so no domain accent dominates the others.
-  accentTasks: 'oklch(0.7 0.15 250)',
+  // The brand's domain colours, exactly: #3B82F6, #10B981, #8B5CF6.
+  accentTasks: 'oklch(0.623 0.188 259.8)',
   accentHabits: 'oklch(0.72 0.13 175)',
-  accentFinance: 'oklch(0.72 0.15 162)',
-  accentTrading: 'oklch(0.7 0.16 300)',
+  accentFinance: 'oklch(0.696 0.149 162.5)',
+  accentTrading: 'oklch(0.606 0.219 292.7)',
 
-  accentContrast: 'oklch(0.145 0.021 265)',
-  accentSoft: 'oklch(0.7 0.15 250 / 0.14)',
+  // Ink on the accent, not canvas: white on #3B82F6 is under 4:1.
+  accentContrast: 'oklch(0.143 0.013 284.6)',
+  accentSoft: 'oklch(0.623 0.188 259.8 / 0.16)',
 
   positive: 'oklch(0.755 0.155 162)',
   positiveSoft: 'oklch(0.755 0.155 162 / 0.13)',
@@ -146,7 +153,7 @@ export const dark = {
   warning: 'oklch(0.8 0.145 78)',
   warningSoft: 'oklch(0.8 0.145 78 / 0.13)',
 
-  focusRing: 'oklch(0.8 0.13 250)',
+  focusRing: 'oklch(0.72 0.15 259.8)',
 } as const;
 
 /** Considered values, not an automatic inversion of the dark set. */

@@ -5,7 +5,7 @@ import { EXAMPLE_NOTE, replaces } from './data';
 import { FadeUp, Float } from './motion';
 import { ButtonLink, Container, Eyebrow } from './primitives';
 
-export function Hero() {
+export function Hero({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <section className="relative overflow-hidden pt-16 pb-24 sm:pt-24 lg:pb-32">
       {/* Texture and light, both faint: a grid that fades out, and one glow
@@ -52,8 +52,9 @@ export function Hero() {
           </FadeUp>
 
           <FadeUp onMount delay={0.15} className="flex flex-wrap gap-3">
-            <ButtonLink href="/sign-up">
-              Get early access <ArrowRight aria-hidden className="size-4" />
+            <ButtonLink href={signedIn ? '/today' : '/sign-up'}>
+              {signedIn ? 'Open your dashboard' : 'Get early access'}{' '}
+              <ArrowRight aria-hidden className="size-4" />
             </ButtonLink>
             <ButtonLink href="#connected" variant="secondary">
               See how it works

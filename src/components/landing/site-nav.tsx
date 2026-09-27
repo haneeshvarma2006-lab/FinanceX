@@ -8,7 +8,7 @@ const LINKS = [
   { href: '#analytics', label: 'Analytics' },
 ] as const;
 
-export function SiteNav() {
+export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <header className="sticky top-0 z-50 border-b border-brand-line/60 bg-brand-canvas/70 backdrop-blur-xl">
       <Container className="flex h-16 items-center gap-8">
@@ -29,15 +29,23 @@ export function SiteNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/sign-in"
-            className="hidden rounded-full px-3 py-2 text-sm text-brand-ink-muted transition-colors hover:text-brand-ink sm:inline-flex"
-          >
-            Sign in
-          </Link>
-          <ButtonLink href="/sign-up" className="h-9 px-4">
-            Get early access
-          </ButtonLink>
+          {signedIn ? (
+            <ButtonLink href="/today" className="h-9 px-4">
+              Open app
+            </ButtonLink>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden rounded-full px-3 py-2 text-sm text-brand-ink-muted transition-colors hover:text-brand-ink sm:inline-flex"
+              >
+                Sign in
+              </Link>
+              <ButtonLink href="/sign-up" className="h-9 px-4">
+                Get early access
+              </ButtonLink>
+            </>
+          )}
         </div>
       </Container>
     </header>

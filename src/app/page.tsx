@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { brand } from '@/lib/brand';
 import { cn } from '@/lib/cn';
@@ -22,12 +21,12 @@ export const metadata: Metadata = {
  * The marketing page.
  *
  * Sections are server components; only the motion wrappers and the
- * pointer-following glow run in the browser. Someone already signed in is
- * taken to their dashboard, since the pitch is for people who have not yet
- * started.
+ * pointer-following glow run in the browser. It shows to everyone — signed
+ * in or not — so the front door is always the same; a signed-in visitor just
+ * gets "Open app" where everyone else gets the sign-up buttons.
  */
 export default async function LandingPage() {
-  if (await getCurrentUser()) redirect('/today');
+  const signedIn = Boolean(await getCurrentUser());
 
   return (
     <div
@@ -37,16 +36,16 @@ export default async function LandingPage() {
       )}
     >
       <MotionRoot>
-        <SiteNav />
+        <SiteNav signedIn={signedIn} />
         <main id="main">
-          <Hero />
+          <Hero signedIn={signedIn} />
           <FeatureBento />
           <ConnectedFlows />
           <Analytics />
           <Audience />
-          <FinalCta />
+          <FinalCta signedIn={signedIn} />
         </main>
-        <SiteFooter />
+        <SiteFooter signedIn={signedIn} />
       </MotionRoot>
     </div>
   );
