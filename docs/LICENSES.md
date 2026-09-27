@@ -127,3 +127,14 @@ pnpm outdated         # version drift
 
 Adding a dependency means adding it to this inventory and checking its licence
 first, not afterwards.
+
+## Added for the landing page (2026-09-27)
+
+| Package         | Version | Licence                                              | Use                                                                                       |
+| --------------- | ------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `geist`         | 1.7.2   | SIL Open Font License 1.1 (`npm view geist license`) | Geist Sans and Geist Mono, self-hosted via `next/font/local`; no third-party font request |
+| `framer-motion` | 13.4.4  | MIT                                                  | Landing-page motion                                                                       |
+
+Satoshi was requested alongside Geist and Inter but is **not** used: it is not
+distributed on npm and ships under the Indian Type Foundry's own free-font
+licence rather than an OSI or OFL licence, which was not reviewed.

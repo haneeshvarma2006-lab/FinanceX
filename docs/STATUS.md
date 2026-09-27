@@ -12,7 +12,7 @@ command named, in this environment. Nothing is asserted from inspection alone.
 | `pnpm typecheck`    | ✅ clean                                                  |
 | `pnpm audit`        | ✅ **no known vulnerabilities**                           |
 | `pnpm test`         | ✅ **386 passing** (296 app + 90 package)                 |
-| `pnpm test:e2e`     | ✅ **64 passing**, Chromium, production build             |
+| `pnpm test:e2e`     | ✅ **68 passing**, Chromium, production build             |
 | `pnpm build`        | ✅ 24 routes                                              |
 | Migrations          | ✅ 9 applied to clean databases                           |
 | CI workflow         | ⚠️ **never executed** — written, unverified as a workflow |

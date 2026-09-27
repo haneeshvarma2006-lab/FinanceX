@@ -7,7 +7,14 @@ import { CheckboxField, Field, FormAlert } from '@/components/ui/form';
 import { signUpAction, type FormState } from '../actions';
 import { brand } from '@/lib/brand';
 
-export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function SignUpForm({
+  googleEnabled,
+  initialEmail,
+}: {
+  googleEnabled: boolean;
+  /** Carried over from the landing page's early-access field. */
+  initialEmail?: string;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(signUpAction, {});
 
   return (
@@ -43,6 +50,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
           label="Email"
           name="email"
           type="email"
+          defaultValue={initialEmail}
           autoComplete="email"
           required
           error={state.fieldErrors?.email}

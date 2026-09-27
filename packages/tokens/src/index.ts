@@ -18,6 +18,20 @@ export const typography = {
   fontMono: "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace",
 
   /**
+   * Geist, self-hosted from the `geist` package (SIL OFL 1.1) through
+   * next/font/local — no request leaves the origin. Marketing headlines and
+   * the landing page; the app itself stays on Inter.
+   */
+  fontDisplay: "var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif",
+  /**
+   * Figures on the landing page: Geist Sans, set with tabular numerals by the
+   * components. Proportional, not monospace — money set in a code face reads
+   * as a terminal, not a finance product. Geist Mono is kept for rule text.
+   */
+  fontFigures: "var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif",
+  fontCode: "var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace",
+
+  /**
    * Eight sizes. Enough for an information-dense product, few enough that
    * hierarchy has to come from weight, colour and space rather than from
    * ever-larger text.
@@ -173,5 +187,28 @@ export const light = {
  * type of `dark` would make `light` — a different set of values for the same
  * names — fail to be a `ColorScheme` at all.
  */
+/**
+ * The brand palette, as specified for the marketing site.
+ *
+ * Theme-independent on purpose: the landing page is always dark, so these do
+ * not change with `data-theme`. Given as sRGB hex in the brief and converted to
+ * OKLCH here, exactly, so every colour in the product is in one format.
+ *
+ *   canvas #09090F  card #111827  line #1F2937  ink #F8FAFC
+ *   tasks  #3B82F6  finance #10B981  trading #8B5CF6
+ *   inkMuted #94A3B8 (7.8:1 on canvas)  inkSubtle #64748B (large text only)
+ */
+export const brandPalette = {
+  canvas: 'oklch(0.143 0.013 284.6)',
+  card: 'oklch(0.21 0.032 264.7)',
+  line: 'oklch(0.278 0.03 256.8)',
+  ink: 'oklch(0.984 0.003 247.9)',
+  inkMuted: 'oklch(0.711 0.035 256.8)',
+  inkSubtle: 'oklch(0.554 0.041 257.4)',
+  tasks: 'oklch(0.623 0.188 259.8)',
+  finance: 'oklch(0.696 0.149 162.5)',
+  trading: 'oklch(0.606 0.219 292.7)',
+} as const;
+
 export type ColorScheme = Record<keyof typeof dark, string>;
 export const themes = { dark, light } as const;

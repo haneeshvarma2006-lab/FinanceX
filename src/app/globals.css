@@ -109,6 +109,78 @@ p {
   box-shadow: var(--shadow-edge);
 }
 
+/* ======================================================== LANDING PAGE */
+
+/**
+ * A faint engineering grid behind the landing hero — the texture of a tool,
+ * not a decoration — fading out towards the edges so it never frames content.
+ */
+.lp-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklch, var(--brand-line) 55%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--brand-line) 55%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 3.5rem 3.5rem;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
+}
+
+/**
+ * The pointer-following glow on landing cards. The colour arrives as --glow
+ * from the component, so each card glows in its own domain's accent.
+ */
+.lp-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    22rem circle at var(--x, 50%) var(--y, 0%),
+    color-mix(in oklch, var(--glow) 16%, transparent),
+    transparent 65%
+  );
+  transition: opacity var(--duration-base) var(--ease-out-soft);
+}
+.lp-glow:hover::before {
+  opacity: 1;
+}
+/* The border lights up under the pointer too, in the same colour. */
+.lp-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    16rem circle at var(--x, 50%) var(--y, 0%),
+    color-mix(in oklch, var(--glow) 60%, transparent),
+    transparent 70%
+  );
+  mask:
+    linear-gradient(black, black) content-box,
+    linear-gradient(black, black);
+  mask-composite: exclude;
+  transition: opacity var(--duration-base) var(--ease-out-soft);
+}
+.lp-glow:hover::after {
+  opacity: 1;
+}
+
+/* The travelling event dot in the "how it connects" section. */
+.lp-dot {
+  box-shadow: 0 0 0.75rem currentColor;
+}
+
 /* Scrollbars that belong to the surface rather than the operating system. */
 @supports (scrollbar-color: auto) {
   * {

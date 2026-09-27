@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { generateCss } from './css';
-import { dark, light } from './index';
+import { brandPalette, dark, light } from './index';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = resolve(here, '__fixtures__/globals-before.css');
@@ -121,7 +121,11 @@ describe('themes', () => {
   });
 
   it('use no colour format but OKLCH', () => {
-    for (const [name, value] of [...Object.entries(dark), ...Object.entries(light)]) {
+    for (const [name, value] of [
+      ...Object.entries(dark),
+      ...Object.entries(light),
+      ...Object.entries(brandPalette),
+    ]) {
       expect(value, name).toMatch(/^oklch\(/);
     }
   });

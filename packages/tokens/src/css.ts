@@ -1,4 +1,5 @@
 import {
+  brandPalette,
   breakpoints,
   dark,
   light,
@@ -41,6 +42,9 @@ export function primitivesCss(): string {
     '@theme {',
     declare('font-sans', typography.fontSans),
     declare('font-mono', typography.fontMono),
+    declare('font-display', typography.fontDisplay),
+    declare('font-figures', typography.fontFigures),
+    declare('font-code', typography.fontCode),
     '',
     ...Object.entries(typography.size).flatMap(([key, { size, line }]) => [
       declare(`text-${key}`, size),
@@ -133,6 +137,23 @@ export function utilitiesCss(): string {
   ].join('\n');
 }
 
+/**
+ * The brand palette: `--brand-*` custom properties plus `bg-brand-*` style
+ * utilities. Declared once in :root because it does not vary by theme.
+ */
+export function brandCss(): string {
+  const entries = Object.entries(brandPalette);
+  return [
+    ':root {',
+    ...entries.map(([key, value]) => declare(`brand-${kebab(key)}`, value)),
+    '}',
+    '',
+    '@theme inline {',
+    ...entries.map(([key]) => declare(`color-brand-${kebab(key)}`, `var(--brand-${kebab(key)})`)),
+    '}',
+  ].join('\n');
+}
+
 export const GENERATED_HEADER = `/**
  * GENERATED FILE — do not edit.
  *
@@ -152,6 +173,8 @@ export function generateCss(): string {
     lightShadowCss(),
     '',
     utilitiesCss(),
+    '',
+    brandCss(),
     '',
   ].join('\n');
 }

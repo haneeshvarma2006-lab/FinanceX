@@ -26,7 +26,13 @@ export const brand = {
    */
   wordmark: { lead: 'Nested', accent: 'Flow' },
 
-  description: 'Tasks, habits, goals, finances and trading — connected.',
+  description: 'The personal wealth operating system: one place for your tasks, money and trading.',
+
+  /** What the product is, in the fewest words. Used as the landing eyebrow. */
+  category: 'Personal wealth operating system',
+
+  /** The promise, used in page titles and share cards. */
+  tagline: 'One system for tasks, money and trading.',
 
   /**
    * The possessive form, because "Nested Flow's" is built by hand in a few
