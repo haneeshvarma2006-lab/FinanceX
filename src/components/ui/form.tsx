@@ -16,9 +16,12 @@ import { cn } from '@/lib/cn';
  * beside it align without per-page correction.
  */
 const CONTROL = [
-  'w-full rounded-[var(--radius-control)] border bg-surface-inset',
+  'w-full rounded-lg border bg-surface-inset/80 shadow-(--shadow-edge)',
   'px-3 py-2 text-sm text-text-primary placeholder:text-text-muted',
-  'transition-[border-color,background-color] duration-[var(--duration-fast)]',
+  'transition-[border-color,background-color,box-shadow] duration-[var(--duration-fast)]',
+  // A soft ring in the accent when a field takes focus, on top of the
+  // global outline, so the active field is unmistakable at a glance.
+  'focus:border-accent/60 focus:bg-surface-inset focus:ring-4 focus:ring-accent/15',
   'ease-(--ease-out-soft)',
   'disabled:cursor-not-allowed disabled:opacity-45',
 ].join(' ');

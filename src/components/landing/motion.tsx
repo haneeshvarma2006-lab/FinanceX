@@ -7,6 +7,8 @@ import {
   motion,
   useInView,
   useReducedMotion,
+  useScroll,
+  useSpring,
   type Transition,
 } from 'framer-motion';
 import { cn } from '@/lib/cn';
@@ -37,11 +39,13 @@ export function FadeUp({
   /** Animate on load rather than on scroll — for content already in view. */
   onMount?: boolean;
 }) {
-  const reveal = { opacity: 1, y: 0 };
+  // A little blur clearing as the block rises: the content comes into focus
+  // rather than merely sliding in.
+  const reveal = { opacity: 1, y: 0, filter: 'blur(0px)' };
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18, filter: 'blur(8px)' }}
       {...(onMount
         ? { animate: reveal }
         : { whileInView: reveal, viewport: { once: true, margin: '-80px' } })}
@@ -49,6 +53,22 @@ export function FadeUp({
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * A hairline across the bottom of the nav that fills with the three domain
+ * colours as you read down the page.
+ */
+export function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 220, damping: 40, restDelta: 0.001 });
+  return (
+    <motion.div
+      aria-hidden
+      style={{ scaleX }}
+      className="absolute inset-x-0 -bottom-px h-px origin-left bg-linear-to-r from-brand-tasks via-brand-trading to-brand-finance"
+    />
   );
 }
 

@@ -55,3 +55,36 @@ test('a signed-in visitor still sees the landing page, with a way into the app',
   await page.getByRole('banner').getByRole('link', { name: 'Open app' }).click();
   await expect(page).toHaveURL(/\/today$/);
 });
+
+test('the Black / White switch flips the theme and remembers it', async ({ page, context }) => {
+  await context.clearCookies();
+  await page.goto('/');
+  const html = page.locator('html');
+  const toggle = page.getByRole('button', { name: /switch between the black and white themes/i });
+
+  // Until the page has hydrated the button does nothing, so each switch
+  // retries its click until the theme actually changes rather than racing
+  // the page's scripts.
+  const switchTo = async (theme: 'light' | 'dark') => {
+    await expect(async () => {
+      const now = (await html.getAttribute('data-theme')) === 'light' ? 'light' : 'dark';
+      if (now !== theme) await toggle.click();
+      if (theme === 'light') {
+        await expect(html).toHaveAttribute('data-theme', 'light', { timeout: 500 });
+      } else {
+        await expect(html).not.toHaveAttribute('data-theme', 'light', { timeout: 500 });
+      }
+    }).toPass();
+  };
+
+  await expect(html).not.toHaveAttribute('data-theme', 'light');
+
+  await switchTo('light');
+  // Rendered by the server from the cookie, so it survives a reload.
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+
+  await switchTo('dark');
+  await page.reload();
+  await expect(html).not.toHaveAttribute('data-theme', 'light');
+});

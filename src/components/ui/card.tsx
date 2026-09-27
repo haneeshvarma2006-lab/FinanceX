@@ -15,12 +15,25 @@ import { cn } from '@/lib/cn';
 /** Which domain a card belongs to. Colour is never the only signal. */
 export type Accent = 'tasks' | 'habits' | 'finance' | 'trading' | 'accent';
 
-const ACCENT_CHIP: Record<Accent, string> = {
-  tasks: 'bg-tasks/12 text-tasks',
-  habits: 'bg-habits/12 text-habits',
-  finance: 'bg-finance/12 text-finance',
-  trading: 'bg-trading/12 text-trading',
-  accent: 'bg-accent-soft text-accent',
+export const ACCENT_CHIP: Record<Accent, string> = {
+  tasks: 'bg-tasks/12 text-tasks ring-tasks/25',
+  habits: 'bg-habits/12 text-habits ring-habits/25',
+  finance: 'bg-finance/12 text-finance ring-finance/25',
+  trading: 'bg-trading/12 text-trading ring-trading/25',
+  accent: 'bg-accent-soft text-accent ring-accent/25',
+};
+
+/**
+ * A lit top edge in the domain's colour, fading out at both ends — the same
+ * treatment the landing page gives its connected steps. It says which part of
+ * the product a card belongs to before a word of it is read.
+ */
+const ACCENT_EDGE: Record<Accent, string> = {
+  tasks: 'before:via-tasks/70',
+  habits: 'before:via-habits/70',
+  finance: 'before:via-finance/70',
+  trading: 'before:via-trading/70',
+  accent: 'before:via-accent/70',
 };
 
 export function Card({
@@ -28,12 +41,15 @@ export function Card({
   className,
   as: Tag = 'section',
   tone,
+  accent,
 }: {
   children: ReactNode;
   className?: string;
   as?: 'section' | 'div' | 'article';
   /** Tints the border only. The card surface never changes colour. */
   tone?: 'warning' | 'negative' | 'accent';
+  /** Lights the top edge in a domain colour. */
+  accent?: Accent;
 }) {
   const toneBorder = tone
     ? { warning: 'border-warning/35', negative: 'border-negative/35', accent: 'border-accent/35' }[
@@ -44,8 +60,18 @@ export function Card({
   return (
     <Tag
       className={cn(
-        'rounded-[var(--radius-card)] border bg-surface-raised',
+        'relative rounded-2xl border bg-surface-raised/75 backdrop-blur-sm',
+        // A whisper of light from above, so the panel reads as material.
+        'bg-linear-to-b from-text-primary/3 to-transparent',
         'shadow-[var(--shadow-raised),var(--shadow-edge)]',
+        'transition-[border-color,box-shadow] duration-[var(--duration-base)] ease-(--ease-out-soft)',
+        'hover:shadow-[var(--shadow-overlay),var(--shadow-edge)]',
+        accent &&
+          cn(
+            'before:pointer-events-none before:absolute before:inset-x-6 before:top-0 before:h-px',
+            'before:bg-linear-to-r before:from-transparent before:to-transparent',
+            ACCENT_EDGE[accent],
+          ),
         toneBorder,
         className,
       )}
@@ -76,14 +102,13 @@ export function CardHeader({
   id?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-3.5">
-      <div className="flex min-w-0 items-start gap-3">
+    <div className="flex items-center justify-between gap-4 border-b border-border-subtle/70 px-5 py-4">
+      <div className="flex min-w-0 items-center gap-3">
         {icon && (
           <span
             aria-hidden
             className={cn(
-              'mt-px inline-flex size-7 shrink-0 items-center justify-center',
-              'rounded-[var(--radius-control)]',
+              'inline-flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset',
               ACCENT_CHIP[accent],
             )}
           >
@@ -91,7 +116,7 @@ export function CardHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h2 id={id} className="text-sm leading-5 font-medium tracking-tight text-text-primary">
+          <h2 id={id} className="text-sm leading-5 font-semibold tracking-tight text-text-primary">
             {title}
           </h2>
           {description && <p className="mt-0.5 text-xs text-text-secondary">{description}</p>}
@@ -114,10 +139,10 @@ export function CardAction({ href, children }: { href: string; children: ReactNo
     <Link
       href={href as '/tasks'}
       className={cn(
-        'group inline-flex items-center gap-0.5 rounded-[var(--radius-control)]',
-        'py-0.5 pr-1 pl-1.5 text-xs text-text-secondary',
+        'group inline-flex items-center gap-0.5 rounded-full border border-border-subtle/70',
+        'py-1 pr-1.5 pl-2.5 text-xs text-text-secondary',
         'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
-        'hover:bg-surface-overlay hover:text-text-primary',
+        'hover:border-border-strong hover:bg-surface-overlay hover:text-text-primary',
       )}
     >
       {children}
@@ -195,7 +220,7 @@ export function Stat({
         className={cn(
           // Never truncated: an elided figure is worse than a wrapped one,
           // and money is the whole reason the tile exists.
-          'numeric mt-1.5 text-lg leading-tight tracking-tight break-words sm:text-xl',
+          'numeric mt-2 text-lg leading-tight font-semibold tracking-tight break-words sm:text-xl',
           tone ? valueTone : 'text-text-primary',
         )}
       >

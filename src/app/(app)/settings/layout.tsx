@@ -11,7 +11,11 @@ const TABS = [
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <PageHeader title="Settings" description="Your account, your data, your choices." />
+      <PageHeader
+        eyebrow="Account"
+        title="Settings"
+        description="Your account, your data, your choices."
+      />
 
       <nav aria-label="Settings sections" className="mb-6 border-b border-border-subtle">
         <ul className="-mb-px flex flex-wrap gap-1">

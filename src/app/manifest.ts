@@ -42,10 +42,10 @@ export default function manifest(): MetadataRoute.Manifest {
  * somewhere else, and a test asserts the pair stays in step.
  */
 export const MANIFEST_SRGB: Record<string, string> = {
-  [dark.surfaceSunken]: '#09090f',
-  [dark.surfaceBase]: '#0d0f19',
-  [light.surfaceSunken]: '#f2f3f7',
-  [light.surfaceBase]: '#fbfbfd',
+  [dark.surfaceSunken]: '#000000',
+  [dark.surfaceBase]: '#0a0a0a',
+  [light.surfaceSunken]: '#fafafa',
+  [light.surfaceBase]: '#ffffff',
 };
 
 export function toHexish(oklch: string): string {

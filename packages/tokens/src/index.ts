@@ -114,37 +114,37 @@ export const breakpoints = {
 } as const;
 
 /**
- * Dark is primary, not an inversion applied afterwards.
+ * Black — the dark theme, and the default.
  *
- * Built on the brand palette below, so the app and the marketing page are
- * the same surface: the page sits on the brand canvas (#09090F), cards on the
- * brand card (#111827), hairlines in the brand line (#1F2937), and the three
- * domain accents are the brand's own blue, emerald and violet.
+ * Pure neutrals, no hue at all: black canvas, near-black cards, grey
+ * hairlines, white ink. Colour is reserved for meaning — the three domain
+ * accents and the money signals — so on a monochrome surface they are the
+ * only things that glow.
  */
 export const dark = {
-  surfaceSunken: 'oklch(0.143 0.013 284.6)',
-  surfaceBase: 'oklch(0.172 0.02 272)',
-  surfaceRaised: 'oklch(0.21 0.032 264.7)',
-  surfaceOverlay: 'oklch(0.248 0.032 262)',
-  surfaceInset: 'oklch(0.158 0.018 276)',
+  surfaceSunken: 'oklch(0 0 0)',
+  surfaceBase: 'oklch(0.145 0 0)',
+  surfaceRaised: 'oklch(0.178 0 0)',
+  surfaceOverlay: 'oklch(0.218 0 0)',
+  surfaceInset: 'oklch(0.12 0 0)',
 
-  borderSubtle: 'oklch(0.278 0.03 256.8)',
-  borderStrong: 'oklch(0.373 0.034 259.7)',
+  borderSubtle: 'oklch(0.269 0 0)',
+  borderStrong: 'oklch(0.371 0 0)',
 
-  // Contrast on surfaceRaised: primary ~16:1, secondary ~11:1, muted ~6.9:1.
-  textPrimary: 'oklch(0.984 0.003 247.9)',
-  textSecondary: 'oklch(0.869 0.022 252.9)',
-  textMuted: 'oklch(0.711 0.035 256.8)',
+  // Contrast on surfaceRaised: primary ~17:1, secondary ~12:1, muted ~7:1.
+  textPrimary: 'oklch(0.985 0 0)',
+  textSecondary: 'oklch(0.87 0 0)',
+  textMuted: 'oklch(0.708 0 0)',
 
-  // The brand's domain colours, exactly: #3B82F6, #10B981, #8B5CF6.
+  // The brand's domain colours: #3B82F6, #10B981, #8B5CF6.
   accentTasks: 'oklch(0.623 0.188 259.8)',
   accentHabits: 'oklch(0.72 0.13 175)',
   accentFinance: 'oklch(0.696 0.149 162.5)',
   accentTrading: 'oklch(0.606 0.219 292.7)',
 
-  // Ink on the accent, not canvas: white on #3B82F6 is under 4:1.
-  accentContrast: 'oklch(0.143 0.013 284.6)',
-  accentSoft: 'oklch(0.623 0.188 259.8 / 0.16)',
+  // The generic accent is ink itself (see css.ts), so what sits on it is black.
+  accentContrast: 'oklch(0 0 0)',
+  accentSoft: 'oklch(0.985 0 0 / 0.1)',
 
   positive: 'oklch(0.755 0.155 162)',
   positiveSoft: 'oklch(0.755 0.155 162 / 0.13)',
@@ -153,31 +153,36 @@ export const dark = {
   warning: 'oklch(0.8 0.145 78)',
   warningSoft: 'oklch(0.8 0.145 78 / 0.13)',
 
-  focusRing: 'oklch(0.72 0.15 259.8)',
+  focusRing: 'oklch(0.87 0 0)',
 } as const;
 
-/** Considered values, not an automatic inversion of the dark set. */
+/**
+ * White — the light theme. The same monochrome idea, inverted with care
+ * rather than by formula: the page is a hair off white so pure-white cards
+ * lift from it, and the domain accents drop a step darker to hold AA on white.
+ */
 export const light = {
-  surfaceSunken: 'oklch(0.955 0.005 265)',
-  surfaceBase: 'oklch(0.985 0.003 265)',
+  surfaceSunken: 'oklch(0.985 0 0)',
+  surfaceBase: 'oklch(1 0 0)',
   surfaceRaised: 'oklch(1 0 0)',
-  surfaceOverlay: 'oklch(1 0 0)',
-  surfaceInset: 'oklch(0.968 0.005 265)',
+  surfaceOverlay: 'oklch(0.97 0 0)',
+  surfaceInset: 'oklch(0.97 0 0)',
 
-  borderSubtle: 'oklch(0.905 0.008 265)',
-  borderStrong: 'oklch(0.795 0.014 265)',
+  borderSubtle: 'oklch(0.922 0 0)',
+  borderStrong: 'oklch(0.87 0 0)',
 
-  textPrimary: 'oklch(0.215 0.02 265)',
-  textSecondary: 'oklch(0.435 0.018 265)',
-  textMuted: 'oklch(0.555 0.017 265)',
+  // Contrast on white: primary ~19:1, secondary ~10:1, muted ~4.7:1.
+  textPrimary: 'oklch(0.145 0 0)',
+  textSecondary: 'oklch(0.371 0 0)',
+  textMuted: 'oklch(0.556 0 0)',
 
-  accentTasks: 'oklch(0.545 0.175 253)',
+  accentTasks: 'oklch(0.546 0.245 262.9)',
   accentHabits: 'oklch(0.545 0.115 178)',
-  accentFinance: 'oklch(0.525 0.145 162)',
-  accentTrading: 'oklch(0.545 0.195 300)',
+  accentFinance: 'oklch(0.596 0.145 163.2)',
+  accentTrading: 'oklch(0.541 0.247 293)',
 
   accentContrast: 'oklch(1 0 0)',
-  accentSoft: 'oklch(0.545 0.175 253 / 0.1)',
+  accentSoft: 'oklch(0.145 0 0 / 0.06)',
 
   positive: 'oklch(0.515 0.145 162)',
   positiveSoft: 'oklch(0.515 0.145 162 / 0.1)',
@@ -186,7 +191,7 @@ export const light = {
   warning: 'oklch(0.575 0.135 70)',
   warningSoft: 'oklch(0.575 0.135 70 / 0.12)',
 
-  focusRing: 'oklch(0.545 0.175 253)',
+  focusRing: 'oklch(0.145 0 0)',
 } as const;
 
 /**
@@ -195,27 +200,33 @@ export const light = {
  * names — fail to be a `ColorScheme` at all.
  */
 /**
- * The brand palette, as specified for the marketing site.
- *
- * Theme-independent on purpose: the landing page is always dark, so these do
- * not change with `data-theme`. Given as sRGB hex in the brief and converted to
- * OKLCH here, exactly, so every colour in the product is in one format.
- *
- *   canvas #09090F  card #111827  line #1F2937  ink #F8FAFC
- *   tasks  #3B82F6  finance #10B981  trading #8B5CF6
- *   inkMuted #94A3B8 (7.8:1 on canvas)  inkSubtle #64748B (large text only)
+ * The marketing palette, in both themes. The landing page reads these as
+ * `--brand-*`; they follow `data-theme` exactly as the app's tokens do, so
+ * the whole site switches together.
  */
 export const brandPalette = {
-  canvas: 'oklch(0.143 0.013 284.6)',
-  card: 'oklch(0.21 0.032 264.7)',
-  line: 'oklch(0.278 0.03 256.8)',
-  ink: 'oklch(0.984 0.003 247.9)',
-  inkMuted: 'oklch(0.711 0.035 256.8)',
-  inkSubtle: 'oklch(0.554 0.041 257.4)',
+  canvas: 'oklch(0 0 0)',
+  card: 'oklch(0.16 0 0)',
+  line: 'oklch(0.269 0 0)',
+  ink: 'oklch(0.985 0 0)',
+  inkMuted: 'oklch(0.708 0 0)',
+  inkSubtle: 'oklch(0.556 0 0)',
   tasks: 'oklch(0.623 0.188 259.8)',
   finance: 'oklch(0.696 0.149 162.5)',
   trading: 'oklch(0.606 0.219 292.7)',
 } as const;
+
+export const brandPaletteLight: Record<keyof typeof brandPalette, string> = {
+  canvas: 'oklch(1 0 0)',
+  card: 'oklch(0.985 0 0)',
+  line: 'oklch(0.922 0 0)',
+  ink: 'oklch(0.145 0 0)',
+  inkMuted: 'oklch(0.439 0 0)',
+  inkSubtle: 'oklch(0.556 0 0)',
+  tasks: 'oklch(0.546 0.245 262.9)',
+  finance: 'oklch(0.596 0.145 163.2)',
+  trading: 'oklch(0.541 0.247 293)',
+};
 
 export type ColorScheme = Record<keyof typeof dark, string>;
 export const themes = { dark, light } as const;

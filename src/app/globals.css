@@ -17,6 +17,9 @@
  */
 @import './tokens.generated.css';
 
+/* `light:` styles apply under the White theme, wherever they sit. */
+@custom-variant light (&:where([data-theme='light'], [data-theme='light'] *));
+
 /* ============================================================== 3. BASE */
 * {
   border-color: var(--border-subtle);
@@ -109,6 +112,93 @@ p {
   box-shadow: var(--shadow-edge);
 }
 
+/* ============================================================== MOTION */
+
+/**
+ * The theme switch. The new theme is revealed as a growing circle by the
+ * toggle's script; these rules stop the browser's default cross-fade from
+ * fighting it.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.theme-icon {
+  transition:
+    transform var(--duration-base) var(--ease-out-soft),
+    opacity var(--duration-base) var(--ease-out-soft);
+}
+
+/**
+ * The cascade: each section of a screen rises into place a beat after the
+ * one above it, with a touch of blur clearing as it lands. Applied to the
+ * page's top-level blocks, so every screen gets it without opting in. The
+ * final state is `transform: none; filter: none` so nothing is left holding
+ * a containing block once the motion ends.
+ */
+@keyframes nestedflow-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.cascade > * > * {
+  animation: nestedflow-rise 560ms var(--ease-out-soft) both;
+}
+.cascade > * > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+.cascade > * > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+.cascade > * > *:nth-child(4) {
+  animation-delay: 210ms;
+}
+.cascade > * > *:nth-child(5) {
+  animation-delay: 280ms;
+}
+.cascade > * > *:nth-child(n + 6) {
+  animation-delay: 350ms;
+}
+
+/* The same beat inside a grid of cards. */
+.cascade-grid > * {
+  animation: nestedflow-rise 560ms var(--ease-out-soft) both;
+}
+.cascade-grid > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.cascade-grid > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+.cascade-grid > *:nth-child(n + 4) {
+  animation-delay: 240ms;
+}
+
+/* Bars fill from zero to their value, once, when the screen loads. */
+@keyframes nestedflow-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.grow-x {
+  transform-origin: left center;
+  animation: nestedflow-grow 900ms var(--ease-out-soft) 200ms both;
+}
+
 /* ======================================================== LANDING PAGE */
 
 /**
@@ -174,6 +264,51 @@ p {
 }
 .lp-glow:hover::after {
   opacity: 1;
+}
+
+/**
+ * A slow comet of the three domain colours travelling round the hero
+ * dashboard's border. The ring is a 1px masked frame; inside it a large
+ * conic gradient turns, so only the slice under the frame is ever seen.
+ */
+@keyframes lp-orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.lp-border {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  mask:
+    linear-gradient(black, black) content-box,
+    linear-gradient(black, black);
+  mask-composite: exclude;
+}
+
+.lp-border::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    transparent 0% 62%,
+    var(--brand-tasks) 72%,
+    var(--brand-trading) 82%,
+    var(--brand-finance) 92%,
+    transparent 100%
+  );
+  animation: lp-orbit 7s linear infinite;
 }
 
 /* The travelling event dot in the "how it connects" section. */

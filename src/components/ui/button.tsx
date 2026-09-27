@@ -21,12 +21,13 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANTS: Record<Variant, string> = {
+  // Ink on canvas, as on the landing page: the one inverted, high-contrast
+  // surface on screen, so the primary action is found without a colour that
+  // would compete with the three domain accents.
   primary: cn(
-    'bg-accent text-accent-contrast font-medium',
-    'shadow-[var(--shadow-raised),var(--shadow-edge)]',
-    // Lifting brightness rather than swapping colour keeps hover subtle at
-    // this saturation; a second hue would read as a different button.
-    'hover:brightness-110 active:brightness-95',
+    'bg-text-primary text-surface-sunken font-medium',
+    'shadow-[var(--shadow-raised)]',
+    'hover:bg-text-primary/90 hover:shadow-(--shadow-overlay) active:brightness-95',
   ),
   secondary: cn(
     'bg-surface-overlay text-text-primary border border-border-subtle shadow-(--shadow-edge)',
@@ -64,11 +65,11 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-[var(--radius-control)]',
+        'inline-flex shrink-0 items-center justify-center rounded-lg',
         'whitespace-nowrap select-none',
-        'transition-[background-color,border-color,filter,opacity]',
+        'transition-[background-color,border-color,box-shadow,filter,opacity,scale]',
         'duration-[var(--duration-fast)] ease-(--ease-out-soft)',
-        'disabled:pointer-events-none disabled:opacity-45',
+        'active:scale-97 disabled:pointer-events-none disabled:opacity-45',
         VARIANTS[variant],
         SIZES[size],
         fullWidth && 'w-full',

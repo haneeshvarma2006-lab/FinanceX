@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { generateCss } from './css';
-import { brandPalette, dark, light } from './index';
+import { brandPalette, brandPaletteLight, dark, light } from './index';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = resolve(here, '__fixtures__/globals-before.css');
@@ -125,6 +125,7 @@ describe('themes', () => {
       ...Object.entries(dark),
       ...Object.entries(light),
       ...Object.entries(brandPalette),
+      ...Object.entries(brandPaletteLight),
     ]) {
       expect(value, name).toMatch(/^oklch\(/);
     }

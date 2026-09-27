@@ -42,11 +42,13 @@ export default async function FinancePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Money"
+        accent="finance"
         title="Finance"
         description={`Everything here is entered by you. ${brand.name} connects to no bank.`}
       />
 
-      <Card>
+      <Card accent="finance">
         <CardBody>
           <StatGrid>
             <Stat
@@ -67,7 +69,7 @@ export default async function FinancePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="finance">
         <CardHeader
           title="Accounts"
           description="Balances are derived from your ledger, never stored separately."
@@ -99,7 +101,7 @@ export default async function FinancePage() {
       </Card>
 
       {budgets.length > 0 && (
-        <Card>
+        <Card accent="finance">
           <CardHeader title="Budgets this month" />
           <CardBody className="flex flex-col gap-4">
             {budgets.map((budget) => (
@@ -128,14 +130,14 @@ export default async function FinancePage() {
       )}
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card>
+        <Card accent="finance">
           <CardHeader title="Add an account" />
           <CardBody>
             <AddAccountForm defaultCurrency={currency} />
           </CardBody>
         </Card>
 
-        <Card>
+        <Card accent="finance">
           <CardHeader title="Record a transaction" />
           <CardBody>
             {accounts.length === 0 ? (
@@ -148,7 +150,7 @@ export default async function FinancePage() {
       </div>
 
       {accounts.length >= 2 && (
-        <Card>
+        <Card accent="finance">
           <CardHeader
             title="Move money between your accounts"
             description="Recorded as two balanced entries, and excluded from income and spending totals."
@@ -159,7 +161,7 @@ export default async function FinancePage() {
         </Card>
       )}
 
-      <Card>
+      <Card accent="finance">
         <CardHeader title="Recent transactions" />
         <CardBody className="p-0">
           {transactions.length === 0 ? (

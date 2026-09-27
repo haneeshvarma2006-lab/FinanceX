@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Wordmark } from '@/components/ui/wordmark';
+import { ScrollProgress } from './motion';
 import { ButtonLink, Container } from './primitives';
 
 const LINKS = [
@@ -29,6 +31,7 @@ export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle className="text-brand-ink-muted hover:bg-brand-card hover:text-brand-ink" />
           {signedIn ? (
             <ButtonLink href="/today" className="h-9 px-4">
               Open app
@@ -48,6 +51,7 @@ export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
           )}
         </div>
       </Container>
+      <ScrollProgress />
     </header>
   );
 }

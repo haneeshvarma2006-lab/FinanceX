@@ -22,6 +22,8 @@ export default async function NotificationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Inbox"
+        accent="accent"
         title="Notifications"
         description="Raised from your own data. Nothing is sent by email — no provider is configured."
         action={
@@ -31,7 +33,7 @@ export default async function NotificationsPage() {
         }
       />
 
-      <Card>
+      <Card accent="accent">
         <CardHeader
           title={unread > 0 ? `${unread} unread` : 'All caught up'}
           action={unread > 0 ? <MarkAllReadButton /> : undefined}

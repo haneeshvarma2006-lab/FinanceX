@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/cn';
 import { requireUser } from '@/lib/auth/current-user';
 import {
+  ACCENT_CHIP,
   Card,
   CardAction,
   CardBody,
@@ -57,8 +58,9 @@ export default async function TodayPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
+        eyebrow={longDate(snapshot.today)}
         title={`Good to see you, ${user.displayName}`}
-        description={`${snapshot.today} · everything below is from your own records.`}
+        description="Everything below is from your own records."
       />
 
       {nothingYet ? <FirstRun /> : null}
@@ -78,8 +80,8 @@ export default async function TodayPage() {
               {snapshot.tasks.overdue > 0 && (
                 <Attention
                   href="/tasks"
-                  icon={<AlertTriangle aria-hidden className="size-4" />}
                   accent="tasks"
+                  icon={<AlertTriangle aria-hidden className="size-4" />}
                   title={`${snapshot.tasks.overdue} overdue task${snapshot.tasks.overdue === 1 ? '' : 's'}`}
                   detail="Past the due time and still open."
                 />
@@ -89,8 +91,8 @@ export default async function TodayPage() {
                 <Attention
                   key={habit.id}
                   href="/habits"
-                  icon={<Flame aria-hidden className="size-4" />}
                   accent="habits"
+                  icon={<Flame aria-hidden className="size-4" />}
                   title={`${habit.name}: ${habit.streak.current}-day streak`}
                   detail="Not logged yet today."
                 />
@@ -110,8 +112,8 @@ export default async function TodayPage() {
               {snapshot.finance.overBudget.length > 0 && (
                 <Attention
                   href="/finance"
-                  icon={<Wallet aria-hidden className="size-4" />}
                   accent="finance"
+                  icon={<Wallet aria-hidden className="size-4" />}
                   title={`${snapshot.finance.overBudget.length} budget${snapshot.finance.overBudget.length === 1 ? '' : 's'} exceeded`}
                   detail="Spending has passed the limit you set this month."
                 />
@@ -120,8 +122,8 @@ export default async function TodayPage() {
               {snapshot.trading.consecutiveLosses >= 3 && (
                 <Attention
                   href="/trading"
-                  icon={<LineChart aria-hidden className="size-4" />}
                   accent="trading"
+                  icon={<LineChart aria-hidden className="size-4" />}
                   title={`${snapshot.trading.consecutiveLosses} losing trades in a row`}
                   detail="Worth reviewing what they had in common before the next one."
                 />
@@ -131,9 +133,9 @@ export default async function TodayPage() {
         </Card>
       )}
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="cascade-grid grid items-start gap-5 lg:grid-cols-2">
         {/* ---------------------------------------------------------- tasks */}
-        <Card>
+        <Card accent="tasks">
           <CardHeader
             title="Today's work"
             accent="tasks"
@@ -152,6 +154,7 @@ export default async function TodayPage() {
                 title="No tasks yet"
                 body="Add the one thing you most want to finish today."
                 href="/tasks"
+                accent="tasks"
                 cta="Add your first task"
               />
             ) : snapshot.tasks.next.length === 0 ? (
@@ -160,6 +163,7 @@ export default async function TodayPage() {
                 title="Nothing open"
                 body={`You have completed ${snapshot.tasks.completedToday} today and nothing is outstanding.`}
                 href="/tasks"
+                accent="tasks"
                 cta="Add a task"
               />
             ) : (
@@ -188,7 +192,7 @@ export default async function TodayPage() {
         </Card>
 
         {/* --------------------------------------------------------- habits */}
-        <Card>
+        <Card accent="habits">
           <CardHeader
             title="Habits"
             accent="habits"
@@ -207,6 +211,7 @@ export default async function TodayPage() {
                 title="No habits yet"
                 body="Pick one you could do on your worst day."
                 href="/habits"
+                accent="habits"
                 cta="Add your first habit"
               />
             ) : (
@@ -232,7 +237,7 @@ export default async function TodayPage() {
         </Card>
 
         {/* ---------------------------------------------------------- money */}
-        <Card>
+        <Card accent="finance">
           <CardHeader
             title="Money this month"
             accent="finance"
@@ -246,6 +251,7 @@ export default async function TodayPage() {
                 title="No accounts yet"
                 body="Add an account, then record what you actually spent."
                 href="/finance"
+                accent="finance"
                 cta="Add an account"
               />
             ) : (
@@ -285,7 +291,7 @@ export default async function TodayPage() {
         </Card>
 
         {/* -------------------------------------------------------- trading */}
-        <Card>
+        <Card accent="trading">
           <CardHeader
             title="Trading"
             accent="trading"
@@ -300,6 +306,7 @@ export default async function TodayPage() {
                 title="No trading account yet"
                 body={`Journal trades you placed elsewhere. ${brand.name} places no orders.`}
                 href="/trading"
+                accent="trading"
                 cta="Set up the journal"
               />
             ) : snapshot.trading.closedTrades === 0 ? (
@@ -330,7 +337,7 @@ export default async function TodayPage() {
 
       {/* ----------------------------------------------------------- goals */}
       {snapshot.goals.hasData && snapshot.goals.nearest && (
-        <Card>
+        <Card accent="habits">
           <CardHeader
             title="Closest deadline"
             accent="habits"
@@ -372,14 +379,6 @@ function Attention({
   title: string;
   detail: string;
 }) {
-  const iconTone = {
-    tasks: 'bg-tasks/12 text-tasks',
-    habits: 'bg-habits/12 text-habits',
-    finance: 'bg-finance/12 text-finance',
-    trading: 'bg-trading/12 text-trading',
-    accent: 'bg-accent-soft text-accent',
-  }[accent];
-
   return (
     <li>
       <Link
@@ -398,9 +397,8 @@ function Attention({
         <span
           aria-hidden
           className={cn(
-            'inline-flex size-7 shrink-0 items-center justify-center',
-            'rounded-[var(--radius-control)]',
-            iconTone,
+            'inline-flex size-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset',
+            ACCENT_CHIP[accent],
           )}
         >
           {icon}
@@ -422,6 +420,14 @@ function Attention({
   );
 }
 
+const GLOW: Record<Accent, string> = {
+  tasks: 'bg-tasks/25',
+  habits: 'bg-habits/25',
+  finance: 'bg-finance/25',
+  trading: 'bg-trading/25',
+  accent: 'bg-accent/25',
+};
+
 /** An honest blank: says what is missing and links to the action that fixes it. */
 function Blank({
   icon,
@@ -429,43 +435,157 @@ function Blank({
   body,
   href,
   cta,
+  accent,
 }: {
   icon: React.ReactNode;
   title: string;
   body: string;
   href: '/tasks' | '/habits' | '/goals' | '/finance' | '/trading';
   cta: string;
+  accent: Accent;
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-10 text-center">
-      <span className="mb-3 rounded-full border border-border-subtle bg-surface-inset p-3 text-text-muted">
-        {icon}
+      <span className="relative mb-4">
+        <span aria-hidden className={cn('absolute inset-0 rounded-2xl blur-xl', GLOW[accent])} />
+        <span
+          className={cn(
+            'relative inline-flex size-12 items-center justify-center rounded-2xl ring-1 ring-inset',
+            'bg-surface-overlay shadow-(--shadow-edge)',
+            ACCENT_CHIP[accent],
+          )}
+        >
+          {icon}
+        </span>
       </span>
-      <p className="text-sm font-medium text-text-primary">{title}</p>
+      <p className="text-base font-semibold tracking-tight text-text-primary">{title}</p>
       <p className="mt-1 max-w-xs text-sm text-pretty text-text-secondary">{body}</p>
       <Link
         href={href}
-        className="mt-4 rounded-[var(--radius-control)] border border-border-subtle bg-surface-overlay px-3 py-1.5 text-xs text-text-primary transition-colors hover:border-border-strong"
+        className={cn(
+          'group mt-5 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-medium',
+          'bg-text-primary text-surface-sunken shadow-(--shadow-raised)',
+          'transition-[background-color,box-shadow] duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+          'hover:bg-text-primary/90 hover:shadow-(--shadow-overlay)',
+        )}
       >
         {cta}
+        <ChevronRight
+          aria-hidden
+          className="size-3.5 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
+        />
       </Link>
     </div>
   );
 }
 
+const QUICK_STARTS = [
+  {
+    href: '/tasks',
+    accent: 'tasks',
+    icon: CheckSquare,
+    title: 'Plan the day',
+    body: 'One task you want finished today.',
+  },
+  {
+    href: '/finance',
+    accent: 'finance',
+    icon: Wallet,
+    title: 'Track your money',
+    body: 'Add an account, then what you spent.',
+  },
+  {
+    href: '/trading',
+    accent: 'trading',
+    icon: LineChart,
+    title: 'Journal a trade',
+    body: 'Record fills; the P&L is worked out.',
+  },
+] as const;
+
+/**
+ * The first screen a new account sees. Three ways in, one per domain, and a
+ * plain statement of the promise — no invented figures to make it look busy.
+ */
 function FirstRun() {
   return (
-    <Card>
-      <CardHeader
-        title="Nothing here yet — and that is correct"
-        description={`${brand.name} will never invent a balance, a streak, or a win rate to make this page look busy.`}
+    <Card className="overflow-hidden">
+      <div aria-hidden className="lp-grid pointer-events-none absolute inset-0 opacity-50" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-trading/15 blur-3xl"
       />
-      <CardBody>
-        <p className="text-sm text-pretty text-text-secondary">
-          Every number on this dashboard comes from something you entered. Pick whichever of these
-          you would actually use tomorrow; the rest can wait until you need them.
-        </p>
-      </CardBody>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -left-16 size-72 rounded-full bg-tasks/15 blur-3xl"
+      />
+
+      <div className="relative flex flex-col gap-6 p-6 sm:p-8">
+        <div className="max-w-xl">
+          <p className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay/60 px-3 py-1 text-xs text-text-secondary">
+            <span aria-hidden className="flex gap-1">
+              <span className="size-1.5 rounded-full bg-tasks" />
+              <span className="size-1.5 rounded-full bg-finance" />
+              <span className="size-1.5 rounded-full bg-trading" />
+            </span>
+            Welcome to {brand.name}
+          </p>
+          <h2 className="mt-4 text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">
+            Nothing here yet — and that is correct
+          </h2>
+          <p className="mt-2 text-sm text-pretty text-text-secondary">
+            {brand.name} will never invent a balance, a streak, or a win rate to make this page look
+            busy. Every number on this dashboard comes from something you entered — start with
+            whichever you would actually use tomorrow.
+          </p>
+        </div>
+
+        <ul className="grid gap-3 sm:grid-cols-3">
+          {QUICK_STARTS.map(({ href, accent, icon: Icon, title, body }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className={cn(
+                  'group flex h-full items-start gap-3 rounded-xl border border-border-subtle',
+                  'bg-surface-overlay/50 p-4 shadow-(--shadow-edge)',
+                  'transition-[border-color,background-color,transform] duration-[var(--duration-base)] ease-(--ease-out-soft)',
+                  'hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-overlay',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    'inline-flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset',
+                    ACCENT_CHIP[accent],
+                  )}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2 text-sm font-medium text-text-primary">
+                    {title}
+                    <ChevronRight
+                      aria-hidden
+                      className="size-4 text-text-muted transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-text-primary"
+                    />
+                  </span>
+                  <span className="mt-0.5 block text-xs text-pretty text-text-muted">{body}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </Card>
   );
+}
+
+/** `2026-09-27` → `Sunday, 27 September`. The ISO day is already the user's own. */
+function longDate(isoDay: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDay}T00:00:00Z`));
 }

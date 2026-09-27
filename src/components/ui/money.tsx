@@ -80,7 +80,7 @@ export function Progress({
     >
       <div
         className={cn(
-          'h-full rounded-full transition-[width]',
+          'grow-x h-full rounded-full transition-[width]',
           'duration-[var(--duration-base)] ease-(--ease-out-soft)',
           bar,
         )}
@@ -124,21 +124,48 @@ export function Badge({
   );
 }
 
+const EYEBROW_DOT = {
+  tasks: 'bg-tasks',
+  habits: 'bg-habits',
+  finance: 'bg-finance',
+  trading: 'bg-trading',
+  accent: 'bg-accent',
+} as const;
+
+/**
+ * The top of every screen. A small eyebrow names the section in its domain
+ * colour; the title is set large and tight, as on the landing page, so each
+ * screen opens with one confident line rather than a form label.
+ */
 export function PageHeader({
   title,
   description,
   action,
+  eyebrow,
+  accent = 'accent',
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  eyebrow?: string;
+  accent?: keyof typeof EYEBROW_DOT;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4">
+    <header className="flex flex-wrap items-end justify-between gap-4 pb-1">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
+        {eyebrow && (
+          <p className="mb-3 inline-flex items-center gap-2 text-xs font-medium tracking-wide text-text-muted uppercase">
+            <span aria-hidden className={cn('size-1.5 rounded-full', EYEBROW_DOT[accent])} />
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="text-3xl font-semibold tracking-tighter text-balance text-text-primary sm:text-4xl">
+          {title}
+        </h1>
         {description && (
-          <p className="mt-1.5 max-w-prose text-sm text-text-secondary">{description}</p>
+          <p className="mt-2 max-w-prose text-sm text-pretty text-text-secondary sm:text-base">
+            {description}
+          </p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -170,10 +197,7 @@ export function ActivityStrip({
         <span
           key={i}
           aria-hidden
-          className={cn(
-            'h-3.5 w-1 rounded-[var(--radius-hairline)]',
-            done ? 'bg-accent' : 'bg-surface-inset',
-          )}
+          className={cn('h-4 w-1 rounded-full', done ? 'bg-accent' : 'bg-surface-inset')}
         />
       ))}
     </div>

@@ -1,5 +1,6 @@
 import {
   brandPalette,
+  brandPaletteLight,
   breakpoints,
   dark,
   light,
@@ -75,7 +76,9 @@ function schemeCss(selector: string, colorScheme: 'dark' | 'light', colors: Colo
   const declarations = Object.entries(colors).flatMap(([key, value]) => {
     const line = declare(kebab(key), value);
     // Sits with the domain accents it aliases, not appended at the end.
-    return key === 'accentTrading' ? [line, '', declare('accent', 'var(--accent-tasks)')] : [line];
+    // The generic accent is ink: a monochrome product keeps colour for the
+    // domains, and "the accent" is simply the strongest thing on the page.
+    return key === 'accentTrading' ? [line, '', declare('accent', 'var(--text-primary)')] : [line];
   });
 
   return [`${selector} {`, `  color-scheme: ${colorScheme};`, '', ...declarations, '}'];
@@ -139,13 +142,19 @@ export function utilitiesCss(): string {
 
 /**
  * The brand palette: `--brand-*` custom properties plus `bg-brand-*` style
- * utilities. Declared once in :root because it does not vary by theme.
+ * utilities, with a light set that follows `data-theme` like everything else.
  */
 export function brandCss(): string {
   const entries = Object.entries(brandPalette);
   return [
     ':root {',
     ...entries.map(([key, value]) => declare(`brand-${kebab(key)}`, value)),
+    '}',
+    '',
+    ":root[data-theme='light'] {",
+    ...Object.entries(brandPaletteLight).map(([key, value]) =>
+      declare(`brand-${kebab(key)}`, value),
+    ),
     '}',
     '',
     '@theme inline {',

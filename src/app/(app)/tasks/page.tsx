@@ -60,16 +60,21 @@ export default async function TasksPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Tasks" description="What you have decided to do, and when." />
+      <PageHeader
+        eyebrow="Work"
+        accent="tasks"
+        title="Tasks"
+        description="What you have decided to do, and when."
+      />
 
-      <Card>
+      <Card accent="tasks">
         <CardHeader title="Add a task" />
         <CardBody>
           <AddTaskForm projects={projects} />
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="tasks">
         <CardHeader
           title={showDone ? 'Completed' : 'Open tasks'}
           description={`${total} ${total === 1 ? 'task' : 'tasks'}`}

@@ -50,11 +50,13 @@ export default async function RulesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Automation"
+        accent="accent"
         title="Rules"
         description={`What ${brand.name} watches for, and what it does about it. All of it yours to change.`}
       />
 
-      <Card>
+      <Card accent="accent">
         <CardHeader
           title="Your rules"
           description={`${rules.filter((r) => r.enabled).length} active of ${rules.length}`}
@@ -90,7 +92,7 @@ export default async function RulesPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="accent">
         <CardHeader title="Create a rule" />
         <CardBody>
           <AddRuleForm
@@ -106,7 +108,7 @@ export default async function RulesPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="accent">
         <CardHeader
           title="Activity"
           description="Every evaluation, including the ones that did not match — so you can see why."
@@ -144,7 +146,7 @@ export default async function RulesPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="accent">
         <CardHeader title="How rules work" />
         <CardBody>
           <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-pretty text-text-secondary">

@@ -31,6 +31,8 @@ export default async function TradingPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Markets"
+        accent="trading"
         title="Trading journal"
         description={`A record of trades you placed elsewhere. ${brand.name} cannot place orders.`}
       />
@@ -57,7 +59,7 @@ export default async function TradingPage() {
             </Badge>
           </div>
 
-          <Card>
+          <Card accent="trading">
             <CardBody>
               <StatGrid columns={4}>
                 <Stat label="Closed trades" value={performance.stats.trades} />
@@ -94,7 +96,7 @@ export default async function TradingPage() {
         </>
       )}
 
-      <Card>
+      <Card accent="trading">
         <CardHeader
           title="Trades"
           description="Entry and exit prices are calculated from your executions, not typed in."
@@ -161,14 +163,14 @@ export default async function TradingPage() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card accent="trading">
           <CardHeader title="Add a trading account" />
           <CardBody>
             <AddTradingAccountForm defaultCurrency={user.baseCurrency} />
           </CardBody>
         </Card>
 
-        <Card>
+        <Card accent="trading">
           <CardHeader title="Log a trade" />
           <CardBody>
             {accounts.length === 0 ? (

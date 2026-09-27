@@ -62,61 +62,61 @@
 :root {
   color-scheme: dark;
 
-  --surface-sunken: oklch(0.143 0.013 284.6);
-  --surface-base: oklch(0.172 0.02 272);
-  --surface-raised: oklch(0.21 0.032 264.7);
-  --surface-overlay: oklch(0.248 0.032 262);
-  --surface-inset: oklch(0.158 0.018 276);
-  --border-subtle: oklch(0.278 0.03 256.8);
-  --border-strong: oklch(0.373 0.034 259.7);
-  --text-primary: oklch(0.984 0.003 247.9);
-  --text-secondary: oklch(0.869 0.022 252.9);
-  --text-muted: oklch(0.711 0.035 256.8);
+  --surface-sunken: oklch(0 0 0);
+  --surface-base: oklch(0.145 0 0);
+  --surface-raised: oklch(0.178 0 0);
+  --surface-overlay: oklch(0.218 0 0);
+  --surface-inset: oklch(0.12 0 0);
+  --border-subtle: oklch(0.269 0 0);
+  --border-strong: oklch(0.371 0 0);
+  --text-primary: oklch(0.985 0 0);
+  --text-secondary: oklch(0.87 0 0);
+  --text-muted: oklch(0.708 0 0);
   --accent-tasks: oklch(0.623 0.188 259.8);
   --accent-habits: oklch(0.72 0.13 175);
   --accent-finance: oklch(0.696 0.149 162.5);
   --accent-trading: oklch(0.606 0.219 292.7);
 
-  --accent: var(--accent-tasks);
-  --accent-contrast: oklch(0.143 0.013 284.6);
-  --accent-soft: oklch(0.623 0.188 259.8 / 0.16);
+  --accent: var(--text-primary);
+  --accent-contrast: oklch(0 0 0);
+  --accent-soft: oklch(0.985 0 0 / 0.1);
   --positive: oklch(0.755 0.155 162);
   --positive-soft: oklch(0.755 0.155 162 / 0.13);
   --negative: oklch(0.685 0.185 22);
   --negative-soft: oklch(0.685 0.185 22 / 0.13);
   --warning: oklch(0.8 0.145 78);
   --warning-soft: oklch(0.8 0.145 78 / 0.13);
-  --focus-ring: oklch(0.72 0.15 259.8);
+  --focus-ring: oklch(0.87 0 0);
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --surface-sunken: oklch(0.955 0.005 265);
-  --surface-base: oklch(0.985 0.003 265);
+  --surface-sunken: oklch(0.985 0 0);
+  --surface-base: oklch(1 0 0);
   --surface-raised: oklch(1 0 0);
-  --surface-overlay: oklch(1 0 0);
-  --surface-inset: oklch(0.968 0.005 265);
-  --border-subtle: oklch(0.905 0.008 265);
-  --border-strong: oklch(0.795 0.014 265);
-  --text-primary: oklch(0.215 0.02 265);
-  --text-secondary: oklch(0.435 0.018 265);
-  --text-muted: oklch(0.555 0.017 265);
-  --accent-tasks: oklch(0.545 0.175 253);
+  --surface-overlay: oklch(0.97 0 0);
+  --surface-inset: oklch(0.97 0 0);
+  --border-subtle: oklch(0.922 0 0);
+  --border-strong: oklch(0.87 0 0);
+  --text-primary: oklch(0.145 0 0);
+  --text-secondary: oklch(0.371 0 0);
+  --text-muted: oklch(0.556 0 0);
+  --accent-tasks: oklch(0.546 0.245 262.9);
   --accent-habits: oklch(0.545 0.115 178);
-  --accent-finance: oklch(0.525 0.145 162);
-  --accent-trading: oklch(0.545 0.195 300);
+  --accent-finance: oklch(0.596 0.145 163.2);
+  --accent-trading: oklch(0.541 0.247 293);
 
-  --accent: var(--accent-tasks);
+  --accent: var(--text-primary);
   --accent-contrast: oklch(1 0 0);
-  --accent-soft: oklch(0.545 0.175 253 / 0.1);
+  --accent-soft: oklch(0.145 0 0 / 0.06);
   --positive: oklch(0.515 0.145 162);
   --positive-soft: oklch(0.515 0.145 162 / 0.1);
   --negative: oklch(0.535 0.195 25);
   --negative-soft: oklch(0.535 0.195 25 / 0.1);
   --warning: oklch(0.575 0.135 70);
   --warning-soft: oklch(0.575 0.135 70 / 0.12);
-  --focus-ring: oklch(0.545 0.175 253);
+  --focus-ring: oklch(0.145 0 0);
 }
 
 :root[data-theme='light'] {
@@ -153,15 +153,27 @@
 }
 
 :root {
-  --brand-canvas: oklch(0.143 0.013 284.6);
-  --brand-card: oklch(0.21 0.032 264.7);
-  --brand-line: oklch(0.278 0.03 256.8);
-  --brand-ink: oklch(0.984 0.003 247.9);
-  --brand-ink-muted: oklch(0.711 0.035 256.8);
-  --brand-ink-subtle: oklch(0.554 0.041 257.4);
+  --brand-canvas: oklch(0 0 0);
+  --brand-card: oklch(0.16 0 0);
+  --brand-line: oklch(0.269 0 0);
+  --brand-ink: oklch(0.985 0 0);
+  --brand-ink-muted: oklch(0.708 0 0);
+  --brand-ink-subtle: oklch(0.556 0 0);
   --brand-tasks: oklch(0.623 0.188 259.8);
   --brand-finance: oklch(0.696 0.149 162.5);
   --brand-trading: oklch(0.606 0.219 292.7);
+}
+
+:root[data-theme='light'] {
+  --brand-canvas: oklch(1 0 0);
+  --brand-card: oklch(0.985 0 0);
+  --brand-line: oklch(0.922 0 0);
+  --brand-ink: oklch(0.145 0 0);
+  --brand-ink-muted: oklch(0.439 0 0);
+  --brand-ink-subtle: oklch(0.556 0 0);
+  --brand-tasks: oklch(0.546 0.245 262.9);
+  --brand-finance: oklch(0.596 0.145 163.2);
+  --brand-trading: oklch(0.541 0.247 293);
 }
 
 @theme inline {

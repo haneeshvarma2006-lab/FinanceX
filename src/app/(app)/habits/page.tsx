@@ -23,11 +23,13 @@ export default async function HabitsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Routine"
+        accent="habits"
         title="Habits"
         description={`Streaks are counted in your own timezone (${user.timezone}).`}
       />
 
-      <Card>
+      <Card accent="habits">
         <CardHeader title="Today" description="Tap to log. Logging twice does not count twice." />
         <CardBody className="p-0">
           {habits.length === 0 ? (
@@ -56,7 +58,7 @@ export default async function HabitsPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card accent="habits">
         <CardHeader title="Add a habit" />
         <CardBody>
           <AddHabitForm />

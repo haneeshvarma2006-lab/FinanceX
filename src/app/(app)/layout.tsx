@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { requireUser } from '@/lib/auth/current-user';
 import { countUnreadNotifications } from '@/modules/productivity/repository';
 import { NotificationBell } from '@/components/ui/notification-bell';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MainNav, type NavItem } from '@/components/ui/nav';
 import { signOutAction } from '../(auth)/actions';
 import { Wordmark } from '@/components/ui/wordmark';
@@ -29,7 +30,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const unread = await countUnreadNotifications(user.id);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="relative isolate flex min-h-dvh flex-col">
+      {/* The landing page's atmosphere, turned down for daily use: the grid
+          fades out within the first screen, and two domain glows sit behind
+          the header rather than across the work. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 overflow-hidden"
+      >
+        <div className="lp-grid absolute inset-0 opacity-60" />
+        <div className="absolute -top-40 left-1/4 size-96 rounded-full bg-tasks/8 blur-3xl" />
+        <div className="absolute -top-48 right-1/4 size-96 rounded-full bg-trading/8 blur-3xl" />
+      </div>
+
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-[var(--radius-control)] focus:bg-surface-overlay focus:px-3 focus:py-2 focus:text-sm focus:shadow-(--shadow-overlay)"
@@ -39,15 +52,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <header
         className={cn(
-          'chrome sticky top-0 z-40 border-b border-border-subtle bg-surface-base',
+          'chrome sticky top-0 z-40 border-b border-border-subtle/70 bg-surface-sunken',
           // The blur starts at sm on purpose. A backdrop-filter makes an
           // element the containing block for its `position: fixed`
           // descendants, which on a phone would pin the bottom nav to the
           // bottom of this header instead of the viewport.
-          'sm:bg-surface-base/80 sm:backdrop-blur-xl sm:backdrop-saturate-150',
+          'sm:bg-surface-sunken/70 sm:backdrop-blur-xl sm:backdrop-saturate-150',
         )}
       >
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <Link
             href="/today"
             className="shrink-0 rounded-[var(--radius-control)] text-text-primary"
@@ -60,25 +73,34 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <MainNav items={NAV} />
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
+            <ThemeToggle />
             <NotificationBell count={unread} />
 
             <Link
               href="/settings"
-              className="inline-flex h-8 items-center rounded-[var(--radius-control)] px-2.5 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
+              className="inline-flex h-8 items-center rounded-full px-3 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
             >
               Settings
             </Link>
 
             <span aria-hidden className="mx-1 hidden h-4 w-px bg-border-subtle sm:block" />
 
-            <span className="hidden max-w-32 truncate text-sm text-text-secondary sm:inline">
-              {user.displayName}
+            <span className="hidden items-center gap-2 sm:inline-flex">
+              <span
+                aria-hidden
+                className="inline-flex size-7 items-center justify-center rounded-full bg-linear-to-br from-tasks via-trading to-finance text-xs font-semibold text-surface-sunken"
+              >
+                {initial(user.displayName)}
+              </span>
+              <span className="max-w-32 truncate text-sm text-text-secondary">
+                {user.displayName}
+              </span>
             </span>
 
             <form action={signOutAction}>
               <button
                 type="submit"
-                className="inline-flex h-8 items-center rounded-[var(--radius-control)] px-2.5 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
+                className="inline-flex h-8 items-center rounded-full px-3 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
               >
                 Sign out
               </button>
@@ -89,10 +111,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <main
         id="main"
-        className="enter mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 sm:px-6 sm:pt-8 sm:pb-10"
+        className="cascade mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-12 sm:pb-16"
       >
         {children}
       </main>
     </div>
   );
+}
+
+/** The first letter of the display name, for the avatar. Never empty. */
+function initial(name: string): string {
+  return (name.trim()[0] ?? '?').toUpperCase();
 }

@@ -233,6 +233,7 @@ export function DashboardMockup() {
         'shadow-[var(--shadow-sheet),var(--shadow-edge)] backdrop-blur-xl',
       )}
     >
+      <span aria-hidden className="lp-border" />
       <div className="flex items-center gap-3 border-b border-brand-line/80 px-4 py-2.5">
         <span aria-hidden className="flex gap-1.5">
           <span className="size-2.5 rounded-full bg-brand-line" />

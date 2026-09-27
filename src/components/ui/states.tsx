@@ -24,10 +24,13 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <div className="mb-3 rounded-full border border-border-subtle bg-surface-inset p-3 text-text-muted">
-        {icon ?? <Inbox aria-hidden className="size-5" />}
+      <div className="relative mb-4">
+        <span aria-hidden className="absolute inset-0 rounded-2xl bg-accent/20 blur-xl" />
+        <div className="relative rounded-2xl border border-border-subtle bg-surface-overlay p-3.5 text-text-secondary shadow-(--shadow-edge)">
+          {icon ?? <Inbox aria-hidden className="size-5" />}
+        </div>
       </div>
-      <p className="text-sm font-medium text-text-primary">{title}</p>
+      <p className="text-base font-semibold tracking-tight text-text-primary">{title}</p>
       <p className="mt-1 max-w-sm text-sm text-pretty text-text-secondary">{description}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
