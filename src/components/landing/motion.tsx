@@ -51,7 +51,7 @@ export function FadeUp({
       initial={{ opacity: 0, y: 18, filter: 'blur(8px)' }}
       {...(onMount
         ? { animate: reveal }
-        : { whileInView: reveal, viewport: { once: true, margin: '-80px' } })}
+        : { whileInView: reveal, viewport: { once: true, margin: '0px 0px -80px 0px' } })}
       transition={{ duration: 0.6, ease: EASE, delay }}
     >
       {children}
@@ -104,7 +104,7 @@ export function GlowCard({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   // Lets the charts inside play their entrance when the card arrives.
-  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const inView = useInView(ref, { once: true, margin: '0px 0px -40px 0px' });
   const reduced = useReducedMotion();
   // A few degrees of tilt toward the pointer, on springs.
   const rotateX = useSpring(0, { stiffness: 200, damping: 22 });
@@ -176,7 +176,7 @@ export function Counter({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const inView = useInView(ref, { once: true, margin: '0px 0px -60px 0px' });
   const reduced = useReducedMotion();
   const [shown, setShown] = useState(value);
 
@@ -278,7 +278,10 @@ export function WordReveal({
                   initial={hidden}
                   {...(onMount
                     ? { animate: shown }
-                    : { whileInView: shown, viewport: { once: true, margin: '-60px' } })}
+                    : {
+                        whileInView: shown,
+                        viewport: { once: true, margin: '0px 0px -60px 0px' },
+                      })}
                   transition={{ duration: 0.7, ease: EASE, delay: delay + i * 0.07 }}
                 >
                   {word.text}
@@ -382,7 +385,7 @@ export function InView({
   'aria-label'?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const inView = useInView(ref, { once: true, margin: '0px 0px -40px 0px' });
   return (
     <Tag
       ref={ref}

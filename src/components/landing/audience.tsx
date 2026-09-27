@@ -3,6 +3,7 @@ import { cn } from '@/lib/cn';
 import { personas } from './data';
 import { FadeUp, GlowCard } from './motion';
 import { Container, ICONS, SectionHeader, TONE_SOFT, type IconName } from './primitives';
+import { Rail } from './rail';
 
 /**
  * Who it is for.
@@ -30,11 +31,11 @@ export function Audience() {
           />
         </FadeUp>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Rail label="Who it is for" gridClassName="md:grid-cols-2 lg:grid-cols-4">
           {personas.map((persona, i) => {
             const Icon = ICONS[persona.icon as IconName];
             return (
-              <FadeUp key={persona.who} delay={i * 0.06}>
+              <FadeUp key={persona.who} delay={i * 0.06} className="h-full">
                 <GlowCard tone={persona.tone} className="h-full">
                   <figure className="flex h-full flex-col gap-6 p-6">
                     <span
@@ -58,7 +59,7 @@ export function Audience() {
               </FadeUp>
             );
           })}
-        </div>
+        </Rail>
       </Container>
     </section>
   );

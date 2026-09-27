@@ -52,13 +52,12 @@ export function MainNav({ items }: { items: readonly NavItem[] }) {
       <nav
         aria-label="Main"
         className={cn(
-          // Phone: a fixed bar across the bottom, above the home indicator.
-          'fixed inset-x-0 bottom-0 z-40 border-t border-border-subtle',
-          'bg-surface-sunken/85 px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]',
-          'shadow-(--shadow-edge)',
-          'backdrop-blur-xl backdrop-saturate-150',
+          // Phone: a floating glass dock, inset from the edges and lifted
+          // clear of the home indicator.
+          'fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 rounded-3xl p-1.5',
+          'shadow-(--shadow-sheet) backdrop-blur-2xl backdrop-saturate-150 max-sm:ui-card',
           // Desktop: an ordinary row inside the header.
-          'sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none',
+          'sm:static sm:rounded-none sm:p-0 sm:shadow-none sm:backdrop-blur-none',
           'sm:-mx-1 sm:min-w-0 sm:overflow-x-auto',
           'sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden',
           // Fades the trailing edge so a scrolled-off item reads as "more this
@@ -76,7 +75,7 @@ export function MainNav({ items }: { items: readonly NavItem[] }) {
                   href={item.href as '/today'}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'relative isolate flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 sm:rounded-full',
+                    'relative isolate flex flex-col items-center gap-1 rounded-2xl px-1 py-2 sm:rounded-full',
                     'text-2xs whitespace-nowrap',
                     'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
                     'sm:h-8 sm:flex-row sm:gap-0 sm:px-3 sm:py-0 sm:text-sm',
@@ -90,7 +89,7 @@ export function MainNav({ items }: { items: readonly NavItem[] }) {
                       layoutId="main-nav-pill"
                       aria-hidden
                       className={cn(
-                        'absolute inset-0 -z-10 rounded-xl sm:rounded-full sm:ring-1 sm:ring-inset',
+                        'absolute inset-0 -z-10 rounded-2xl sm:rounded-full sm:ring-1 sm:ring-inset',
                         ACTIVE_PILL[item.accent],
                       )}
                       transition={{ type: 'spring', stiffness: 520, damping: 40 }}

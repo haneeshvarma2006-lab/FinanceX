@@ -15,6 +15,7 @@ import { AreaChart, Meter, Sparkline, type Tone } from './charts';
 import { monthlySavings, tradeResults, tradeStats } from './data';
 import { FadeUp, GlowCard } from './motion';
 import { Container, SectionHeader, TONE_DOT, TONE_SOFT } from './primitives';
+import { Rail } from './rail';
 
 /**
  * The feature grid.
@@ -296,81 +297,88 @@ export function FeatureBento() {
             />
           </FadeUp>
 
-          {(
-            [
-              {
-                tone: 'tasks',
-                icon: Lightbulb,
-                title: 'Insights',
-                benefits: ['Signals from your own records', 'Never an invented number'],
-                visual: (
-                  <SmallVisual>
-                    <p className="text-2xs text-brand-ink">Dining is 18% over budget</p>
-                    <p className="mt-0.5 text-3xs text-brand-ink-subtle">
-                      Nine days left this month
-                    </p>
-                  </SmallVisual>
-                ),
-              },
-              {
-                tone: 'trading',
-                icon: ShieldAlert,
-                title: 'Risk Tracking',
-                benefits: ['Risk per trade, set per account', 'Drawdown measured from your fills'],
-                visual: (
-                  <SmallVisual>
-                    <div className="mb-1.5 flex justify-between text-3xs text-brand-ink-subtle">
-                      <span>Risk per trade</span>
-                      <span className="font-figures tabular-nums">1.0%</span>
-                    </div>
-                    <Meter
-                      value={33}
-                      tone="trading"
-                      label="Risk per trade at one percent of a three percent ceiling"
-                    />
-                  </SmallVisual>
-                ),
-              },
-              {
-                tone: 'finance',
-                icon: Target,
-                title: 'Goal System',
-                benefits: ['Savings, numeric and habit goals', 'Told when you fall off pace'],
-                visual: (
-                  <SmallVisual>
-                    <div className="mb-1.5 flex justify-between text-3xs text-brand-ink-subtle">
-                      <span>Emergency fund</span>
-                      <span className="font-figures tabular-nums">74%</span>
-                    </div>
-                    <Meter
-                      value={74}
-                      tone="finance"
-                      label="Emergency fund goal 74 percent complete"
-                    />
-                  </SmallVisual>
-                ),
-              },
-              {
-                tone: 'neutral',
-                icon: BarChart3,
-                title: 'Analytics',
-                benefits: ['Net worth across every account', 'Performance by strategy'],
-                visual: (
-                  <SmallVisual>
-                    <Sparkline
-                      values={monthlySavings}
-                      tone="finance"
-                      label="Monthly savings trending upward"
-                    />
-                  </SmallVisual>
-                ),
-              },
-            ] as const
-          ).map((card, i) => (
-            <FadeUp key={card.title} delay={0.05 * i} className="lg:col-span-3">
-              <Card {...card} className="h-full" />
-            </FadeUp>
-          ))}
+          <div className="md:col-span-2 lg:col-span-12">
+            <Rail label="More of the product" gridClassName="md:grid-cols-2 lg:grid-cols-4">
+              {(
+                [
+                  {
+                    tone: 'tasks',
+                    icon: Lightbulb,
+                    title: 'Insights',
+                    benefits: ['Signals from your own records', 'Never an invented number'],
+                    visual: (
+                      <SmallVisual>
+                        <p className="text-2xs text-brand-ink">Dining is 18% over budget</p>
+                        <p className="mt-0.5 text-3xs text-brand-ink-subtle">
+                          Nine days left this month
+                        </p>
+                      </SmallVisual>
+                    ),
+                  },
+                  {
+                    tone: 'trading',
+                    icon: ShieldAlert,
+                    title: 'Risk Tracking',
+                    benefits: [
+                      'Risk per trade, set per account',
+                      'Drawdown measured from your fills',
+                    ],
+                    visual: (
+                      <SmallVisual>
+                        <div className="mb-1.5 flex justify-between text-3xs text-brand-ink-subtle">
+                          <span>Risk per trade</span>
+                          <span className="font-figures tabular-nums">1.0%</span>
+                        </div>
+                        <Meter
+                          value={33}
+                          tone="trading"
+                          label="Risk per trade at one percent of a three percent ceiling"
+                        />
+                      </SmallVisual>
+                    ),
+                  },
+                  {
+                    tone: 'finance',
+                    icon: Target,
+                    title: 'Goal System',
+                    benefits: ['Savings, numeric and habit goals', 'Told when you fall off pace'],
+                    visual: (
+                      <SmallVisual>
+                        <div className="mb-1.5 flex justify-between text-3xs text-brand-ink-subtle">
+                          <span>Emergency fund</span>
+                          <span className="font-figures tabular-nums">74%</span>
+                        </div>
+                        <Meter
+                          value={74}
+                          tone="finance"
+                          label="Emergency fund goal 74 percent complete"
+                        />
+                      </SmallVisual>
+                    ),
+                  },
+                  {
+                    tone: 'neutral',
+                    icon: BarChart3,
+                    title: 'Analytics',
+                    benefits: ['Net worth across every account', 'Performance by strategy'],
+                    visual: (
+                      <SmallVisual>
+                        <Sparkline
+                          values={monthlySavings}
+                          tone="finance"
+                          label="Monthly savings trending upward"
+                        />
+                      </SmallVisual>
+                    ),
+                  },
+                ] as const
+              ).map((card, i) => (
+                <FadeUp key={card.title} delay={0.05 * i} className="h-full">
+                  <Card {...card} className="h-full" />
+                </FadeUp>
+              ))}
+            </Rail>
+          </div>
         </div>
       </Container>
     </section>

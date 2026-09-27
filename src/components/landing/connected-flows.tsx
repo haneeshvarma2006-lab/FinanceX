@@ -5,6 +5,7 @@ import type { Tone } from './charts';
 import { flows } from './data';
 import { FadeUp, GlowCard, Pulse } from './motion';
 import { Container, SectionHeader, TONE_TEXT, ToneChip, type IconName } from './primitives';
+import { Rail } from './rail';
 
 /**
  * "How it connects" — the reason the product exists.
@@ -113,9 +114,9 @@ export function ConnectedFlows() {
           />
         </FadeUp>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <Rail label="Three chains of cause and effect" gridClassName="md:grid-cols-3">
           {flows.map((flow, i) => (
-            <FadeUp key={flow.id} delay={i * 0.08}>
+            <FadeUp key={flow.id} delay={i * 0.08} className="h-full">
               <GlowCard tone={flow.tone} className="h-full">
                 <span
                   aria-hidden
@@ -161,7 +162,7 @@ export function ConnectedFlows() {
               </GlowCard>
             </FadeUp>
           ))}
-        </div>
+        </Rail>
 
         <FadeUp className="flex justify-center">
           <p className="inline-flex items-center gap-2 text-sm text-brand-ink-muted">

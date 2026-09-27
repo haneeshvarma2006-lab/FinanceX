@@ -1,5 +1,14 @@
 import Link from 'next/link';
-import { CheckSquare, Flame, LayoutGrid, LineChart, Target, Wallet, Workflow } from 'lucide-react';
+import {
+  CheckSquare,
+  Flame,
+  LayoutGrid,
+  LineChart,
+  LogOut,
+  Target,
+  Wallet,
+  Workflow,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { requireUser } from '@/lib/auth/current-user';
 import { countUnreadNotifications } from '@/modules/productivity/repository';
@@ -50,7 +59,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <header
         className={cn(
-          'chrome sticky top-0 z-40 border-b border-border-subtle/70 bg-surface-sunken',
+          'chrome sticky top-0 z-40 border-b border-border-subtle/70',
           // From sm up the bar floats: a glass pill over the page. The blur
           // lives on the pill and starts at sm on purpose — a backdrop-filter
           // makes an element the containing block for its `position: fixed`
@@ -59,6 +68,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           'sm:border-0 sm:bg-transparent sm:px-4 sm:pt-3 sm:shadow-none',
         )}
       >
+        {/* Phone glass. The blur sits on this separate layer rather than on
+            the header, so the header never becomes the containing block of
+            the fixed bottom dock inside it. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-surface-sunken/75 backdrop-blur-xl backdrop-saturate-150 sm:hidden"
+        />
         <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 sm:h-14 sm:rounded-full sm:pr-2 sm:pl-5 sm:shadow-(--shadow-overlay) sm:ui-card sm:backdrop-blur-xl sm:backdrop-saturate-150">
           <Link
             href="/today"
@@ -75,11 +91,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <ThemeToggle />
             <NotificationBell count={unread} />
 
+            {/* One link at every width: the avatar on a phone, the word from
+                sm up. The label keeps its name the same for assistive tech. */}
             <Link
               href="/settings"
-              className="inline-flex h-8 items-center rounded-full px-3 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
+              aria-label="Settings"
+              className="inline-flex h-8 items-center rounded-full text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary sm:px-3"
             >
-              Settings
+              <span
+                aria-hidden
+                className="inline-flex size-8 items-center justify-center rounded-full bg-linear-to-br from-tasks via-trading to-finance text-xs font-semibold text-surface-sunken ring-2 ring-surface-sunken sm:hidden"
+              >
+                {initial(user.displayName)}
+              </span>
+              <span className="hidden sm:inline">Settings</span>
             </Link>
 
             <span aria-hidden className="mx-1 hidden h-4 w-px bg-border-subtle sm:block" />
@@ -99,9 +124,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <form action={signOutAction}>
               <button
                 type="submit"
-                className="inline-flex h-8 items-center rounded-full px-3 text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary"
+                aria-label="Sign out"
+                className="inline-flex size-8 items-center justify-center rounded-full text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary sm:w-auto sm:px-3"
               >
-                Sign out
+                <LogOut aria-hidden className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </form>
           </div>
@@ -110,7 +137,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <main
         id="main"
-        className="cascade mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-28 sm:px-6 sm:pt-12 sm:pb-16"
+        className="cascade mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-36 sm:px-6 sm:pt-12 sm:pb-16"
       >
         {children}
       </main>

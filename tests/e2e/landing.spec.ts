@@ -115,3 +115,20 @@ test('with reduced motion the page renders whole and still', async ({ browser, b
   expect(problems).toEqual([]);
   await context.close();
 });
+
+test('on a phone the menu opens, links to a section, and closes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const open = page.getByRole('button', { name: 'Open menu' });
+  const menu = page.getByRole('dialog', { name: 'Menu' });
+  // Until the page hydrates the button does nothing, so retry the tap.
+  await expect(async () => {
+    await open.click();
+    await expect(menu).toBeVisible({ timeout: 500 });
+  }).toPass();
+
+  await menu.getByRole('link', { name: 'How it connects' }).click();
+  await expect(menu).toBeHidden();
+  await expect(page).toHaveURL(/#connected$/);
+});

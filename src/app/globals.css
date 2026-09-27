@@ -600,6 +600,9 @@ p {
     var(--brand-ink) 35%,
     color-mix(in oklch, var(--brand-ink) 62%, transparent)
   );
+  /* One gradient per line, so a headline that wraps onto three lines on a
+     phone has three bright tops rather than one fading slab. */
+  background-size: 100% 1lh;
   background-clip: text;
   color: transparent;
 }
@@ -740,6 +743,7 @@ p {
     var(--text-primary) 40%,
     color-mix(in oklch, var(--text-primary) 66%, transparent)
   );
+  background-size: 100% 1lh;
   background-clip: text;
   color: transparent;
 }

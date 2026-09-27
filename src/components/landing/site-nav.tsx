@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Wordmark } from '@/components/ui/wordmark';
+import { MobileMenu } from './mobile-menu';
 import { ScrollProgress } from './motion';
 import { ButtonLink } from './primitives';
 
@@ -37,7 +38,9 @@ export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
-            <ThemeToggle className="text-brand-ink-muted hover:bg-brand-ink/5 hover:text-brand-ink" />
+            {/* On a phone the theme switch lives in the menu, so the bar
+                holds only the brand, the one call to action and the menu. */}
+            <ThemeToggle className="hidden text-brand-ink-muted hover:bg-brand-ink/5 hover:text-brand-ink sm:inline-flex" />
             {signedIn ? (
               <ButtonLink href="/today" className="h-10 px-4">
                 Open app
@@ -55,6 +58,7 @@ export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
                 </ButtonLink>
               </>
             )}
+            <MobileMenu signedIn={signedIn} />
           </div>
         </div>
       </header>

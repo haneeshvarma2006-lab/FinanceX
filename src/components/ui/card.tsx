@@ -192,7 +192,11 @@ export function StatGrid({ children, columns = 3 }: { children: ReactNode; colum
   return (
     <dl
       className={cn(
-        'grid grid-cols-1 gap-4',
+        // Phone: two columns rather than a tall stack. With three figures the
+        // first — the headline, a balance or a total — takes the full width,
+        // set larger, and the other two sit side by side beneath it.
+        'grid grid-cols-2 gap-x-4 gap-y-5',
+        columns === 3 && 'max-sm:[&>*:first-child]:col-span-2 max-sm:[&>*:first-child_dd]:text-3xl',
         cols,
         'sm:gap-0 sm:divide-x sm:divide-border-subtle',
         // Pulls the first column flush with the card padding while the
