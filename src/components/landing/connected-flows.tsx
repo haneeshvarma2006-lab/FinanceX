@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import type { Tone } from './charts';
 import { flows } from './data';
 import { FadeUp, GlowCard, Pulse } from './motion';
-import { Container, SectionHeader, ToneChip, type IconName } from './primitives';
+import { Container, SectionHeader, TONE_TEXT, ToneChip, type IconName } from './primitives';
 
 /**
  * "How it connects" — the reason the product exists.
@@ -59,7 +59,14 @@ function Step({
   return (
     <li className="relative flex flex-col">
       <div className="flex items-start gap-3.5">
-        <ToneChip tone={step.tone} icon={step.icon as IconName} />
+        {/* Ripples as the travelling dot arrives, so the eye follows the
+            event from one step into the next. */}
+        <span
+          className={cn('lp-ping inline-flex', TONE_TEXT[step.tone])}
+          style={{ animationDelay: `${index === 0 ? 0 : (index - 1) * 600 + 1750}ms` }}
+        >
+          <ToneChip tone={step.tone} icon={step.icon as IconName} />
+        </span>
         <div className="min-w-0 pt-0.5">
           <p className="text-sm font-medium text-brand-ink">{step.label}</p>
           <p className="mt-0.5 text-xs text-brand-ink-muted">{step.detail}</p>

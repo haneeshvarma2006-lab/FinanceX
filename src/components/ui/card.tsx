@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { CardGlow } from './card-glow';
 
 /**
  * The card is the product's primary container.
@@ -28,6 +29,14 @@ export const ACCENT_CHIP: Record<Accent, string> = {
  * treatment the landing page gives its connected steps. It says which part of
  * the product a card belongs to before a word of it is read.
  */
+const GLOW_COLOR: Record<Accent, string> = {
+  tasks: 'var(--accent-tasks)',
+  habits: 'var(--accent-habits)',
+  finance: 'var(--accent-finance)',
+  trading: 'var(--accent-trading)',
+  accent: 'var(--text-primary)',
+};
+
 const ACCENT_EDGE: Record<Accent, string> = {
   tasks: 'before:via-tasks/70',
   habits: 'before:via-habits/70',
@@ -60,7 +69,7 @@ export function Card({
   return (
     <Tag
       className={cn(
-        'relative rounded-2xl border bg-surface-raised/75 backdrop-blur-sm',
+        'group/card relative isolate rounded-2xl border bg-surface-raised/75 backdrop-blur-sm',
         // A whisper of light from above, so the panel reads as material.
         'bg-linear-to-b from-text-primary/3 to-transparent',
         'shadow-[var(--shadow-raised),var(--shadow-edge)]',
@@ -76,6 +85,7 @@ export function Card({
         className,
       )}
     >
+      <CardGlow color={GLOW_COLOR[accent ?? 'accent']} />
       {children}
     </Tag>
   );
@@ -220,11 +230,11 @@ export function Stat({
         className={cn(
           // Never truncated: an elided figure is worse than a wrapped one,
           // and money is the whole reason the tile exists.
-          'numeric mt-2 text-lg leading-tight font-semibold tracking-tight break-words sm:text-xl',
+          'numeric mt-2 overflow-hidden text-lg leading-tight font-semibold tracking-tight break-words sm:text-xl',
           tone ? valueTone : 'text-text-primary',
         )}
       >
-        {value}
+        <span className="stat-roll max-w-full">{value}</span>
       </dd>
       {detail && <p className="numeric mt-1 text-xs text-text-muted">{detail}</p>}
     </div>

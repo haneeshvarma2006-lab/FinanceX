@@ -88,3 +88,30 @@ test('the Black / White switch flips the theme and remembers it', async ({ page,
   await page.reload();
   await expect(html).not.toHaveAttribute('data-theme', 'light');
 });
+
+test('with reduced motion the page renders whole and still', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') problems.push(m.text());
+  });
+
+  await page.goto(`${baseURL}/`);
+  // Scrolling must not detach anything: a server/client tree mismatch would
+  // make React re-render the page and drop these nodes.
+  await page.locator('#analytics').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('One system for');
+
+  // No chart is left hidden waiting for an entrance that will never play.
+  const hidden = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('.lp-draw, .lp-bar, .lp-grow, .lp-pop')].filter(
+        (el) => getComputedStyle(el).visibility === 'hidden',
+      ).length,
+  );
+  expect(hidden).toBe(0);
+  expect(problems).toEqual([]);
+  await context.close();
+});

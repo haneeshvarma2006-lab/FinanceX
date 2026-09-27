@@ -446,7 +446,7 @@ function Blank({
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-10 text-center">
-      <span className="relative mb-4">
+      <span className="float-soft relative mb-4">
         <span aria-hidden className={cn('absolute inset-0 rounded-2xl blur-xl', GLOW[accent])} />
         <span
           className={cn(

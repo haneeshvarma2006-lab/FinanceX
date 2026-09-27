@@ -11,6 +11,7 @@ import { Hero } from '@/components/landing/hero';
 import { MotionRoot } from '@/components/landing/motion';
 import { SiteFooter } from '@/components/landing/site-footer';
 import { SiteNav } from '@/components/landing/site-nav';
+import { Ticker } from '@/components/landing/ticker';
 
 export const metadata: Metadata = {
   title: { absolute: `${brand.name} — ${brand.tagline}` },
@@ -39,6 +40,7 @@ export default async function LandingPage() {
         <SiteNav signedIn={signedIn} />
         <main id="main">
           <Hero signedIn={signedIn} />
+          <Ticker />
           <FeatureBento />
           <ConnectedFlows />
           <Analytics />

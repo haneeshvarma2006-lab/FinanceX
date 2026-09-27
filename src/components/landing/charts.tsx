@@ -74,7 +74,7 @@ export function AreaChart({
       aria-label={label}
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
-      className={cn('w-full overflow-visible', className)}
+      className={cn('lp-draw w-full overflow-visible', className)}
     >
       <defs>
         <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
@@ -97,7 +97,7 @@ export function AreaChart({
           cy={last.y}
           r={3.5}
           vectorEffect="non-scaling-stroke"
-          className={cn('fill-brand-canvas', STROKE[tone])}
+          className={cn('lp-pop fill-brand-canvas', STROKE[tone])}
           strokeWidth={2}
         />
       )}
@@ -123,7 +123,7 @@ export function Sparkline({
       aria-label={label}
       viewBox="0 0 100 28"
       preserveAspectRatio="none"
-      className={cn('h-7 w-full', className)}
+      className={cn('lp-draw h-7 w-full', className)}
     >
       <path
         d={smoothPath(points)}
@@ -172,7 +172,10 @@ export function TradeBars({
             width={10 - gap}
             height={Math.max(h, 1)}
             rx={1.5}
-            className={r >= 0 ? 'fill-brand-finance' : 'fill-brand-trading/70'}
+            className={cn(
+              r >= 0 ? 'lp-bar fill-brand-finance' : 'lp-bar lp-bar-down fill-brand-trading/70',
+            )}
+            style={{ animationDelay: `${200 + i * 60}ms` }}
           />
         );
       })}
@@ -195,7 +198,7 @@ export function AllocationBar({
       <div
         role="img"
         aria-label={parts.map((p) => `${p.label} ${p.share}%`).join(', ')}
-        className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full"
+        className="lp-grow flex h-2 w-full gap-0.5 overflow-hidden rounded-full"
       >
         {parts.map((part) => (
           <span key={part.label} className={part.className} style={{ width: `${part.share}%` }} />
@@ -240,7 +243,7 @@ export function Meter({
       className="h-1 w-full overflow-hidden rounded-full bg-brand-line"
     >
       <div
-        className={cn('h-full rounded-full', fill)}
+        className={cn('lp-grow h-full rounded-full', fill)}
         style={{ width: `${Math.min(value, 100)}%` }}
       />
     </div>

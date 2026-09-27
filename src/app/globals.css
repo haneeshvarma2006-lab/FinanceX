@@ -311,6 +311,261 @@ p {
   animation: lp-orbit 7s linear infinite;
 }
 
+/**
+ * The hero spotlight: a brighter copy of the grid, plus a faint wash of
+ * colour, visible only in a circle around the pointer. Position arrives as
+ * --x / --y from the Spotlight component.
+ */
+.lp-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out-soft);
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklch, var(--brand-ink) 14%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--brand-ink) 14%, transparent) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at var(--x, 50%) var(--y, 50%),
+      color-mix(in oklch, var(--brand-tasks) 12%, transparent),
+      transparent 60%
+    );
+  background-size:
+    3.5rem 3.5rem,
+    3.5rem 3.5rem,
+    100% 100%;
+  mask-image: radial-gradient(16rem circle at var(--x, 50%) var(--y, 50%), black, transparent 75%);
+}
+
+/* Aurora: three domain-coloured lights drifting slowly behind the hero. */
+@keyframes lp-drift-a {
+  50% {
+    transform: translate3d(-12%, 10%, 0) scale(1.15);
+  }
+}
+@keyframes lp-drift-b {
+  50% {
+    transform: translate3d(14%, -8%, 0) scale(0.9);
+  }
+}
+@keyframes lp-drift-c {
+  50% {
+    transform: translate3d(-8%, -14%, 0) scale(1.1);
+  }
+}
+.lp-aurora-a {
+  animation: lp-drift-a 18s ease-in-out infinite;
+}
+.lp-aurora-b {
+  animation: lp-drift-b 22s ease-in-out infinite;
+}
+.lp-aurora-c {
+  animation: lp-drift-c 26s ease-in-out infinite;
+}
+
+/**
+ * Charts that draw themselves when scrolled into view. A region is marked by
+ * the InView component; the line is revealed left to right, the area fades
+ * up behind it, the end point pops, bars rise from the baseline, meters fill.
+ * Only for people who have not asked for less motion — everyone else simply
+ * sees the finished chart.
+ */
+@keyframes lp-reveal-x {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes lp-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes lp-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes lp-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes lp-pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.5);
+  }
+}
+
+.lp-bar,
+.lp-pop {
+  transform-box: fill-box;
+}
+.lp-bar {
+  transform-origin: center bottom;
+}
+.lp-bar-down {
+  transform-origin: center top;
+}
+.lp-pop {
+  transform-origin: center;
+}
+.lp-grow {
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-inview='false'] :is(.lp-draw, .lp-area, .lp-bar, .lp-pop, .lp-grow) {
+    visibility: hidden;
+  }
+  [data-inview='true'] .lp-draw {
+    animation: lp-reveal-x 1.6s var(--ease-out-soft) both;
+  }
+  [data-inview='true'] .lp-area {
+    animation: lp-fade-in 1.4s ease 0.4s both;
+  }
+  [data-inview='true'] .lp-bar {
+    animation: lp-rise 0.7s var(--ease-out-soft) both;
+  }
+  [data-inview='true'] .lp-pop {
+    animation: lp-pop 0.6s var(--ease-out-soft) 1.4s both;
+  }
+  [data-inview='true'] .lp-grow {
+    animation: lp-fill 1.2s var(--ease-out-soft) 0.2s both;
+  }
+}
+
+/* The capability ticker: two copies side by side, sliding one width left. */
+@keyframes lp-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.lp-ticker {
+  animation: lp-marquee 45s linear infinite;
+}
+.lp-ticker-wrap:hover .lp-ticker {
+  animation-play-state: paused;
+}
+.lp-ticker-wrap {
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+/* A ring that ripples out of a step as the event reaches it. */
+@keyframes lp-ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, currentColor 55%, transparent);
+  }
+  40%,
+  100% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+.lp-ping {
+  border-radius: 0.5rem;
+  animation: lp-ping 3s ease-out infinite;
+}
+
+/**
+ * A slow sheen across coloured headline words. The word's colour arrives as
+ * --sheen from the component, so each word shines in its own hue.
+ */
+@keyframes lp-sheen {
+  0%,
+  60% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+.lp-sheen {
+  background-image: linear-gradient(
+    110deg,
+    var(--sheen) 40%,
+    color-mix(in oklch, var(--sheen) 45%, white) 50%,
+    var(--sheen) 60%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: lp-sheen 7s ease-in-out 1.5s infinite;
+}
+
+/* A turning halo of the three colours behind the closing headline. */
+@keyframes lp-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.lp-halo {
+  background: conic-gradient(
+    from 0deg,
+    var(--brand-tasks),
+    var(--brand-trading),
+    var(--brand-finance),
+    var(--brand-tasks)
+  );
+  animation: lp-turn 18s linear infinite;
+}
+
+/* The landing nav drops into place on load. */
+@keyframes lp-nav-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+}
+.lp-nav-in {
+  animation: lp-nav-in 700ms var(--ease-out-soft) both;
+}
+
+/* ================================================================ APP MOTION */
+
+/* Cards catch a soft light under the pointer, in their section's colour. */
+.card-glow {
+  background: radial-gradient(
+    24rem circle at var(--x, 50%) var(--y, 0%),
+    color-mix(in oklch, var(--glow, var(--text-primary)) 9%, transparent),
+    transparent 60%
+  );
+}
+
+/* Headline figures slide up into place from under a clip, once. */
+@keyframes stat-roll {
+  from {
+    transform: translate3d(0, 105%, 0);
+    opacity: 0;
+  }
+}
+.stat-roll {
+  display: inline-block;
+  animation: stat-roll 700ms var(--ease-out-soft) 250ms both;
+}
+
+/* Empty-state icons breathe gently while they wait. */
+@keyframes float-soft {
+  50% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+.float-soft {
+  animation: float-soft 4.5s ease-in-out infinite;
+}
+
 /* The travelling event dot in the "how it connects" section. */
 .lp-dot {
   box-shadow: 0 0 0.75rem currentColor;
@@ -326,6 +581,12 @@ p {
 
 /* Respect the system setting rather than animating regardless. */
 @media (prefers-reduced-motion: reduce) {
+  /* Pointer tilt, magnetic pull and scroll tilt are inline transforms set by
+     script; this flattens them for anyone who asked for less motion. */
+  .lp-tilt {
+    transform: none !important;
+  }
+
   *,
   *::before,
   *::after {

@@ -24,7 +24,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <div className="relative mb-4">
+      <div className="float-soft relative mb-4">
         <span aria-hidden className="absolute inset-0 rounded-2xl bg-accent/20 blur-xl" />
         <div className="relative rounded-2xl border border-border-subtle bg-surface-overlay p-3.5 text-text-secondary shadow-(--shadow-edge)">
           {icon ?? <Inbox aria-hidden className="size-5" />}

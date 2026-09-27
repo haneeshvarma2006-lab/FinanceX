@@ -19,6 +19,7 @@ import {
   tradeResults,
   tradeStats,
 } from './data';
+import { Counter, InView } from './motion';
 import { TONE_DOT } from './primitives';
 
 /**
@@ -76,7 +77,7 @@ function NetWorth() {
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p className="font-figures text-2xl font-medium tracking-tight text-brand-ink tabular-nums sm:text-3xl">
-          {inr.format(netWorthStats.current)}
+          <Counter value={netWorthStats.current} format="inr" />
         </p>
         <p className="font-figures text-xs text-brand-finance tabular-nums">
           +{inr.format(netWorthStats.monthChange)} · +{netWorthStats.monthChangePct.toFixed(1)}%
@@ -226,7 +227,8 @@ const NAV = [LayoutGrid, ListChecks, Wallet, CandlestickChart, Target];
 
 export function DashboardMockup() {
   return (
-    <figure
+    <InView
+      as="figure"
       aria-label="The Today dashboard, shown with example data"
       className={cn(
         'relative overflow-hidden rounded-2xl border border-brand-line bg-brand-card/70',
@@ -274,6 +276,6 @@ export function DashboardMockup() {
           <Insights />
         </div>
       </div>
-    </figure>
+    </InView>
   );
 }

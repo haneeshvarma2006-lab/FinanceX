@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
-import { FadeUp } from './motion';
+import type { CSSProperties } from 'react';
+import { FadeUp, Magnetic, WordReveal } from './motion';
 import { ButtonLink, Container } from './primitives';
 
 /**
@@ -18,11 +19,33 @@ export function FinalCta({ signedIn = false }: { signedIn?: boolean }) {
         aria-hidden
         className="pointer-events-none absolute bottom-0 left-1/2 size-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-brand-trading/15 blur-3xl"
       />
+      {/* A turning halo of the three colours, centred behind the headline. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+      >
+        <div className="lp-halo size-80 rounded-full opacity-25 blur-3xl sm:size-120" />
+      </div>
 
       <Container className="relative flex flex-col items-center gap-8 text-center">
         <FadeUp className="flex flex-col items-center gap-5">
           <h2 className="max-w-3xl text-4xl font-semibold tracking-tighter text-brand-ink sm:text-6xl">
-            Build a more intentional life.
+            <WordReveal
+              onMount={false}
+              lines={[
+                [
+                  { text: 'Build' },
+                  { text: 'a' },
+                  { text: 'more' },
+                  {
+                    text: 'intentional',
+                    className: 'lp-sheen',
+                    style: { '--sheen': 'var(--brand-trading)' } as CSSProperties,
+                  },
+                  { text: 'life.' },
+                ],
+              ]}
+            />
           </h2>
           <p className="max-w-lg text-lg text-pretty text-brand-ink-muted">
             {signedIn
@@ -33,9 +56,11 @@ export function FinalCta({ signedIn = false }: { signedIn?: boolean }) {
 
         {signedIn ? (
           <FadeUp delay={0.08}>
-            <ButtonLink href="/today" className="h-12 px-6">
-              Open your dashboard <ArrowRight aria-hidden className="size-4" />
-            </ButtonLink>
+            <Magnetic>
+              <ButtonLink href="/today" className="h-12 px-6">
+                Open your dashboard <ArrowRight aria-hidden className="size-4" />
+              </ButtonLink>
+            </Magnetic>
           </FadeUp>
         ) : (
           <FadeUp delay={0.08} className="w-full max-w-md">

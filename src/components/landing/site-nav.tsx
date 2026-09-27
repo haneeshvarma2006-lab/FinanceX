@@ -12,7 +12,7 @@ const LINKS = [
 
 export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-brand-line/60 bg-brand-canvas/70 backdrop-blur-xl">
+    <header className="lp-nav-in sticky top-0 z-50 border-b border-brand-line/60 bg-brand-canvas/70 backdrop-blur-xl">
       <Container className="flex h-16 items-center gap-8">
         <Link href="/" aria-label="Home" className="rounded-md">
           <Wordmark className="text-base text-brand-ink" />
