@@ -13,7 +13,9 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { newId } from '@/lib/db/id';
+import { accounts } from '@/modules/finance/schema';
 import { users } from '@/modules/identity/schema';
+import { tradingAccounts } from '@/modules/trading/schema';
 
 /**
  * Tasks, projects, habits and goals.
@@ -54,6 +56,11 @@ export const tasks = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     projectId: varchar({ length: 36 }).references(() => projects.id, { onDelete: 'set null' }),
+    /**
+     * The goal this task moves forward. Goals sit above tasks: a task is how
+     * a goal gets done, so a task may name the one it serves.
+     */
+    goalId: varchar({ length: 36 }).references(() => goals.id, { onDelete: 'set null' }),
 
     title: varchar({ length: 240 }).notNull(),
     notes: text(),
@@ -92,6 +99,7 @@ export const tasks = pgTable(
     index('tasks_user_due_idx').on(t.userId, t.dueAt),
     index('tasks_project_idx').on(t.projectId),
     index('tasks_recurrence_parent_idx').on(t.recurrenceParentId),
+    index('tasks_goal_idx').on(t.goalId),
     check('tasks_status_check', sql`${t.status} in ('todo','doing','done','cancelled')`),
     check('tasks_priority_check', sql`${t.priority} between 1 and 4`),
     // A done task must record when; anything else makes streaks and history lie.
@@ -213,6 +221,20 @@ export const goals = pgTable(
 
     /** Set for a habit-kind goal. */
     habitId: varchar({ length: 36 }).references(() => habits.id, { onDelete: 'set null' }),
+
+    /**
+     * A money goal can follow an account instead of manual check-ins: its
+     * progress is that account's balance, recorded as a checkpoint whenever
+     * it changes.
+     */
+    accountId: varchar({ length: 36 }).references(() => accounts.id, { onDelete: 'set null' }),
+    /**
+     * Or a trading account: progress is the realised profit on trades closed
+     * there since the goal started — "pass the challenge", "make ₹50,000".
+     */
+    tradingAccountId: varchar({ length: 36 }).references(() => tradingAccounts.id, {
+      onDelete: 'set null',
+    }),
 
     startsOn: date(),
     targetDate: date(),

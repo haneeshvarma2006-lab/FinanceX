@@ -12,6 +12,8 @@ import {
   GoalValueError,
   type GoalKind,
 } from '@nestedflow/domain/productivity';
+import * as financeRepo from '@/modules/finance/repository';
+import * as tradingRepo from '@/modules/trading/repository';
 import { notify } from './notifications';
 import type { Goal, Habit, Project, Task } from './schema';
 import type { CheckpointInput, GoalInput, HabitInput, ProjectInput, TaskInput } from './validators';
@@ -47,6 +49,10 @@ export async function createTask(userId: string, input: TaskInput): Promise<Resu
     const project = await repo.findProject(userId, input.projectId);
     if (!project) return notFound();
   }
+  if (input.goalId) {
+    const goal = await repo.findGoal(userId, input.goalId);
+    if (!goal) return notFound();
+  }
 
   const dueAt = parseDueAt(input.dueAt || undefined);
   if (dueAt === 'invalid') return invalid('dueAt', 'That is not a valid date and time');
@@ -63,6 +69,7 @@ export async function createTask(userId: string, input: TaskInput): Promise<Resu
   return ok(
     await repo.insertTask(userId, {
       projectId: input.projectId || null,
+      goalId: input.goalId || null,
       title: input.title,
       notes: input.notes ?? null,
       priority: input.priority,
@@ -86,6 +93,10 @@ export async function updateTask(
     const project = await repo.findProject(userId, input.projectId);
     if (!project) return notFound();
   }
+  if (input.goalId) {
+    const goal = await repo.findGoal(userId, input.goalId);
+    if (!goal) return notFound();
+  }
 
   const dueAt = parseDueAt(input.dueAt || undefined);
   if (dueAt === 'invalid') return invalid('dueAt', 'That is not a valid date and time');
@@ -101,6 +112,7 @@ export async function updateTask(
 
   const updated = await repo.updateTask(userId, id, {
     projectId: input.projectId || null,
+    goalId: input.goalId || null,
     title: input.title,
     notes: input.notes ?? null,
     priority: input.priority,
@@ -152,6 +164,7 @@ export async function completeTask(
 
   const follower = await repo.insertTask(userId, {
     projectId: existing.projectId,
+    goalId: existing.goalId,
     title: existing.title,
     notes: existing.notes,
     priority: existing.priority,
@@ -250,9 +263,32 @@ export async function createGoal(userId: string, input: GoalInput): Promise<Resu
     if (!habit) return notFound();
   }
 
+  // A goal that follows an account is a money goal in that account's currency.
+  let kind = input.kind;
+  let currency: string | null = input.currency || null;
+  let accountId: string | null = null;
+  let tradingAccountId: string | null = null;
+  let sourceName: string | null = null;
+
+  if (input.source === 'account') {
+    const account = await financeRepo.findAccount(userId, input.accountId ?? '');
+    if (!account) return notFound();
+    kind = 'financial';
+    currency = account.currency;
+    accountId = account.id;
+    sourceName = account.name;
+  } else if (input.source === 'trading') {
+    const account = await tradingRepo.findTradingAccount(userId, input.tradingAccountId ?? '');
+    if (!account) return notFound();
+    kind = 'financial';
+    currency = account.currency;
+    tradingAccountId = account.id;
+    sourceName = account.name;
+  }
+
   let targetValue: string;
   try {
-    targetValue = normaliseValue(input.kind, input.targetValue, input.currency || null);
+    targetValue = normaliseValue(kind, input.targetValue, currency);
   } catch (error) {
     return invalid(
       'targetValue',
@@ -260,23 +296,131 @@ export async function createGoal(userId: string, input: GoalInput): Promise<Resu
     );
   }
 
-  if (BigInt(targetValue) <= 0n && input.kind !== 'milestone') {
+  if (BigInt(targetValue) <= 0n && kind !== 'milestone') {
     return invalid('targetValue', 'Set a target greater than zero');
   }
 
-  return ok(
-    await repo.insertGoal(userId, {
-      title: input.title,
-      description: input.description ?? null,
-      kind: input.kind,
-      targetValue,
-      unit: input.unit ?? null,
-      currency: input.currency || null,
-      habitId: input.habitId || null,
-      startsOn: input.startsOn || null,
-      targetDate: input.targetDate || null,
-    }),
+  const goal = await repo.insertGoal(userId, {
+    title: input.title,
+    description: input.description ?? null,
+    kind,
+    targetValue,
+    unit: input.unit ?? null,
+    currency,
+    habitId: input.habitId || null,
+    startsOn: input.startsOn || null,
+    targetDate: input.targetDate || null,
+    accountId,
+    tradingAccountId,
+  });
+
+  if (input.starterTasks) {
+    for (const starter of starterTasksFor(input.source, sourceName)) {
+      await repo.insertTask(userId, {
+        projectId: null,
+        goalId: goal.id,
+        title: starter.title,
+        notes: starter.notes,
+        priority: 2,
+        dueAt: null,
+        scheduledFor: null,
+        estimateMinutes: starter.minutes,
+        rrule: buildRule(starter.repeat, 1),
+      });
+    }
+  }
+
+  return ok(goal);
+}
+
+/**
+ * A goal becomes action: a few recurring tasks that move this kind of goal
+ * forward, linked to it, created only when the user ticks the box.
+ */
+function starterTasksFor(
+  source: GoalInput['source'],
+  accountName: string | null,
+): { title: string; notes: string; minutes: number; repeat: 'daily' | 'weekly' | 'monthly' }[] {
+  if (source === 'trading') {
+    return [
+      {
+        title: 'Journal review',
+        notes: 'Go through this week’s trades: what followed the plan, and what did not.',
+        minutes: 30,
+        repeat: 'weekly',
+      },
+      {
+        title: 'Risk management review',
+        notes: 'Check position sizes and drawdown against your limits.',
+        minutes: 20,
+        repeat: 'weekly',
+      },
+      {
+        title: 'Weekly analysis',
+        notes: 'Look for patterns across winners and losers before next week.',
+        minutes: 30,
+        repeat: 'weekly',
+      },
+    ];
+  }
+  if (source === 'account') {
+    return [
+      {
+        title: accountName ? `Move money into ${accountName}` : 'Move money toward this goal',
+        notes: 'Pay yourself first, before the month decides for you.',
+        minutes: 10,
+        repeat: 'monthly',
+      },
+      {
+        title: 'Review this week’s spending',
+        notes: 'Find one thing to cut, and send the difference to the goal.',
+        minutes: 15,
+        repeat: 'weekly',
+      },
+    ];
+  }
+  return [
+    {
+      title: 'Plan the next step',
+      notes: 'Pick the single action that moves this goal forward this week.',
+      minutes: 15,
+      repeat: 'weekly',
+    },
+  ];
+}
+
+/**
+ * Bring goals that follow an account up to date.
+ *
+ * Runs before a page that shows goals renders. When the balance or the
+ * realised profit has moved since the last checkpoint, the new value is
+ * recorded as a checkpoint — the same append-only history a manual check-in
+ * writes — so "every deposit, as a checkpoint" is literally true.
+ */
+export async function syncLinkedGoals(userId: string): Promise<void> {
+  const active = (await repo.listGoals(userId, 'active')).filter(
+    (g) => g.accountId || g.tradingAccountId,
   );
+  if (active.length === 0) return;
+
+  const balances = active.some((g) => g.accountId)
+    ? await financeRepo.accountBalances(userId)
+    : new Map<string, bigint>();
+
+  for (const goal of active) {
+    let value: bigint;
+    let note: string;
+    if (goal.accountId) {
+      value = balances.get(goal.accountId) ?? 0n;
+      note = 'Balance of the linked account';
+    } else {
+      const since = goal.startsOn ? new Date(`${goal.startsOn}T00:00:00Z`) : goal.createdAt;
+      value = await tradingRepo.realizedPnlSince(userId, goal.tradingAccountId!, since);
+      note = 'Realised profit on the linked trading account';
+    }
+    if (value.toString() === goal.currentValue) continue;
+    await applyProgress(userId, goal, value < 0n ? '0' : value.toString(), note);
+  }
 }
 
 /**
@@ -303,11 +447,21 @@ export async function recordCheckpoint(
     return invalid('value', error instanceof Error ? error.message : 'Invalid value');
   }
 
-  await repo.insertCheckpoint(userId, {
-    goalId: goal.id,
-    value,
-    note: input.note ?? null,
-  });
+  return applyProgress(userId, goal, value, input.note ?? null);
+}
+
+/**
+ * Record a value against a goal: the checkpoint, the cached current value,
+ * and — the first time the target is met — the achievement and its one
+ * notification. Shared by manual check-ins and linked-account sync.
+ */
+async function applyProgress(
+  userId: string,
+  goal: Goal,
+  value: string,
+  note: string | null,
+): Promise<Result<Goal>> {
+  await repo.insertCheckpoint(userId, { goalId: goal.id, value, note });
 
   const achieved = isAchieved(goal.kind as GoalKind, value, goal.targetValue);
 

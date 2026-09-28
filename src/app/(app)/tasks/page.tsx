@@ -44,7 +44,7 @@ export default async function TasksPage({
     projectId: typeof params.project === 'string' ? params.project : undefined,
   };
 
-  const [items, total, projects] = await Promise.all([
+  const [items, total, projects, goals] = await Promise.all([
     repo.listTasks(user.id, {
       ...filter,
       limit: pagination.pageSize,
@@ -52,10 +52,12 @@ export default async function TasksPage({
     }),
     repo.countTasks(user.id, filter),
     repo.listProjects(user.id),
+    repo.listGoals(user.id, 'active'),
   ]);
 
   const page = paginate(items, total, pagination);
   const projectName = new Map(projects.map((p) => [p.id, p.name]));
+  const goalName = new Map(goals.map((g) => [g.id, g.title]));
   const filtered = Boolean(q || params.project);
 
   return (
@@ -70,7 +72,10 @@ export default async function TasksPage({
       <Card accent="tasks">
         <CardHeader title="Add a task" />
         <CardBody>
-          <AddTaskForm projects={projects} />
+          <AddTaskForm
+            projects={projects}
+            goals={goals.map((g) => ({ id: g.id, title: g.title }))}
+          />
         </CardBody>
       </Card>
 
@@ -107,6 +112,7 @@ export default async function TasksPage({
             <TaskList
               tasks={page.items}
               projectName={projectName}
+              goalName={goalName}
               showDone={showDone}
               renderedAt={renderedAt}
             />

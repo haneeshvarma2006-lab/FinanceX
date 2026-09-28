@@ -22,6 +22,7 @@ export async function createTaskAction(_prev: FormState, formData: FormData): Pr
     title: formData.get('title'),
     notes: formData.get('notes') || undefined,
     projectId: formData.get('projectId') || undefined,
+    goalId: formData.get('goalId') || undefined,
     priority: formData.get('priority') || 3,
     dueAt: formData.get('dueAt') || undefined,
     scheduledFor: formData.get('scheduledFor') || undefined,

@@ -45,6 +45,16 @@ export type TodaySnapshot = {
   goals: {
     hasData: boolean;
     active: number;
+    /** The goals nearest their dates, for the top of the dashboard. */
+    items: {
+      id: string;
+      title: string;
+      percent: number;
+      currentLabel: string;
+      targetLabel: string;
+      offTrack: boolean;
+      daysRemaining: number | null;
+    }[];
     offTrack: { id: string; title: string; percent: number }[];
     nearest: { id: string; title: string; percent: number; daysRemaining: number | null } | null;
   };
@@ -81,6 +91,8 @@ export async function buildTodaySnapshot(
   now: Date = new Date(),
 ): Promise<TodaySnapshot> {
   const today = todayFor(timezone);
+  // Goals that follow an account catch up before anything reads them.
+  await productivity.syncLinkedGoals(userId);
   const monthStart = startOfMonth(parseISO(today)).toISOString().slice(0, 10);
   const monthEnd = endOfMonth(parseISO(today)).toISOString().slice(0, 10);
   const dayStart = parseISO(today);
@@ -190,6 +202,15 @@ export async function buildTodaySnapshot(
     goals: {
       hasData: goals.length > 0,
       active: goals.length,
+      items: goalProgress.slice(0, 3).map((g) => ({
+        id: g.goal.id,
+        title: g.goal.title,
+        percent: g.percent,
+        currentLabel: g.currentLabel,
+        targetLabel: g.targetLabel,
+        offTrack: g.offTrack,
+        daysRemaining: g.daysRemaining,
+      })),
       offTrack,
       nearest,
     },

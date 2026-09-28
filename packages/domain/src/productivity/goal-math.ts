@@ -1,4 +1,4 @@
-import { parseAmount, toDecimalString, type Currency } from '../money/index';
+import { formatMoney, parseAmount, type Currency } from '../money/index';
 import { parseDecimal, formatDecimal } from '../trading/decimal';
 
 /**
@@ -43,7 +43,8 @@ export function formatValue(kind: GoalKind, stored: string, currency?: string | 
   const value = BigInt(stored || '0');
 
   if (kind === 'financial') {
-    return toDecimalString(value, (currency ?? 'INR') as Currency);
+    // Shown the way money is shown everywhere else: symbol and grouping.
+    return formatMoney(value, (currency ?? 'INR') as Currency);
   }
   if (kind === 'milestone') {
     return value > 0n ? 'Done' : 'Not yet';

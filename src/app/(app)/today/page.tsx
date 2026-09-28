@@ -137,6 +137,64 @@ export default async function TodayPage() {
         </Card>
       )}
 
+      {/* ---------------------------------------------------------- goals */}
+      {/* Goals sit above everything else: the rest of the page is how they
+          get done, so they come first. */}
+      {!nothingYet && (
+        <Card accent="habits">
+          <CardHeader
+            title="Your goals"
+            accent="habits"
+            icon={<Target aria-hidden className="size-4" />}
+            description={
+              snapshot.goals.hasData
+                ? `${snapshot.goals.active} active${snapshot.goals.offTrack.length ? ` · ${snapshot.goals.offTrack.length} behind pace` : ''}`
+                : 'What everything else here is for.'
+            }
+            action={<CardAction href="/goals">All goals</CardAction>}
+          />
+          <CardBody className={snapshot.goals.hasData ? 'flex flex-col gap-4' : 'p-0'}>
+            {!snapshot.goals.hasData ? (
+              <Blank
+                icon={<Target aria-hidden className="size-5" />}
+                title="Start with a goal"
+                body="An emergency fund, a prop challenge, a business. Tasks, money and trades can all point at it."
+                href="/goals"
+                accent="habits"
+                cta="Set your first goal"
+              />
+            ) : (
+              snapshot.goals.items.map((goal) => (
+                <div key={goal.id} className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-text-primary">
+                      <span className="truncate">{goal.title}</span>
+                      {goal.offTrack && <Badge tone="warning">Behind pace</Badge>}
+                    </span>
+                    <span className="numeric text-xs text-text-muted">
+                      {goal.currentLabel} of {goal.targetLabel}
+                      {goal.daysRemaining !== null && goal.daysRemaining >= 0
+                        ? ` · ${goal.daysRemaining}d left`
+                        : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Progress
+                      value={goal.percent}
+                      label={`${goal.title} progress`}
+                      tone={goal.offTrack ? 'warning' : 'positive'}
+                    />
+                    <span className="numeric w-10 shrink-0 text-right text-sm font-semibold text-text-primary">
+                      {goal.percent}%
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardBody>
+        </Card>
+      )}
+
       <div className="cascade-grid grid items-start gap-5 lg:grid-cols-2">
         {/* ---------------------------------------------------------- tasks */}
         <Card accent="tasks">
@@ -338,33 +396,6 @@ export default async function TodayPage() {
           </CardBody>
         </Card>
       </div>
-
-      {/* ----------------------------------------------------------- goals */}
-      {snapshot.goals.hasData && snapshot.goals.nearest && (
-        <Card accent="habits">
-          <CardHeader
-            title="Closest deadline"
-            accent="habits"
-            icon={<Target aria-hidden className="size-4" />}
-            action={<CardAction href="/goals">All goals</CardAction>}
-          />
-          <CardBody className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-text-primary">{snapshot.goals.nearest.title}</span>
-              <span className="numeric text-xs text-text-muted">
-                {snapshot.goals.nearest.daysRemaining !== null &&
-                snapshot.goals.nearest.daysRemaining >= 0
-                  ? `${snapshot.goals.nearest.daysRemaining} days left`
-                  : 'past its date'}
-              </span>
-            </div>
-            <Progress
-              value={snapshot.goals.nearest.percent}
-              label={`${snapshot.goals.nearest.title} progress`}
-            />
-          </CardBody>
-        </Card>
-      )}
     </div>
   );
 }
@@ -485,6 +516,13 @@ function Blank({
 
 const QUICK_STARTS = [
   {
+    href: '/goals',
+    accent: 'habits',
+    icon: Target,
+    title: 'Set a goal',
+    body: 'What all of this is for.',
+  },
+  {
     href: '/tasks',
     accent: 'tasks',
     icon: CheckSquare,
@@ -544,7 +582,7 @@ function FirstRun() {
           </p>
         </div>
 
-        <ul className="grid gap-3 sm:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {QUICK_STARTS.map(({ href, accent, icon: Icon, title, body }) => (
             <li key={href}>
               <Link

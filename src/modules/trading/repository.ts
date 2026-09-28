@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   strategies,
@@ -283,4 +283,27 @@ export async function deleteNote(userId: string, id: string): Promise<boolean> {
     .returning({ id: tradeNotes.id });
 
   return rows.length > 0;
+}
+
+/**
+ * Realised profit on one account from trades closed at or after `since`.
+ * What a trading goal measures: "make ₹50,000 on this account from here".
+ */
+export async function realizedPnlSince(
+  userId: string,
+  tradingAccountId: string,
+  since: Date,
+): Promise<bigint> {
+  const [row] = await db
+    .select({ total: sql<string>`coalesce(sum(${trades.realizedPnlMinor}), 0)::text` })
+    .from(trades)
+    .where(
+      and(
+        eq(trades.userId, userId),
+        eq(trades.tradingAccountId, tradingAccountId),
+        eq(trades.status, 'closed'),
+        gte(trades.closedAt, since),
+      ),
+    );
+  return BigInt(row?.total ?? '0');
 }

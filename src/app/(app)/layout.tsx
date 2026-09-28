@@ -22,9 +22,9 @@ const ICON = 'size-4';
 
 const NAV: readonly NavItem[] = [
   { href: '/today', label: 'Today', accent: 'accent', icon: <LayoutGrid className={ICON} /> },
+  { href: '/goals', label: 'Goals', accent: 'habits', icon: <Target className={ICON} /> },
   { href: '/tasks', label: 'Tasks', accent: 'tasks', icon: <CheckSquare className={ICON} /> },
   { href: '/lifestyle', label: 'Lifestyle', accent: 'habits', icon: <Flame className={ICON} /> },
-  { href: '/goals', label: 'Goals', accent: 'habits', icon: <Target className={ICON} /> },
   { href: '/finance', label: 'Finance', accent: 'finance', icon: <Wallet className={ICON} /> },
   { href: '/trading', label: 'Trading', accent: 'trading', icon: <LineChart className={ICON} /> },
   { href: '/rules', label: 'Rules', accent: 'accent', icon: <Workflow className={ICON} /> },

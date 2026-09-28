@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { useClearingField } from '@/components/ui/use-clearing-field';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Check, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
+import { Check, ChevronRight, RotateCcw, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { controlClass, Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
@@ -29,6 +29,7 @@ type Task = {
   dueAt: Date | null;
   scheduledFor: string | null;
   projectId: string | null;
+  goalId: string | null;
   rrule: string | null;
 };
 
@@ -83,7 +84,14 @@ function MoreOptions({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AddTaskForm({ projects }: { projects: Project[] }) {
+export function AddTaskForm({
+  projects,
+  goals,
+}: {
+  projects: Project[];
+  /** Active goals, so a task can say which one it serves. */
+  goals: { id: string; title: string }[];
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(createTaskAction, {});
   const titleField = useClearingField(state);
 
@@ -114,6 +122,23 @@ export function AddTaskForm({ projects }: { projects: Project[] }) {
       />
 
       <MoreOptions>
+        <SelectField
+          label="For goal"
+          name="goalId"
+          hint={
+            goals.length === 0
+              ? 'Set a goal on the Goals page and tasks can serve it.'
+              : 'Tasks move goals forward — pick the one this serves.'
+          }
+        >
+          <option value="">No goal</option>
+          {goals.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.title}
+            </option>
+          ))}
+        </SelectField>
+
         <div className="grid gap-4 sm:grid-cols-3">
           <SelectField label="Priority" name="priority" defaultValue="3">
             {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
@@ -351,11 +376,13 @@ function DeleteButton({ id }: { id: string }) {
 export function TaskList({
   tasks,
   projectName,
+  goalName,
   showDone,
   renderedAt,
 }: {
   tasks: Task[];
   projectName: Map<string, string>;
+  goalName: Map<string, string>;
   showDone: boolean;
   /**
    * The server's clock, passed in rather than read here.
@@ -403,6 +430,13 @@ export function TaskList({
                 {task.rrule && <Badge>repeats</Badge>}
                 {overdue && <Badge tone="negative">Overdue</Badge>}
               </p>
+
+              {task.goalId && goalName.get(task.goalId) && (
+                <p className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-habits/25 bg-habits/10 px-2 py-0.5 text-2xs text-habits">
+                  <Target aria-hidden className="size-3 shrink-0" />
+                  <span className="truncate">{goalName.get(task.goalId)}</span>
+                </p>
+              )}
 
               {(task.scheduledFor || task.dueAt || task.projectId) && (
                 <p className="numeric mt-1 text-xs text-text-muted">

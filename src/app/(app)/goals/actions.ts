@@ -12,6 +12,7 @@ export type { FormState };
 function revalidateAll() {
   revalidatePath('/goals');
   revalidatePath('/today');
+  revalidatePath('/tasks');
 }
 
 export async function createGoalAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -27,6 +28,10 @@ export async function createGoalAction(_prev: FormState, formData: FormData): Pr
     habitId: formData.get('habitId') || undefined,
     startsOn: formData.get('startsOn') || undefined,
     targetDate: formData.get('targetDate') || undefined,
+    source: formData.get('source') || 'manual',
+    accountId: formData.get('accountId') || undefined,
+    tradingAccountId: formData.get('tradingAccountId') || undefined,
+    starterTasks: formData.get('starterTasks') ?? '',
   });
 
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };

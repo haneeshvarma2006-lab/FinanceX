@@ -196,7 +196,7 @@ test('a money goal keeps exact precision', async ({ page }) => {
   await expect(page.getByText('Progress recorded')).toBeVisible();
 
   // 25000.50 of 100000.00 is 25% — and the paise are not lost.
-  await expect(page.getByText('25000.50 of 100000.00')).toBeVisible();
+  await expect(page.getByText('₹25,000.50 of ₹1,00,000.00')).toBeVisible();
 });
 
 test('overdue work is surfaced on the dashboard and notified', async ({ page }) => {

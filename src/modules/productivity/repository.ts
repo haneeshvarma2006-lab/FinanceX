@@ -79,6 +79,8 @@ export type TaskSort = (typeof TASK_SORT_COLUMNS)[number];
 export type TaskFilter = {
   status?: string[];
   projectId?: string;
+  /** Tasks serving any of these goals. */
+  goalIds?: string[];
   /** Inclusive calendar-day bounds on scheduledFor. */
   scheduledFrom?: string;
   scheduledTo?: string;
@@ -96,6 +98,11 @@ function taskConditions(userId: string, filter: TaskFilter) {
 
   if (filter.status?.length) conditions.push(inArray(tasks.status, filter.status));
   if (filter.projectId) conditions.push(eq(tasks.projectId, filter.projectId));
+  if (filter.goalIds) {
+    // An empty list means "no goals", which matches nothing — not everything.
+    if (filter.goalIds.length === 0) conditions.push(sql`false`);
+    else conditions.push(inArray(tasks.goalId, filter.goalIds));
+  }
   if (filter.scheduledFrom) conditions.push(gte(tasks.scheduledFor, filter.scheduledFrom));
   if (filter.scheduledTo) conditions.push(lte(tasks.scheduledFor, filter.scheduledTo));
   if (filter.dueBefore) conditions.push(lte(tasks.dueAt, filter.dueBefore));
@@ -159,6 +166,7 @@ export async function findTask(userId: string, id: string): Promise<Task | undef
 
 export type NewTask = {
   projectId: string | null;
+  goalId?: string | null;
   title: string;
   notes: string | null;
   priority: number;
@@ -423,6 +431,8 @@ export async function insertGoal(
     habitId: string | null;
     startsOn: string | null;
     targetDate: string | null;
+    accountId?: string | null;
+    tradingAccountId?: string | null;
   },
 ): Promise<Goal> {
   const [row] = await db

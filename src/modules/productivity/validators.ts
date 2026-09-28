@@ -40,6 +40,8 @@ export const taskSchema = z.object({
   title: z.string().trim().min(1, 'What needs doing?').max(240),
   notes: optionalText(4000),
   projectId: z.string().length(36).optional().or(z.literal('')),
+  /** The goal this task serves, if any. */
+  goalId: z.string().length(36).optional().or(z.literal('')),
   priority: z.coerce.number().int().min(1).max(4).default(3),
 
   /** datetime-local, or blank. */
@@ -67,6 +69,7 @@ export const habitEntrySchema = z.object({
 });
 
 export const GOAL_KINDS = ['numeric', 'financial', 'habit', 'milestone'] as const;
+export const GOAL_SOURCES = ['manual', 'account', 'trading'] as const;
 
 export const goalSchema = z
   .object({
@@ -82,8 +85,31 @@ export const goalSchema = z
     habitId: z.string().length(36).optional().or(z.literal('')),
     startsOn: isoDate.optional().or(z.literal('')),
     targetDate: isoDate.optional().or(z.literal('')),
+
+    /**
+     * Where progress comes from. `manual` is check-ins; `account` follows a
+     * money account's balance; `trading` follows realised profit on a trading
+     * account. The last two make the goal a money goal in that account's
+     * currency, whatever kind was sent.
+     */
+    source: z.enum(GOAL_SOURCES).default('manual'),
+    accountId: z.string().length(36).optional().or(z.literal('')),
+    tradingAccountId: z.string().length(36).optional().or(z.literal('')),
+    /** Create a few recurring tasks that move this kind of goal forward. */
+    starterTasks: z
+      .union([z.literal('on'), z.literal('true'), z.literal(''), z.boolean()])
+      .optional()
+      .transform((v) => v === true || v === 'on' || v === 'true'),
   })
-  .refine((v) => v.kind !== 'financial' || Boolean(v.currency), {
+  .refine((v) => v.source !== 'account' || Boolean(v.accountId), {
+    message: 'Choose the account this goal follows',
+    path: ['accountId'],
+  })
+  .refine((v) => v.source !== 'trading' || Boolean(v.tradingAccountId), {
+    message: 'Choose the trading account this goal follows',
+    path: ['tradingAccountId'],
+  })
+  .refine((v) => v.source !== 'manual' || v.kind !== 'financial' || Boolean(v.currency), {
     message: 'Choose a currency for a money goal',
     path: ['currency'],
   })
