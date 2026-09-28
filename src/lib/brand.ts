@@ -33,6 +33,11 @@ export const brand = {
 
   /** The promise, used in page titles and share cards. */
   tagline: 'One system for tasks, money and trading.',
+  /**
+   * The brand's line to live by, set large at the foot of the site in two
+   * tones — the first half full ink, the second softer.
+   */
+  motto: { lead: 'Nothing changes', soft: 'unless you do it.' },
 
   /**
    * The possessive form, because "Nested Flow's" is built by hand in a few

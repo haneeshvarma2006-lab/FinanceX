@@ -144,7 +144,7 @@ export function PageHeader({
   eyebrow,
   accent = 'accent',
 }: {
-  /** An <em> inside is set in the serif italic, as on the landing page. */
+  /** An <em> inside is set in softer ink, as on the landing page. */
   title: React.ReactNode;
   description?: string;
   action?: React.ReactNode;
@@ -160,7 +160,7 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="ui-ink pb-1 text-3xl font-semibold tracking-tighter text-balance sm:text-5xl [&_em]:pr-1 [&_em]:font-serif [&_em]:font-normal [&_em]:tracking-normal">
+        <h1 className="ui-ink pb-1 text-3xl font-semibold tracking-tighter text-balance sm:text-5xl">
           {title}
         </h1>
         {description && (

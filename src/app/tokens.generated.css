@@ -12,7 +12,6 @@
   --font-display: var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-figures: var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-code: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-serif: 'Instrument Serif', ui-serif, Georgia, 'Times New Roman', serif;
 
   --text-3xs: 0.625rem;
   --text-3xs--line-height: 1rem;

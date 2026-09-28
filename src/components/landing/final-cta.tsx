@@ -38,9 +38,9 @@ export function FinalCta({ signedIn = false }: { signedIn?: boolean }) {
                   [
                     {
                       text: 'intentional',
-                      className: 'lp-ink pr-1 font-serif font-normal italic tracking-normal',
+                      className: 'lp-ink-soft',
                     },
-                    { text: 'life.', className: 'lp-ink' },
+                    { text: 'life.', className: 'lp-ink-soft' },
                   ],
                 ]}
               />

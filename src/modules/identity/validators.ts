@@ -1,15 +1,24 @@
 import { z } from 'zod';
 import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
+import { isCommonPassword, PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
 
 /**
- * A length floor rather than a character-class maze. Composition rules push
- * people toward "Passw0rd!" while a long passphrase they can actually remember
- * is stronger; NIST 800-63B says the same.
+ * A length floor and a blocklist, rather than a character-class maze.
+ *
+ * Rules like "one capital, one number, one symbol" make passwords harder to
+ * create and remember without making them much harder to guess — they push
+ * people toward "Passw0rd!". NIST 800-63B asks for a minimum of eight and a
+ * check against common passwords, and nothing else; that is what this does.
+ * The form shows capitals, numbers and symbols as ways to make a password
+ * stronger, never as requirements.
  */
 const password = z
   .string()
-  .min(12, 'Use at least 12 characters — a memorable phrase works well')
-  .max(256, 'That is longer than 256 characters');
+  .min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters`)
+  .max(256, 'That is longer than 256 characters')
+  .refine((value) => !isCommonPassword(value), {
+    message: 'That password is too common — add a word or two to make it yours',
+  });
 
 const email = z
   .string()

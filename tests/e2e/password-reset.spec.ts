@@ -94,7 +94,7 @@ test('a weak new password is refused and the link still works', async ({ page })
   await page.goto(`/reset-password?token=${token}`);
   await page.getByLabel('New password').fill('short');
   await page.getByRole('button', { name: /set new password/i }).click();
-  await expect(page.getByText(/at least 12 characters/i).first()).toBeVisible();
+  await expect(page.getByText(/use at least 8 characters/i).first()).toBeVisible();
 
   await page.getByLabel('New password').fill(NEW);
   await page.getByRole('button', { name: /set new password/i }).click();

@@ -130,11 +130,10 @@ first, not afterwards.
 
 ## Added for the landing page (2026-09-27)
 
-| Package                        | Version | Licence                                                                     | Use                                                                                       |
-| ------------------------------ | ------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `geist`                        | 1.7.2   | SIL Open Font License 1.1 (`npm view geist license`)                        | Geist Sans and Geist Mono, self-hosted via `next/font/local`; no third-party font request |
-| `framer-motion`                | 13.4.4  | MIT                                                                         | Landing-page motion                                                                       |
-| `@fontsource/instrument-serif` | 5.3.0   | SIL Open Font License 1.1 (`npm view @fontsource/instrument-serif license`) | Instrument Serif, the italic headline accent; self-hosted, no third-party font request    |
+| Package         | Version | Licence                                              | Use                                                                                       |
+| --------------- | ------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `geist`         | 1.7.2   | SIL Open Font License 1.1 (`npm view geist license`) | Geist Sans and Geist Mono, self-hosted via `next/font/local`; no third-party font request |
+| `framer-motion` | 13.4.4  | MIT                                                  | Landing-page motion                                                                       |
 
 Satoshi was requested alongside Geist and Inter but is **not** used: it is not
 distributed on npm and ships under the Indian Type Foundry's own free-font

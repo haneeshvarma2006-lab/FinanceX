@@ -4,7 +4,8 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Field, FormAlert } from '@/components/ui/form';
+import { FormAlert } from '@/components/ui/form';
+import { PasswordField } from '@/components/ui/password-field';
 import { completePasswordResetAction, type FormState } from '../actions';
 
 function Submit() {
@@ -32,12 +33,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
       <input type="hidden" name="token" value={token} />
 
-      <Field
+      <PasswordField
         label="New password"
         name="password"
-        type="password"
         autoComplete="new-password"
-        hint="At least 12 characters. A phrase you can remember works well."
         required
         error={state.fieldErrors?.password}
       />

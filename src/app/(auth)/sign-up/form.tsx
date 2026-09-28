@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CheckboxField, Field, FormAlert } from '@/components/ui/form';
+import { PasswordField } from '@/components/ui/password-field';
 import { signUpAction, type FormState } from '../actions';
 import { brand } from '@/lib/brand';
 
@@ -56,13 +57,11 @@ export function SignUpForm({
           error={state.fieldErrors?.email}
         />
 
-        <Field
+        <PasswordField
           label="Password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
-          hint="At least 12 characters. A memorable phrase beats a short, complicated one."
           error={state.fieldErrors?.password}
         />
 

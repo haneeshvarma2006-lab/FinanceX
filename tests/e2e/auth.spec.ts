@@ -124,6 +124,6 @@ test('rejects a password below the minimum length', async ({ page }) => {
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
 
-  await expect(page.getByText(/at least 12 characters/i)).toBeVisible();
+  await expect(page.getByText(/use at least 8 characters/i)).toBeVisible();
   await expect(page).toHaveURL(/\/sign-up$/);
 });

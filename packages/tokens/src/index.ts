@@ -35,12 +35,6 @@ export const typography = {
    */
   fontFigures: "var(--font-geist-sans), 'Inter Variable', ui-sans-serif, system-ui, sans-serif",
   fontCode: "var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace",
-  /**
-   * Instrument Serif (SIL OFL 1.1), self-hosted through @fontsource. Used
-   * sparingly, in italic, for the one word in a headline that carries the
-   * feeling — the editorial accent against Geist's engineering.
-   */
-  fontSerif: "'Instrument Serif', ui-serif, Georgia, 'Times New Roman', serif",
 
   /**
    * Eight sizes. Enough for an information-dense product, few enough that

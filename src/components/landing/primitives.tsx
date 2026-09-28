@@ -125,9 +125,9 @@ export function SectionHeader({
           className="h-px w-8 bg-linear-to-l from-transparent to-brand-ink-subtle"
         />
       </p>
-      {/* An <em> in the title is set in the serif italic: the one word that
-          carries the feeling, against Geist's engineering. */}
-      <h2 className="lp-ink max-w-4xl pb-1 text-4xl leading-[1.02] font-semibold tracking-tighter text-balance sm:text-6xl [&_em]:pr-1 [&_em]:font-serif [&_em]:font-normal [&_em]:tracking-normal">
+      {/* An <em> in the title is set in softer ink: a two-tone headline,
+          the second half quieter than the first. */}
+      <h2 className="lp-ink max-w-4xl pb-1 text-4xl leading-[1.02] font-semibold tracking-tighter text-balance sm:text-6xl">
         {title}
       </h2>
       {body && (

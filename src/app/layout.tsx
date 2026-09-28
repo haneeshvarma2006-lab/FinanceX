@@ -3,9 +3,6 @@ import { cookies } from 'next/headers';
 // Self-hosted Inter (SIL OFL-1.1). Bundled as local woff2 by the build — no
 // request ever leaves the origin for a font. See docs/LICENSES.md.
 import '@fontsource-variable/inter';
-// Instrument Serif (SIL OFL-1.1), self-hosted: the italic accent in headlines.
-import '@fontsource/instrument-serif/400.css';
-import '@fontsource/instrument-serif/400-italic.css';
 // Geist (SIL OFL-1.1), self-hosted by next/font/local. The variables live on
 // <html> because the --font-display token that reads them resolves at the
 // root; declared any lower, the token sees nothing and falls back to Inter.

@@ -46,7 +46,6 @@ export function primitivesCss(): string {
     declare('font-display', typography.fontDisplay),
     declare('font-figures', typography.fontFigures),
     declare('font-code', typography.fontCode),
-    declare('font-serif', typography.fontSerif),
     '',
     ...Object.entries(typography.size).flatMap(([key, { size, line }]) => [
       declare(`text-${key}`, size),

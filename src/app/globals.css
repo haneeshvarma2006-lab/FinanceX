@@ -608,6 +608,23 @@ p {
 }
 
 /**
+ * The quieter half of a two-tone headline: same face and weight, softer ink.
+ * An <em> inside an inked title takes it, as does a word given the class.
+ */
+.lp-ink-soft,
+.lp-ink em {
+  font-style: normal;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--brand-ink) 58%, transparent),
+    color-mix(in oklch, var(--brand-ink) 36%, transparent)
+  );
+  background-size: 100% 1lh;
+  background-clip: text;
+  color: transparent;
+}
+
+/**
  * Cards with a gradient hairline: brighter along the top edge where light
  * would catch it, fading down the sides. A solid 1px border cannot do this.
  */
@@ -737,6 +754,18 @@ p {
 }
 
 /* Page titles: full ink at the top of the line, easing toward the bottom. */
+.ui-ink em {
+  font-style: normal;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--text-primary) 58%, transparent),
+    color-mix(in oklch, var(--text-primary) 38%, transparent)
+  );
+  background-size: 100% 1lh;
+  background-clip: text;
+  color: transparent;
+}
+
 .ui-ink {
   background-image: linear-gradient(
     180deg,

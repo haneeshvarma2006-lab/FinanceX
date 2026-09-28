@@ -50,11 +50,11 @@ const EVENTS: readonly StreamEvent[] = [
 ];
 
 const INK = 'lp-ink';
-const SERIF = 'lp-ink pr-1 font-serif font-normal italic tracking-normal';
+const SOFT = 'lp-ink-soft';
 
 /**
  * The hero, centred and quiet: one light source above, one sentence set
- * large with a single serif accent, and the product rising into view below
+ * large in two tones of ink, and the product rising into view below
  * it in perspective. Everything moves once, on arrival, then gets out of
  * the way.
  */
@@ -94,9 +94,9 @@ export function Hero({ signedIn = false }: { signedIn?: boolean }) {
               ],
               [
                 { text: 'in', className: INK },
-                { text: 'one', className: SERIF },
-                { text: 'calm', className: SERIF },
-                { text: 'flow.', className: SERIF },
+                { text: 'one', className: SOFT },
+                { text: 'calm', className: SOFT },
+                { text: 'flow.', className: SOFT },
               ],
             ]}
           />

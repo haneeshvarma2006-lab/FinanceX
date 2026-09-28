@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
+import { Card, CardBody, CardHeader } from '@/components/ui/card';
+import { ExpandableStats } from '@/components/ui/expandable-stats';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { ratioToPercent, type Currency } from '@nestedflow/domain/money';
@@ -26,14 +27,17 @@ export default async function FinancePage() {
   const currency = user.baseCurrency as Currency;
   const { start, end } = monthBounds();
 
-  const [accounts, categories, balances, totals, transactions, budgets] = await Promise.all([
-    repo.listAccounts(user.id),
-    repo.listCategories(user.id),
-    repo.accountBalances(user.id),
-    repo.periodTotals(user.id, start, end),
-    repo.listTransactions(user.id, { limit: 25 }),
-    finance.budgetProgress(user.id, start, end),
-  ]);
+  const [accounts, categories, balances, totals, transactions, budgets, monthTx, byCategory] =
+    await Promise.all([
+      repo.listAccounts(user.id),
+      repo.listCategories(user.id),
+      repo.accountBalances(user.id),
+      repo.periodTotals(user.id, start, end),
+      repo.listTransactions(user.id, { limit: 25 }),
+      finance.budgetProgress(user.id, start, end),
+      repo.listTransactions(user.id, { from: start, to: end, limit: 500 }),
+      repo.spendByCategory(user.id, start, end),
+    ]);
 
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
@@ -50,22 +54,70 @@ export default async function FinancePage() {
 
       <Card accent="finance">
         <CardBody>
-          <StatGrid>
-            <Stat
-              label="Total balance"
-              value={<Money minor={totalBalance} currency={currency} />}
-            />
-            <Stat
-              label="Income this month"
-              tone="positive"
-              value={<Money minor={totals.incomeMinor} currency={currency} />}
-            />
-            <Stat
-              label="Spent this month"
-              tone="negative"
-              value={<Money minor={totals.expenseMinor} currency={currency} />}
-            />
-          </StatGrid>
+          <ExpandableStats
+            stats={[
+              {
+                key: 'balance',
+                label: 'Total balance',
+                action: 'Show the accounts behind your balance',
+                value: <Money minor={totalBalance} currency={currency} />,
+                detail: (
+                  <BalanceDetail
+                    rows={accounts.map((a) => ({
+                      id: a.id,
+                      name: a.name,
+                      kind: a.kind,
+                      minor: balances.get(a.id) ?? 0n,
+                      currency: a.currency as Currency,
+                    }))}
+                    total={totalBalance}
+                  />
+                ),
+              },
+              {
+                key: 'income',
+                label: 'Income this month',
+                tone: 'positive',
+                action: 'Show your income this month',
+                value: <Money minor={totals.incomeMinor} currency={currency} />,
+                detail: (
+                  <TransactionHistory
+                    rows={monthTx.filter((tx) => tx.kind === 'income')}
+                    accountName={accountName}
+                    categoryName={categoryName}
+                    empty="No income recorded this month yet."
+                  />
+                ),
+              },
+              {
+                key: 'spent',
+                label: 'Spent this month',
+                tone: 'negative',
+                action: 'Show what you spent this month',
+                value: <Money minor={totals.expenseMinor} currency={currency} />,
+                detail: (
+                  <SpendDetail
+                    byCategory={byCategory.map((row) => ({
+                      name: row.categoryId
+                        ? (categoryName.get(row.categoryId) ?? 'Category')
+                        : 'Uncategorised',
+                      minor: row.spentMinor,
+                    }))}
+                    total={totals.expenseMinor}
+                    currency={currency}
+                    history={
+                      <TransactionHistory
+                        rows={monthTx.filter((tx) => tx.kind === 'expense')}
+                        accountName={accountName}
+                        categoryName={categoryName}
+                        empty="Nothing spent this month yet."
+                      />
+                    }
+                  />
+                ),
+              },
+            ]}
+          />
         </CardBody>
       </Card>
 
@@ -192,5 +244,126 @@ export default async function FinancePage() {
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+/* ------------------------------------------------ histories under the totals */
+
+type Tx = Awaited<ReturnType<typeof repo.listTransactions>>[number];
+
+function BalanceDetail({
+  rows,
+  total,
+}: {
+  rows: { id: string; name: string; kind: string; minor: bigint; currency: Currency }[];
+  total: bigint;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-text-muted">No accounts yet — add one below.</p>;
+  }
+  return (
+    <ul className="flex flex-col gap-3">
+      {rows.map((row) => (
+        <li key={row.id} className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate text-text-primary">
+              {row.name}
+              <span className="ml-2 text-xs text-text-muted capitalize">{row.kind}</span>
+            </span>
+            <Money minor={row.minor} currency={row.currency} />
+          </div>
+          <Progress
+            value={total > 0n && row.minor > 0n ? ratioToPercent(row.minor, total) : 0}
+            label={`${row.name} share of your total balance`}
+            tone="positive"
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SpendDetail({
+  byCategory,
+  total,
+  currency,
+  history,
+}: {
+  byCategory: { name: string; minor: bigint }[];
+  total: bigint;
+  currency: Currency;
+  history: React.ReactNode;
+}) {
+  const sorted = [...byCategory].sort((a, b) =>
+    b.minor > a.minor ? 1 : b.minor < a.minor ? -1 : 0,
+  );
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div>
+        <p className="mb-3 text-2xs font-medium tracking-wide text-text-muted uppercase">
+          Where it went
+        </p>
+        {sorted.length === 0 ? (
+          <p className="text-sm text-text-muted">Nothing spent this month yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {sorted.map((row) => (
+              <li key={row.name} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate text-text-primary">{row.name}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <Money minor={row.minor} currency={currency} />
+                    <span className="numeric w-10 text-right text-xs text-text-muted">
+                      {total > 0n ? `${Math.round(ratioToPercent(row.minor, total))}%` : ''}
+                    </span>
+                  </span>
+                </div>
+                <Progress
+                  value={total > 0n ? ratioToPercent(row.minor, total) : 0}
+                  label={`${row.name} share of this month's spending`}
+                  tone="negative"
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div>
+        <p className="mb-3 text-2xs font-medium tracking-wide text-text-muted uppercase">
+          Every purchase
+        </p>
+        {history}
+      </div>
+    </div>
+  );
+}
+
+function TransactionHistory({
+  rows,
+  accountName,
+  categoryName,
+  empty,
+}: {
+  rows: Tx[];
+  accountName: Map<string, string>;
+  categoryName: Map<string, string>;
+  empty: string;
+}) {
+  if (rows.length === 0) return <p className="text-sm text-text-muted">{empty}</p>;
+  return (
+    <ul className="-my-2 max-h-80 divide-y divide-border-subtle overflow-y-auto">
+      {rows.map((tx) => (
+        <li key={tx.id} className="flex items-center justify-between gap-4 py-2.5">
+          <div className="min-w-0">
+            <p className="truncate text-sm text-text-primary">{tx.description}</p>
+            <p className="numeric mt-0.5 text-xs text-text-muted">
+              {tx.occurredOn} · {accountName.get(tx.accountId) ?? 'Account'}
+              {tx.categoryId ? ` · ${categoryName.get(tx.categoryId) ?? ''}` : ''}
+            </p>
+          </div>
+          <Money minor={tx.amountMinor} currency={tx.currency as Currency} signed />
+        </li>
+      ))}
+    </ul>
   );
 }

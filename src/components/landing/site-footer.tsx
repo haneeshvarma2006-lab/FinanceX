@@ -40,6 +40,10 @@ export function SiteFooter({ signedIn = false }: { signedIn?: boolean }) {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="flex flex-col gap-3 lg:col-span-2">
             <Wordmark className="text-base text-brand-ink" />
+            <p className="max-w-sm text-2xl leading-tight font-semibold tracking-tight text-balance">
+              <span className="lp-ink">{brand.motto.lead} </span>
+              <span className="lp-ink-soft">{brand.motto.soft}</span>
+            </p>
             <p className="max-w-xs text-sm text-brand-ink-muted">{brand.tagline}</p>
           </div>
           {COLUMNS.map((column) => (
