@@ -76,7 +76,7 @@ export function Card({
   return (
     <Tag
       className={cn(
-        'group/card relative isolate rounded-2xl backdrop-blur-sm',
+        'group/card relative isolate rounded-2xl',
         'shadow-[var(--shadow-raised),var(--shadow-edge)]',
         'transition-[border-color,box-shadow] duration-[var(--duration-base)] ease-(--ease-out-soft)',
         'hover:shadow-[var(--shadow-overlay),var(--shadow-edge)]',

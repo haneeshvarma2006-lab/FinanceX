@@ -35,6 +35,15 @@ export const tradeSchema = z.object({
   stopPrice: decimalString.optional().or(z.literal('')),
   targetPrice: decimalString.optional().or(z.literal('')),
   plannedRisk: z.string().trim().max(24).optional().or(z.literal('')),
+  /** A chart the trader saved elsewhere. https only: never a script URL. */
+  chartUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .url('Paste a full link, starting https://')
+    .refine((v) => v.startsWith('https://'), 'Use an https:// link')
+    .optional()
+    .or(z.literal('')),
 });
 
 export const executionSchema = z.object({
@@ -45,10 +54,41 @@ export const executionSchema = z.object({
   executedAt: z.string().min(1).max(40),
 });
 
+/**
+ * The feelings a journal asks about. Fear, greed, FOMO and revenge are the
+ * ones that cost money; the calm ones are there so a good trade can say why.
+ */
+export const EMOTIONS = [
+  'calm',
+  'confident',
+  'disciplined',
+  'patient',
+  'fear',
+  'greed',
+  'fomo',
+  'revenge',
+  'impatient',
+] as const;
+
+export const EMOTION_LABELS: Record<(typeof EMOTIONS)[number], string> = {
+  calm: 'Calm',
+  confident: 'Confident',
+  disciplined: 'Disciplined',
+  patient: 'Patient',
+  fear: 'Fear',
+  greed: 'Greed',
+  fomo: 'FOMO',
+  revenge: 'Revenge',
+  impatient: 'Impatient',
+};
+
+/** The ones that tend to cost money, so the journal can point them out. */
+export const COSTLY_EMOTIONS: readonly string[] = ['fear', 'greed', 'fomo', 'revenge', 'impatient'];
+
 export const noteSchema = z.object({
   kind: z.enum(['thesis', 'review', 'psychology']),
   body: z.string().trim().min(1, 'Write something').max(8000),
-  emotionTag: z.string().trim().max(32).optional(),
+  emotionTag: z.enum(EMOTIONS).optional().or(z.literal('')),
   confidence: z.coerce.number().int().min(1).max(5).optional(),
 });
 

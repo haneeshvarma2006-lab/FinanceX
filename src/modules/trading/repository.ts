@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   strategies,
@@ -143,6 +143,7 @@ export async function insertTrade(
     stopPrice: string | null;
     targetPrice: string | null;
     plannedRiskMinor: bigint | null;
+    chartUrl?: string | null;
   },
 ): Promise<Trade> {
   const [row] = await db
@@ -248,6 +249,19 @@ export async function deleteExecution(
 }
 
 /* ----------------------------------------------------------------- notes --- */
+
+/** Notes for a page of trades in one query, oldest first within each trade. */
+export async function listNotesForTrades(
+  userId: string,
+  tradeIds: readonly string[],
+): Promise<TradeNote[]> {
+  if (tradeIds.length === 0) return [];
+  return db
+    .select()
+    .from(tradeNotes)
+    .where(and(eq(tradeNotes.userId, userId), inArray(tradeNotes.tradeId, [...tradeIds])))
+    .orderBy(asc(tradeNotes.createdAt));
+}
 
 export async function listNotes(userId: string, tradeId: string): Promise<TradeNote[]> {
   return db

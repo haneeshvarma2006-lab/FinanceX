@@ -132,56 +132,45 @@ p {
 }
 
 /**
- * The cascade: each section of a screen rises into place a beat after the
- * one above it, with a touch of blur clearing as it lands. Applied to the
- * page's top-level blocks, so every screen gets it without opting in. The
- * final state is `transform: none; filter: none` so nothing is left holding
- * a containing block once the motion ends.
+ * The cascade: each section of a screen settles into place a beat after the
+ * one above it. Short on purpose — this plays on every tab switch, and past
+ * a quarter-second it reads as lag, not polish. No blur: a blurred full-width
+ * section is expensive to paint on a tablet. The final state is
+ * `transform: none` so nothing keeps a containing block once it ends.
  */
 @keyframes nestedflow-rise {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
-    filter: blur(6px);
+    transform: translate3d(0, 8px, 0);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 
 .cascade > * > * {
-  animation: nestedflow-rise 560ms var(--ease-out-soft) both;
+  animation: nestedflow-rise 260ms var(--ease-out-soft) both;
 }
 .cascade > * > *:nth-child(2) {
-  animation-delay: 70ms;
+  animation-delay: 30ms;
 }
 .cascade > * > *:nth-child(3) {
-  animation-delay: 140ms;
+  animation-delay: 60ms;
 }
-.cascade > * > *:nth-child(4) {
-  animation-delay: 210ms;
-}
-.cascade > * > *:nth-child(5) {
-  animation-delay: 280ms;
-}
-.cascade > * > *:nth-child(n + 6) {
-  animation-delay: 350ms;
+.cascade > * > *:nth-child(n + 4) {
+  animation-delay: 90ms;
 }
 
 /* The same beat inside a grid of cards. */
 .cascade-grid > * {
-  animation: nestedflow-rise 560ms var(--ease-out-soft) both;
+  animation: nestedflow-rise 260ms var(--ease-out-soft) both;
 }
 .cascade-grid > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.cascade-grid > *:nth-child(n + 3) {
   animation-delay: 80ms;
-}
-.cascade-grid > *:nth-child(3) {
-  animation-delay: 160ms;
-}
-.cascade-grid > *:nth-child(n + 4) {
-  animation-delay: 240ms;
 }
 
 /* Bars fill from zero to their value, once, when the screen loads. */

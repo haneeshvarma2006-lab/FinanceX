@@ -71,6 +71,13 @@
       "when": 1790600055136,
       "tag": "0009_sad_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790611330742,
+      "tag": "0010_condemned_archangel",
+      "breakpoints": true
     }
   ]
 }

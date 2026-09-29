@@ -1,6 +1,6 @@
 import { invalid, notFound, ok, type Result } from '@/lib/result';
 import { exponentOf, parseAmount, type Currency } from '@nestedflow/domain/money';
-import { formatDecimal, parseDecimal } from '@nestedflow/domain/trading';
+import { formatDecimal, openedSoonAfterLoss, parseDecimal } from '@nestedflow/domain/trading';
 import {
   computeStrategyStats,
   computeTradeMetrics,
@@ -40,6 +40,7 @@ export async function createTrade(userId: string, input: TradeInput): Promise<Re
     stopPrice: input.stopPrice || null,
     targetPrice: input.targetPrice || null,
     plannedRiskMinor,
+    chartUrl: input.chartUrl || null,
   });
 
   return ok(trade);
@@ -171,7 +172,7 @@ export async function addNote(
     tradeId,
     kind: input.kind,
     body: input.body,
-    emotionTag: input.emotionTag ?? null,
+    emotionTag: input.emotionTag || null,
     confidence: input.confidence ?? null,
   });
 
@@ -195,5 +196,101 @@ export async function accountPerformance(userId: string, tradingAccountId: strin
     account,
     stats: computeStrategyStats(pnls),
     curve: equityCurve(account.startingBalanceMinor, pnls),
+  };
+}
+
+/* --------------------------------------------------------------- journal --- */
+
+export type JournalGroup = {
+  key: string;
+  label: string;
+  trades: number;
+  closed: number;
+  wins: number;
+  netPnlMinor: bigint;
+};
+
+/**
+ * What the journal says about the trader, from their own records only:
+ * results by setup, results by the feeling they tagged, and the trades they
+ * opened soon after a loss. Totals are in one currency — the account's — so
+ * figures in different currencies are never added together.
+ */
+export async function journalInsights(userId: string, currency: string, limit = 300) {
+  const [trades, strategies] = await Promise.all([
+    repo.listTrades(userId, { limit }),
+    repo.listStrategies(userId),
+  ]);
+  const inCurrency = trades.filter((t) => t.currency === currency);
+  const notes = await repo.listNotesForTrades(
+    userId,
+    inCurrency.map((t) => t.id),
+  );
+
+  const emotionsByTrade = new Map<string, Set<string>>();
+  for (const note of notes) {
+    if (!note.emotionTag) continue;
+    const set = emotionsByTrade.get(note.tradeId) ?? new Set<string>();
+    set.add(note.emotionTag);
+    emotionsByTrade.set(note.tradeId, set);
+  }
+
+  const setupName = new Map(strategies.map((s) => [s.id, s.name]));
+  const bySetup = new Map<string, JournalGroup>();
+  const byEmotion = new Map<string, JournalGroup>();
+
+  const add = (map: Map<string, JournalGroup>, key: string, label: string, trade: Trade) => {
+    const group = map.get(key) ?? { key, label, trades: 0, closed: 0, wins: 0, netPnlMinor: 0n };
+    group.trades += 1;
+    if (trade.status === 'closed') {
+      group.closed += 1;
+      if (trade.realizedPnlMinor > 0n) group.wins += 1;
+      group.netPnlMinor += trade.realizedPnlMinor;
+    }
+    map.set(key, group);
+  };
+
+  for (const trade of inCurrency) {
+    const key = trade.strategyId ?? 'none';
+    add(
+      bySetup,
+      key,
+      trade.strategyId ? (setupName.get(trade.strategyId) ?? 'Setup') : 'No setup',
+      trade,
+    );
+    for (const emotion of emotionsByTrade.get(trade.id) ?? []) {
+      add(byEmotion, emotion, emotion, trade);
+    }
+  }
+
+  const soonAfterLoss = openedSoonAfterLoss(
+    inCurrency.map((t) => ({
+      id: t.id,
+      accountId: t.tradingAccountId,
+      openedAt: t.openedAt,
+      closedAt: t.closedAt,
+      realizedPnlMinor: t.realizedPnlMinor,
+      status: t.status,
+    })),
+  );
+  const afterLoss = inCurrency.filter((t) => soonAfterLoss.has(t.id));
+
+  const byNet = (a: JournalGroup, b: JournalGroup) =>
+    b.netPnlMinor > a.netPnlMinor ? 1 : b.netPnlMinor < a.netPnlMinor ? -1 : 0;
+
+  return {
+    setups: [...bySetup.values()].sort(byNet),
+    emotions: [...byEmotion.values()].sort(byNet),
+    emotionsByTrade,
+    notes,
+    soonAfterLoss,
+    afterLoss: {
+      trades: afterLoss.length,
+      closed: afterLoss.filter((t) => t.status === 'closed').length,
+      netPnlMinor: afterLoss.reduce(
+        (sum, t) => (t.status === 'closed' ? sum + t.realizedPnlMinor : sum),
+        0n,
+      ),
+    },
   };
 }

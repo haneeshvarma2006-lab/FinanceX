@@ -1,7 +1,7 @@
 # Deploying Nested Flow to Vercel
 
 **Live at <https://nested-flow.vercel.app>** — Vercel project `nested-flow`,
-functions in `bom1`, database on Neon (project `rough-voice-18829501`,
+functions in `sin1` (Singapore), database on Neon (project `rough-voice-18829501`,
 `aws-ap-southeast-1`, pooled endpoint).
 
 Verified end to end on 2026-09-25 by a real sign-up through the production
@@ -58,12 +58,15 @@ better deleted than left blank.
 | `.vercelignore`  | Keeps tests, docs and fixtures out of the upload                          |
 | `next.config.ts` | Marks `@node-rs/argon2` external so the native binary is not bundled      |
 
-### Why the region is `bom1`
+### Why the region is `sin1`
 
-The base currency is INR and the first market is India, so functions run in
-Mumbai to keep the round trip to the database short. **Put the database in the
-same region.** A function in Mumbai talking to a database in Virginia pays that
-latency on every query, and this app makes several per page.
+Functions run next to the database. The Neon database is in
+`aws-ap-southeast-1` (Singapore), so functions run in Singapore too. They were
+first set to Mumbai (`bom1`) to be near Indian users, but that put every
+database query across the Mumbai–Singapore link, and a page makes several —
+the user noticed it as lag switching between tabs. A visitor's one request to
+Singapore costs a few tens of milliseconds once; a query across regions costs
+it every time. **Keep the functions and the database in the same region.**
 
 Region selection may depend on your Vercel plan. If the deployment is rejected
 for that reason, remove the `regions` key and accept the default.

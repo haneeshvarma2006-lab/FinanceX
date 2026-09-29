@@ -109,6 +109,9 @@ test('refuses a duplicate registration', async ({ page }) => {
     if (attempt === 1) {
       await expect(page).toHaveURL(/\/today$/);
       await page.getByRole('button', { name: /sign out/i }).click();
+      // Let the sign-out redirect land before navigating on, or it can arrive
+      // after the next goto and put the page back on /sign-in.
+      await expect(page).toHaveURL(/\/sign-in$/);
     }
   }
 

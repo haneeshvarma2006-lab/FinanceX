@@ -41,14 +41,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="relative isolate flex min-h-dvh flex-col">
       {/* The landing page's light, turned down for daily use: one soft
-          horizon above the work, and the same fine grain over the page. */}
+          horizon above the work. No grain here — a full-screen blended
+          overlay costs every frame, and the app is used all day. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-160 overflow-hidden opacity-70"
       >
         <div className="lp-horizon lp-breathe absolute inset-0" />
       </div>
-      <div aria-hidden className="lp-noise" />
 
       <a
         href="#main"

@@ -10,6 +10,7 @@ import * as repo from '@/modules/trading/repository';
 import * as trading from '@/modules/trading/service';
 import {
   executionSchema,
+  noteSchema,
   strategySchema,
   tradeSchema,
   tradingAccountSchema,
@@ -79,11 +80,11 @@ export async function createStrategy(_prev: FormState, formData: FormData): Prom
       rules: parsed.data.rules ?? null,
     });
   } catch {
-    return { fieldErrors: { name: 'You already have a strategy with that name' } };
+    return { fieldErrors: { name: 'You already have a setup with that name' } };
   }
 
   revalidatePath('/trading');
-  return { message: 'Strategy added', tone: 'success' };
+  return { message: 'Setup added', tone: 'success' };
 }
 
 export async function createTrade(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -98,6 +99,7 @@ export async function createTrade(_prev: FormState, formData: FormData): Promise
     stopPrice: formData.get('stopPrice') || undefined,
     targetPrice: formData.get('targetPrice') || undefined,
     plannedRisk: formData.get('plannedRisk') || undefined,
+    chartUrl: formData.get('chartUrl') || undefined,
   });
 
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
@@ -128,4 +130,25 @@ export async function addExecution(_prev: FormState, formData: FormData): Promis
 
   revalidatePath('/trading');
   return { message: 'Execution recorded', tone: 'success' };
+}
+
+export async function addNoteAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const tradeId = String(formData.get('tradeId') ?? '');
+
+  const parsed = noteSchema.safeParse({
+    kind: formData.get('kind') || 'review',
+    body: formData.get('body'),
+    emotionTag: formData.get('emotionTag') || undefined,
+    confidence: formData.get('confidence') || undefined,
+  });
+
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
+
+  const result = await trading.addNote(user.id, tradeId, parsed.data);
+  if (!result.ok) return toFormState(result.error);
+
+  revalidatePath('/trading');
+  revalidatePath('/review');
+  return { message: 'Added to the journal', tone: 'success' };
 }

@@ -126,14 +126,14 @@ test('journals a trade and derives P&L from its fills', async ({ page }) => {
   await expect(page.getByText(/trade created/i)).toBeVisible();
 
   // Open: buy 100 @ 250.
-  await page.getByRole('group').filter({ hasText: 'Add an execution' }).first().click();
+  await page.getByRole('group').filter({ hasText: 'Journal' }).first().click();
   await page.getByLabel('Quantity').fill('100');
   await page.getByLabel('Price').fill('250');
   await page.getByRole('button', { name: /add execution/i }).click();
   await expect(page.getByText('Execution recorded')).toBeVisible();
 
   // Close: sell 100 @ 275 → ₹2,500 realised.
-  await page.getByRole('group').filter({ hasText: 'Add an execution' }).first().click();
+  await page.getByRole('group').filter({ hasText: 'Journal' }).first().click();
   await page.getByLabel('Side').selectOption('sell');
   await page.getByLabel('Quantity').fill('100');
   await page.getByLabel('Price').fill('275');
@@ -143,6 +143,15 @@ test('journals a trade and derives P&L from its fills', async ({ page }) => {
   await expect(page.getByText('closed').first()).toBeVisible();
   await expect(page.locator('text=Realised P&L').locator('..')).toContainText('2,500.00');
   await expect(page.locator('text=Win rate').locator('..')).toContainText('100%');
+
+  // Journal it: how it felt, in one tap, and what happened.
+  await page.getByRole('button', { name: 'FOMO', exact: true }).click();
+  await page.getByLabel('Notes').fill('Chased the breakout after missing the first move.');
+  await page.getByRole('button', { name: /add to journal/i }).click();
+  await expect(page.getByText('Added to the journal')).toBeVisible();
+  await expect(page.getByText('Chased the breakout after missing the first move.')).toBeVisible();
+  // The psychology panel now knows what FOMO did on this trade.
+  await expect(page.getByText('What each feeling you tagged has cost or earned.')).toBeVisible();
 });
 
 test('shows the trading disclosure prominently', async ({ page }) => {

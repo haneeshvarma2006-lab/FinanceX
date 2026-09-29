@@ -132,6 +132,13 @@ export const trades = pgTable(
 
     currency: varchar({ length: 3 }).notNull(),
 
+    /**
+     * A link to the chart for this trade — a TradingView snapshot, say. A
+     * link rather than an upload: the app stores no files, and a chart the
+     * trader already saved elsewhere is the one they want to look back at.
+     */
+    chartUrl: varchar({ length: 500 }),
+
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

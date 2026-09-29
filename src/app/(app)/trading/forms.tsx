@@ -1,11 +1,25 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Field, FormAlert, SelectField } from '@/components/ui/form';
+import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
+import { cn } from '@/lib/cn';
 import { SUPPORTED_CURRENCIES } from '@nestedflow/domain/money';
-import { ASSET_CLASSES, TRADE_ENVIRONMENTS } from '@/modules/trading/validators';
-import { addExecution, createTrade, createTradingAccount, type FormState } from './actions';
+import {
+  ASSET_CLASSES,
+  COSTLY_EMOTIONS,
+  EMOTION_LABELS,
+  EMOTIONS,
+  TRADE_ENVIRONMENTS,
+} from '@/modules/trading/validators';
+import {
+  addExecution,
+  addNoteAction,
+  createStrategy,
+  createTrade,
+  createTradingAccount,
+  type FormState,
+} from './actions';
 
 type Account = { id: string; name: string; currency: string; environment: string };
 type Strategy = { id: string; name: string };
@@ -131,8 +145,12 @@ export function AddTradeForm({
         </SelectField>
       </div>
 
-      <SelectField label="Strategy" name="strategyId">
-        <option value="">None</option>
+      <SelectField
+        label="Setup"
+        name="strategyId"
+        hint={strategies.length === 0 ? 'Add your setups below to compare them.' : undefined}
+      >
+        <option value="">No setup</option>
         {strategies.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name}
@@ -161,6 +179,16 @@ export function AddTradeForm({
           error={state.fieldErrors?.plannedRisk}
         />
       </div>
+
+      <Field
+        label="Chart link"
+        name="chartUrl"
+        type="url"
+        inputMode="url"
+        placeholder="https://www.tradingview.com/x/…"
+        hint="Optional. A snapshot you saved, to look back at later."
+        error={state.fieldErrors?.chartUrl}
+      />
 
       <Button type="submit" loading={pending} className="self-start">
         Log trade
@@ -217,6 +245,112 @@ export function AddExecutionForm({ tradeId }: { tradeId: string }) {
       <div>
         <Button type="submit" size="sm" variant="secondary" loading={pending}>
           Add execution
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function AddSetupForm() {
+  const [state, action, pending] = useActionState<FormState, FormData>(createStrategy, {});
+
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <Status state={state} />
+      <Field
+        label="Setup title"
+        name="name"
+        required
+        maxLength={120}
+        placeholder="Opening range breakout"
+        error={state.fieldErrors?.name}
+      />
+      <TextareaField
+        label="Rules"
+        name="rules"
+        rows={3}
+        maxLength={8000}
+        placeholder="When it qualifies, where the stop goes, when you take profit."
+      />
+      <Button type="submit" variant="secondary" loading={pending} className="self-start">
+        Add setup
+      </Button>
+    </form>
+  );
+}
+
+/**
+ * One journal entry for a trade: what you thought, what happened, and how
+ * you felt. The feeling is a single tap, because it is the thing people
+ * skip when it takes typing — and it is the thing the journal learns from.
+ */
+export function AddNoteForm({ tradeId }: { tradeId: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(addNoteAction, {});
+  const [emotion, setEmotion] = useState('');
+
+  return (
+    <form action={action} className="flex flex-col gap-3" noValidate>
+      <input type="hidden" name="tradeId" value={tradeId} />
+      <input type="hidden" name="emotionTag" value={emotion} />
+      <Status state={state} />
+
+      <fieldset>
+        <legend className="mb-2 text-xs font-medium text-text-secondary">How did you feel?</legend>
+        <div className="flex flex-wrap gap-1.5">
+          {EMOTIONS.map((e) => {
+            const selected = emotion === e;
+            const costly = COSTLY_EMOTIONS.includes(e);
+            return (
+              <button
+                key={e}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setEmotion(selected ? '' : e)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs transition-colors duration-[var(--duration-fast)]',
+                  selected
+                    ? costly
+                      ? 'border-negative/50 bg-negative-soft text-negative'
+                      : 'border-positive/50 bg-positive-soft text-positive'
+                    : 'border-border-subtle text-text-secondary hover:border-border-strong hover:text-text-primary',
+                )}
+              >
+                {EMOTION_LABELS[e]}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SelectField label="Entry type" name="kind" defaultValue="review">
+          <option value="thesis">Plan — why I took it</option>
+          <option value="review">Review — what happened</option>
+          <option value="psychology">Psychology — what I felt</option>
+        </SelectField>
+        <SelectField label="Conviction" name="confidence" defaultValue="">
+          <option value="">Not rated</option>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <option key={n} value={n}>
+              {n} of 5
+            </option>
+          ))}
+        </SelectField>
+      </div>
+
+      <TextareaField
+        label="Notes"
+        name="body"
+        rows={3}
+        maxLength={8000}
+        required
+        placeholder="Followed the plan? Moved the stop? What would you do differently?"
+        error={state.fieldErrors?.body}
+      />
+
+      <div>
+        <Button type="submit" size="sm" variant="secondary" loading={pending}>
+          Add to journal
         </Button>
       </div>
     </form>
