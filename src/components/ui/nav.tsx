@@ -46,11 +46,14 @@ const ACTIVE_PILL = {
  */
 export function MainNav({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const activeIndex = items.findIndex((item) => isActive(item.href));
 
   return (
     <MotionConfig reducedMotion="user">
       <nav
         aria-label="Main"
+        data-vt-anchor="dock"
         className={cn(
           // Phone: a floating glass dock, inset from the edges and lifted
           // clear of the home indicator.
@@ -66,14 +69,17 @@ export function MainNav({ items }: { items: readonly NavItem[] }) {
         )}
       >
         <ul className="flex items-stretch justify-between sm:items-center sm:justify-start sm:gap-0.5 sm:px-1">
-          {items.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          {items.map((item, index) => {
+            const active = index === activeIndex;
 
             return (
               <li key={item.href} className="min-w-0 flex-1 sm:flex-none">
                 <Link
                   href={item.href as '/today'}
                   aria-current={active ? 'page' : undefined}
+                  // The screen slides the way the tab row reads: a tab to the
+                  // right arrives from the right, one to the left from the left.
+                  transitionTypes={[index < activeIndex ? 'nav-back' : 'nav-forward']}
                   className={cn(
                     'relative isolate flex flex-col items-center gap-1 rounded-2xl px-1 py-2 sm:rounded-full',
                     'text-2xs whitespace-nowrap',

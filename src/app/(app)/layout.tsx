@@ -58,6 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </a>
 
       <header
+        data-vt-anchor="header"
         className={cn(
           'chrome sticky top-0 z-40 border-b border-border-subtle/70',
           // From sm up the bar floats: a glass pill over the page. The blur
