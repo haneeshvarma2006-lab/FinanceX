@@ -279,6 +279,7 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
   for (const [link, heading] of [
     ['Tasks', /tasks/i],
     ['Lifestyle', /lifestyle/i],
+    ['Notes', /notes/i],
     ['Goals', /goals/i],
     ['Finance', /finance/i],
     ['Trading', /trading journal/i],
@@ -348,4 +349,51 @@ test('text typed during a submit is not discarded', async ({ page }) => {
 
   // What was typed during the round trip survived.
   await expect(field).toHaveValue('Second habit');
+});
+
+test('notes work like a diary: write, edit, pin, search and delete', async ({ page }) => {
+  await register(page, 'notes');
+  await page.getByRole('link', { name: 'Notes', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Notes');
+  await expect(page.getByText('Your diary is empty')).toBeVisible();
+
+  await page.getByLabel('Title').fill('Morning');
+  await page.getByLabel('Entry').fill('Woke early.\nPlanned the week.');
+  await page.getByRole('button', { name: 'Good', exact: true }).click();
+  await page.getByRole('button', { name: 'Save entry' }).click();
+
+  const today = page.getByRole('region', { name: 'Today' });
+  await expect(today.getByRole('heading', { name: 'Morning' })).toBeVisible();
+  await expect(today.getByText('Planned the week.')).toBeVisible();
+  // The composer is ready for the next entry.
+  await expect(page.getByLabel('Entry')).toHaveValue('');
+
+  await page.getByRole('button', { name: 'Edit Morning' }).click();
+  const editor = page
+    .locator('form')
+    .filter({ has: page.getByRole('button', { name: 'Save changes' }) });
+  await editor.getByLabel('Entry').fill('Woke early. Gym, then work.');
+  await editor.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('Woke early. Gym, then work.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+
+  await page.getByLabel('Title').fill('');
+  await page.getByLabel('Entry').fill('Second thought about money');
+  await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(page.getByText('Second thought about money')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Pin Morning' }).click();
+  await expect(page.getByRole('region', { name: 'Pinned' }).getByText('Morning')).toBeVisible();
+
+  await page.getByLabel('Search your notes').fill('money');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page).toHaveURL(/q=money/);
+  await expect(page.getByText('1 entry matches')).toBeVisible();
+  await expect(page.getByText('Woke early. Gym, then work.')).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Show all' }).click();
+  await page.getByRole('button', { name: 'Delete Morning' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByText('Woke early. Gym, then work.')).toHaveCount(0);
+  await expect(page.getByText('Second thought about money')).toBeVisible();
 });
