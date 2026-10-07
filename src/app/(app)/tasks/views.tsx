@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useClearingField } from '@/components/ui/use-clearing-field';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Check, ChevronRight, RotateCcw, Target, Trash2 } from 'lucide-react';
@@ -9,7 +9,12 @@ import { controlClass, Field, FormAlert, SelectField, TextareaField } from '@/co
 import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
 import { setParam } from '@/lib/navigation';
-import { PRIORITY_LABELS } from '@/modules/productivity/validators';
+import { TASK_CATEGORY_ICONS, TaskCategoryTag } from '@/components/ui/task-category';
+import {
+  PRIORITY_LABELS,
+  TASK_CATEGORIES,
+  TASK_CATEGORY_LABELS,
+} from '@/modules/productivity/validators';
 import { SUPPORTED_FREQUENCIES } from '@nestedflow/domain/productivity';
 import {
   completeTaskAction,
@@ -24,6 +29,7 @@ type Task = {
   id: string;
   title: string;
   notes: string | null;
+  category?: string | null;
   status: string;
   priority: number;
   dueAt: Date | null;
@@ -94,6 +100,26 @@ export function AddTaskForm({
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createTaskAction, {});
   const titleField = useClearingField(state);
+  const [category, setCategory] = useState('');
+
+  // The chip clears with the title once a task lands. Adjusted during render
+  // rather than in an effect, so no frame shows the old selection.
+  const [seen, setSeen] = useState(state);
+  if (state !== seen) {
+    setSeen(state);
+    if (state.tone === 'success') setCategory('');
+  }
+
+  function pick(next: string) {
+    const previousLabel = TASK_CATEGORY_LABELS[category as keyof typeof TASK_CATEGORY_LABELS];
+    setCategory(next);
+    // One tap and "Add" is enough: an empty title (or one that is still just
+    // the last chip's word) takes the chip's word.
+    const title = titleField.value.trim();
+    if (!title || title === previousLabel) {
+      titleField.set(next ? TASK_CATEGORY_LABELS[next as keyof typeof TASK_CATEGORY_LABELS] : '');
+    }
+  }
 
   return (
     <form
@@ -105,6 +131,44 @@ export function AddTaskForm({
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
+
+      <fieldset>
+        <legend className="mb-2 text-xs font-medium text-text-secondary">Quick add</legend>
+        <input type="hidden" name="category" value={category} />
+        <div className="flex flex-wrap gap-1.5">
+          {TASK_CATEGORIES.map((key) => {
+            const Icon = TASK_CATEGORY_ICONS[key];
+            const selected = category === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => pick(selected ? '' : key)}
+                className={cn(
+                  'inline-flex h-8 items-center gap-2 rounded-full border pr-3.5 pl-2 text-xs',
+                  'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
+                  selected
+                    ? 'border-tasks/50 bg-tasks/12 font-medium text-tasks'
+                    : 'border-border-subtle text-text-secondary hover:border-border-strong hover:text-text-primary',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    'flex size-4 items-center justify-center rounded-full border',
+                    selected ? 'border-tasks bg-tasks text-surface-base' : 'border-border-strong',
+                  )}
+                >
+                  {selected && <Check className="size-2.5" strokeWidth={3} />}
+                </span>
+                <Icon aria-hidden className="size-3.5" />
+                {TASK_CATEGORY_LABELS[key]}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <Field
         label="What needs doing?"
@@ -422,6 +486,7 @@ export function TaskList({
                 )}
               >
                 {task.title}
+                <TaskCategoryTag category={task.category ?? null} />
                 {task.priority <= 2 && (
                   <Badge tone={PRIORITY_TONE[task.priority as 1 | 2]}>
                     {PRIORITY_LABELS[task.priority as 1 | 2]}

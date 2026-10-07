@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Flame,
   LineChart,
+  Scale,
   Target,
   Wallet,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
+import * as decisionsRepo from '@/modules/decisions/repository';
 import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Today' };
@@ -47,6 +49,7 @@ export default async function TodayPage() {
   // The user's own rules, evaluated against the same read the page renders,
   // so what they are told always matches what they can see.
   await runAutomationRules(user.id, snapshot);
+  const dueDecisions = await decisionsRepo.listDueDecisions(user.id, snapshot.today);
 
   const nothingYet =
     !snapshot.tasks.hasData &&
@@ -73,7 +76,8 @@ export default async function TodayPage() {
         snapshot.habits.atRisk.length > 0 ||
         snapshot.goals.offTrack.length > 0 ||
         snapshot.finance.overBudget.length > 0 ||
-        snapshot.trading.consecutiveLosses >= 3) && (
+        snapshot.trading.consecutiveLosses >= 3 ||
+        dueDecisions.length > 0) && (
         <Card tone="warning">
           <CardHeader
             title="Worth your attention"
@@ -130,6 +134,20 @@ export default async function TodayPage() {
                   icon={<LineChart aria-hidden className="size-4" />}
                   title={`${snapshot.trading.consecutiveLosses} losing trades in a row`}
                   detail="Worth reviewing what they had in common before the next one."
+                />
+              )}
+
+              {dueDecisions.length > 0 && (
+                <Attention
+                  href="/notes/decisions"
+                  accent="accent"
+                  icon={<Scale aria-hidden className="size-4" />}
+                  title={
+                    dueDecisions.length === 1
+                      ? `Review your decision: ${dueDecisions[0]!.title}`
+                      : `${dueDecisions.length} decisions ready to review`
+                  }
+                  detail="Their review day has come. Was each the right call?"
                 />
               )}
             </ul>
@@ -407,7 +425,7 @@ function Attention({
   title,
   detail,
 }: {
-  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading';
+  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading' | '/notes/decisions';
   icon: React.ReactNode;
   /** The domain the item came from, so the row matches its section. */
   accent: Accent;

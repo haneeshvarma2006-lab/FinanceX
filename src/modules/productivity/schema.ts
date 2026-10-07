@@ -64,6 +64,11 @@ export const tasks = pgTable(
 
     title: varchar({ length: 240 }).notNull(),
     notes: text(),
+    /**
+     * What kind of time this is — see TASK_CATEGORIES. One tap when adding,
+     * so a day's list reads as work, trading, gym, meals and sleep at a glance.
+     */
+    category: varchar({ length: 16 }),
 
     /** todo | doing | done | cancelled */
     status: varchar({ length: 16 }).notNull().default('todo'),
@@ -99,6 +104,10 @@ export const tasks = pgTable(
     index('tasks_user_due_idx').on(t.userId, t.dueAt),
     index('tasks_project_idx').on(t.projectId),
     index('tasks_recurrence_parent_idx').on(t.recurrenceParentId),
+    check(
+      'tasks_category_check',
+      sql`${t.category} is null or ${t.category} in ('work','trading','gym','eating','sleeping')`,
+    ),
     index('tasks_goal_idx').on(t.goalId),
     check('tasks_status_check', sql`${t.status} in ('todo','doing','done','cancelled')`),
     check('tasks_priority_check', sql`${t.priority} between 1 and 4`),

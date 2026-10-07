@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/states';
 import * as repo from '@/modules/notes/repository';
 import type { Note } from '@/modules/notes/schema';
 import type { NoteMood } from '@/modules/notes/validators';
+import { NotesTabs } from './tabs';
 import { NoteComposer, NoteEntry, type NoteView } from './views';
 
 export const metadata: Metadata = { title: 'Notes' };
@@ -97,6 +98,7 @@ export default async function NotesPage({
         title="Notes"
         description="Write what happened, what you decided and why. Come back and change it whenever you like — entries stay private to your account."
       />
+      <NotesTabs />
 
       <Card>
         <CardHeader

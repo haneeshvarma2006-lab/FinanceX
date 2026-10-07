@@ -169,6 +169,7 @@ export type NewTask = {
   goalId?: string | null;
   title: string;
   notes: string | null;
+  category?: string | null;
   priority: number;
   dueAt: Date | null;
   scheduledFor: string | null;

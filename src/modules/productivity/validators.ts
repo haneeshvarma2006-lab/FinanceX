@@ -22,6 +22,17 @@ const optionalText = (max: number) =>
     .transform((v) => (v ? v : undefined))
     .optional();
 
+/** The quick-add chips beside "Add task". */
+export const TASK_CATEGORIES = ['work', 'trading', 'gym', 'eating', 'sleeping'] as const;
+export type TaskCategory = (typeof TASK_CATEGORIES)[number];
+export const TASK_CATEGORY_LABELS: Record<TaskCategory, string> = {
+  work: 'Working',
+  trading: 'Trading',
+  gym: 'Gym',
+  eating: 'Eating',
+  sleeping: 'Sleeping',
+};
+
 export const TASK_STATUSES = ['todo', 'doing', 'done', 'cancelled'] as const;
 export const PRIORITY_LABELS = {
   1: 'Urgent',
@@ -39,6 +50,7 @@ export const projectSchema = z.object({
 export const taskSchema = z.object({
   title: z.string().trim().min(1, 'What needs doing?').max(240),
   notes: optionalText(4000),
+  category: z.enum(TASK_CATEGORIES).optional().or(z.literal('')),
   projectId: z.string().length(36).optional().or(z.literal('')),
   /** The goal this task serves, if any. */
   goalId: z.string().length(36).optional().or(z.literal('')),

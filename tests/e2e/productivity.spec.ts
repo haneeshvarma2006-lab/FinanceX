@@ -397,3 +397,80 @@ test('notes work like a diary: write, edit, pin, search and delete', async ({ pa
   await expect(page.getByText('Woke early. Gym, then work.')).toHaveCount(0);
   await expect(page.getByText('Second thought about money')).toBeVisible();
 });
+
+test('quick-add chips name and tag a task in one tap', async ({ page }) => {
+  await register(page, 'chips');
+  await page.goto('/tasks');
+
+  await page.getByRole('button', { name: 'Gym', exact: true }).click();
+  await expect(page.getByLabel('What needs doing?')).toHaveValue('Gym');
+  await page.getByRole('button', { name: 'Add task' }).click();
+
+  const list = page.locator('main ul').filter({ hasText: 'Gym' }).last();
+  await expect(list.getByText('Gym', { exact: true }).first()).toBeVisible();
+  // The chip resets for the next task, and a typed title is never replaced.
+  await expect(page.getByRole('button', { name: 'Gym', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await page.getByLabel('What needs doing?').fill('Deep work on the report');
+  await page.getByRole('button', { name: 'Working', exact: true }).click();
+  await expect(page.getByLabel('What needs doing?')).toHaveValue('Deep work on the report');
+  await page.getByRole('button', { name: 'Add task' }).click();
+  await expect(page.getByText('Deep work on the report')).toBeVisible();
+  await expect(page.getByText('Working', { exact: true }).last()).toBeVisible();
+});
+
+test('the decision journal logs, reviews and reopens a decision', async ({ page }) => {
+  await register(page, 'decisions');
+  await page.goto('/notes');
+  await page.getByRole('link', { name: 'Decisions' }).click();
+  await expect(page).toHaveURL(/\/notes\/decisions$/);
+  await expect(page.getByText('No decisions yet')).toBeVisible();
+
+  await page.getByLabel('What did you decide?').fill('Stop trading the first 15 minutes');
+  await page.getByLabel('Why').fill('Most of my losses come from the open.');
+  await page.getByLabel('Area').selectOption('trading');
+  await page.getByLabel('How sure are you?').selectOption('4');
+  await page.getByLabel('Review on').fill(isoDay());
+  await page.getByRole('button', { name: 'Log decision' }).click();
+
+  const due = page.getByRole('region', { name: 'Ready to review' });
+  await expect(due.getByText('Stop trading the first 15 minutes')).toBeVisible();
+
+  // Today points at it too.
+  await page.goto('/today');
+  await expect(
+    page.getByText('Review your decision: Stop trading the first 15 minutes'),
+  ).toBeVisible();
+  await page.goto('/notes/decisions');
+
+  await page.getByRole('button', { name: 'Review Stop trading the first 15 minutes' }).click();
+  await page.getByRole('button', { name: 'Save review' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Was it the right call?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Right call' }).click();
+  await page.getByLabel('What actually happened?').fill('Fewer losing mornings.');
+  await page.getByRole('button', { name: 'Save review' }).click();
+
+  const reviewed = page.getByRole('region', { name: 'Reviewed' });
+  await expect(reviewed.getByText('Fewer losing mornings.')).toBeVisible();
+  await expect(page.getByText('100%')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Reopen Stop trading the first 15 minutes' }).click();
+  await expect(page.getByRole('region', { name: 'Ready to review' })).toBeVisible();
+});
+
+test('Lifestyle keeps a diary for the day without touching habits', async ({ page }) => {
+  await register(page, 'diary');
+  await page.goto('/lifestyle');
+  await expect(page.getByRole('heading', { name: 'Add a habit' })).toBeVisible();
+
+  await page.getByLabel('Entry').fill('Slept 8 hours. Walked 6 km.');
+  await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(page.getByText('Slept 8 hours. Walked 6 km.')).toBeVisible();
+
+  await page.getByRole('link', { name: 'All notes' }).click();
+  await expect(
+    page.getByRole('region', { name: 'Today' }).getByText('Slept 8 hours.'),
+  ).toBeVisible();
+});

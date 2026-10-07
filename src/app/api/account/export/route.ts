@@ -6,6 +6,7 @@ import * as financeRepo from '@/modules/finance/repository';
 import * as tradingRepo from '@/modules/trading/repository';
 import * as productivityRepo from '@/modules/productivity/repository';
 import * as notesRepo from '@/modules/notes/repository';
+import * as decisionsRepo from '@/modules/decisions/repository';
 import { brand } from '@/lib/brand';
 
 /**
@@ -37,6 +38,7 @@ export async function GET(): Promise<NextResponse> {
     goals,
     notificationPreferences,
     notes,
+    decisions,
   ] = await Promise.all([
     financeRepo.listAccounts(user.id, true),
     financeRepo.listCategories(user.id),
@@ -55,6 +57,7 @@ export async function GET(): Promise<NextResponse> {
     productivityRepo.listGoals(user.id),
     productivityRepo.listNotificationPreferences(user.id),
     notesRepo.listNotes(user.id, { limit: 5000 }),
+    decisionsRepo.listDecisions(user.id, 5000),
   ]);
 
   const payload = {
@@ -72,6 +75,7 @@ export async function GET(): Promise<NextResponse> {
     },
     productivity: { projects, tasks, habits, goals },
     notes,
+    decisions,
     finance: { accounts, categories, transactions, budgets, subscriptions, netWorth },
     trading: { tradingAccounts, strategies, trades },
     emailPreferences: preferences,

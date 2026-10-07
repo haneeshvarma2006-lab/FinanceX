@@ -10,6 +10,12 @@ export type { FormState };
 
 const GONE: FormState = { message: 'That note no longer exists.', tone: 'error' };
 
+/** Notes are written here and on Lifestyle, as the day's diary. */
+function revalidateAll() {
+  revalidatePath('/notes');
+  revalidatePath('/lifestyle');
+}
+
 function fields(formData: FormData) {
   return {
     title: formData.get('title') ?? '',
@@ -25,7 +31,7 @@ export async function createNoteAction(_prev: FormState, formData: FormData): Pr
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   await repo.createNote(user.id, parsed.data);
-  revalidatePath('/notes');
+  revalidateAll();
   return { message: 'Saved', tone: 'success' };
 }
 
@@ -39,7 +45,7 @@ export async function updateNoteAction(_prev: FormState, formData: FormData): Pr
   const updated = await repo.updateNote(user.id, id, input);
   if (!updated) return GONE;
 
-  revalidatePath('/notes');
+  revalidateAll();
   return { message: 'Changes saved', tone: 'success' };
 }
 
@@ -50,7 +56,7 @@ export async function pinNoteAction(_prev: FormState, formData: FormData): Promi
   const done = await repo.setNotePinned(user.id, String(formData.get('id') ?? ''), pinned);
   if (!done) return GONE;
 
-  revalidatePath('/notes');
+  revalidateAll();
   return { message: pinned ? 'Pinned' : 'Unpinned', tone: 'success' };
 }
 
@@ -60,6 +66,6 @@ export async function deleteNoteAction(_prev: FormState, formData: FormData): Pr
   const done = await repo.deleteNote(user.id, String(formData.get('id') ?? ''));
   if (!done) return GONE;
 
-  revalidatePath('/notes');
+  revalidateAll();
   return { message: 'Deleted', tone: 'success' };
 }

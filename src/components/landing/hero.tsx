@@ -86,17 +86,15 @@ export function Hero({ signedIn = false }: { signedIn?: boolean }) {
             delay={0.15}
             lines={[
               [
-                { text: 'Your', className: INK },
-                { text: 'work,', className: INK },
-                { text: 'money', className: INK },
-                { text: '&', className: INK },
-                { text: 'trades', className: INK },
+                { text: 'One', className: INK },
+                { text: 'system', className: INK },
+                { text: 'for', className: INK },
               ],
               [
-                { text: 'in', className: INK },
-                { text: 'one', className: SOFT },
-                { text: 'calm', className: SOFT },
-                { text: 'flow.', className: SOFT },
+                { text: 'tasks,', className: SOFT },
+                { text: 'money', className: SOFT },
+                { text: '&', className: SOFT },
+                { text: 'trading.', className: SOFT },
               ],
             ]}
           />
@@ -104,8 +102,7 @@ export function Hero({ signedIn = false }: { signedIn?: boolean }) {
 
         <FadeUp onMount delay={0.7}>
           <p className="mt-7 max-w-2xl text-lg text-pretty text-brand-ink-muted sm:text-xl">
-            A task manager, a finance tracker and a trading journal, built as one system — so what
-            happens in one part of your life becomes action in the others.
+            Manage your work, finances, and trading performance from one intelligent command center.
           </p>
         </FadeUp>
 

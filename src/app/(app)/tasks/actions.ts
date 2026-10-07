@@ -21,6 +21,7 @@ export async function createTaskAction(_prev: FormState, formData: FormData): Pr
   const parsed = taskSchema.safeParse({
     title: formData.get('title'),
     notes: formData.get('notes') || undefined,
+    category: formData.get('category') || undefined,
     projectId: formData.get('projectId') || undefined,
     goalId: formData.get('goalId') || undefined,
     priority: formData.get('priority') || 3,

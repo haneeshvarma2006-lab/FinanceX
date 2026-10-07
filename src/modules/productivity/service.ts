@@ -72,6 +72,7 @@ export async function createTask(userId: string, input: TaskInput): Promise<Resu
       goalId: input.goalId || null,
       title: input.title,
       notes: input.notes ?? null,
+      category: input.category || null,
       priority: input.priority,
       dueAt,
       scheduledFor: input.scheduledFor || null,
@@ -167,6 +168,7 @@ export async function completeTask(
     goalId: existing.goalId,
     title: existing.title,
     notes: existing.notes,
+    category: existing.category,
     priority: existing.priority,
     // Preserve the time of day from the original due date, on the new date.
     dueAt: existing.dueAt ? next : null,
