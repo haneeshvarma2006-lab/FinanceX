@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { FileUp, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
@@ -49,7 +50,16 @@ export default async function FinancePage() {
         eyebrow="Money"
         accent="finance"
         title="Finance"
-        description={`Everything here is entered by you. ${brand.name} connects to no bank.`}
+        description={`Everything here is entered or imported by you. ${brand.name} connects to no bank.`}
+        action={
+          <Link
+            href="/finance/import"
+            className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+          >
+            <FileUp aria-hidden className="size-4" />
+            Import statement
+          </Link>
+        }
       />
 
       <Card accent="finance">

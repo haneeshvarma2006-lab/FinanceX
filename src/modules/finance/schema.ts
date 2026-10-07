@@ -241,7 +241,7 @@ export const recordRevisions = pgTable(
 
     entityType: varchar({ length: 40 }).notNull(),
     entityId: varchar({ length: 36 }).notNull(),
-    /** created | updated | deleted */
+    /** created | updated | deleted | imported */
     action: varchar({ length: 16 }).notNull(),
 
     before: jsonb().$type<Record<string, unknown> | null>(),

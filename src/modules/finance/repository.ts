@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { newId } from '@/lib/db/id';
 import {
@@ -504,4 +504,101 @@ export async function listRevisions(userId: string, entityType: string, entityId
       ),
     )
     .orderBy(desc(recordRevisions.createdAt));
+}
+
+/* -------------------------------------------------------------- import --- */
+
+/** Which of these import ids this account already holds. */
+export async function existingExternalIds(
+  userId: string,
+  accountId: string,
+  externalIds: readonly string[],
+): Promise<Set<string>> {
+  if (externalIds.length === 0) return new Set();
+  const rows = await db
+    .select({ externalId: transactions.externalId })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.accountId, accountId),
+        inArray(transactions.externalId, [...externalIds]),
+      ),
+    );
+  return new Set(rows.map((r) => r.externalId!));
+}
+
+/**
+ * Entries typed by hand on this account between two days, as date and
+ * signed amount — what an imported row is compared with to spot a
+ * transaction the user already recorded themselves.
+ */
+export async function manualEntriesBetween(
+  userId: string,
+  accountId: string,
+  from: string,
+  to: string,
+): Promise<{ occurredOn: string; amountMinor: bigint }[]> {
+  return db
+    .select({ occurredOn: transactions.occurredOn, amountMinor: transactions.amountMinor })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.accountId, accountId),
+        isNull(transactions.externalId),
+        gte(transactions.occurredOn, from),
+        lte(transactions.occurredOn, to),
+      ),
+    );
+}
+
+/**
+ * Insert a statement's rows in one database transaction: all of them or
+ * none. A row whose import id is already on the account is skipped by the
+ * unique index rather than failing the batch, so two imports racing each
+ * other still cannot duplicate a line.
+ */
+export async function insertImportedTransactions(
+  userId: string,
+  rows: readonly NewTransaction[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
+  return db.transaction(async (tx) => {
+    let inserted = 0;
+    for (let i = 0; i < rows.length; i += 500) {
+      const chunk = rows.slice(i, i + 500).map((row) => ({
+        userId,
+        ...row,
+        merchant: row.merchant ?? null,
+        notes: row.notes ?? null,
+        externalId: row.externalId ?? null,
+        transferGroupId: null,
+      }));
+      const written = await tx.insert(transactions).values(chunk).onConflictDoNothing().returning({
+        id: transactions.id,
+        occurredOn: transactions.occurredOn,
+        amountMinor: transactions.amountMinor,
+        description: transactions.description,
+      });
+      if (written.length > 0) {
+        await tx.insert(recordRevisions).values(
+          written.map((w) => ({
+            userId,
+            entityType: 'transaction',
+            entityId: w.id,
+            action: 'imported',
+            before: null,
+            after: {
+              occurredOn: w.occurredOn,
+              amountMinor: w.amountMinor.toString(),
+              description: w.description,
+            },
+          })),
+        );
+      }
+      inserted += written.length;
+    }
+    return inserted;
+  });
 }

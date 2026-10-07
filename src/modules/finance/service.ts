@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import { invalid, notFound, ok, type Result } from '@/lib/result';
 import { parseAmount, type Currency } from '@nestedflow/domain/money';
 import type { Transaction } from './schema';
 import * as repo from './repository';
-import type { TransactionInput, TransferInput } from './validators';
+import { importKeys, type ImportRowStatus } from './statement';
+import type { StatementImportInput, TransactionInput, TransferInput } from './validators';
 
 /**
  * Finance business rules.
@@ -264,4 +266,91 @@ export async function budgetProgress(
       overBudget: spentMinor > budget.amountMinor,
     };
   });
+}
+
+/* -------------------------------------------------------------- import --- */
+
+function externalIdsFor(accountId: string, rows: StatementImportInput['rows']): string[] {
+  return importKeys(rows.map((r) => ({ ...r, amountMinor: BigInt(r.amountMinor) }))).map(
+    (key) => `csv:${createHash('sha256').update(`${accountId}|${key}`).digest('hex')}`,
+  );
+}
+
+/**
+ * What would happen to each row: new, already imported from an earlier
+ * statement (it will be skipped), or matching something typed in by hand on
+ * the same day for the same amount (shown, left unticked, the user decides).
+ */
+export async function previewImport(
+  userId: string,
+  input: StatementImportInput,
+): Promise<Result<ImportRowStatus[]>> {
+  const account = await repo.findAccount(userId, input.accountId);
+  if (!account) return notFound();
+
+  const ids = externalIdsFor(account.id, input.rows);
+  const days = input.rows.map((r) => r.occurredOn).sort();
+  const [existing, manual] = await Promise.all([
+    repo.existingExternalIds(userId, account.id, ids),
+    repo.manualEntriesBetween(userId, account.id, days[0]!, days[days.length - 1]!),
+  ]);
+
+  // Each hand-typed entry can explain away one imported row, not several.
+  const unclaimed = new Map<string, number>();
+  for (const m of manual) {
+    const key = `${m.occurredOn}|${m.amountMinor}`;
+    unclaimed.set(key, (unclaimed.get(key) ?? 0) + 1);
+  }
+
+  return ok(
+    input.rows.map((row, i) => {
+      if (existing.has(ids[i]!)) return 'already-imported';
+      const key = `${row.occurredOn}|${row.amountMinor}`;
+      const left = unclaimed.get(key) ?? 0;
+      if (left > 0) {
+        unclaimed.set(key, left - 1);
+        return 'possible-duplicate';
+      }
+      return 'new';
+    }),
+  );
+}
+
+/**
+ * Save the ticked rows of a statement to one account, in its currency.
+ * Money in becomes income and money out an expense, uncategorised; rows
+ * already imported before are skipped, so importing a statement twice adds
+ * nothing the second time.
+ */
+export async function importStatement(
+  userId: string,
+  input: StatementImportInput,
+): Promise<Result<{ inserted: number; skipped: number }>> {
+  const account = await repo.findAccount(userId, input.accountId);
+  if (!account) return notFound();
+  if (account.archivedAt) return invalid('accountId', 'That account is archived');
+
+  const ids = externalIdsFor(account.id, input.rows);
+  const chosen = input.rows
+    .map((row, i) => ({ row, externalId: ids[i]! }))
+    .filter(({ row }) => row.selected);
+
+  const inserted = await repo.insertImportedTransactions(
+    userId,
+    chosen.map(({ row, externalId }) => {
+      const amountMinor = BigInt(row.amountMinor);
+      return {
+        accountId: account.id,
+        categoryId: null,
+        occurredOn: row.occurredOn,
+        amountMinor,
+        currency: account.currency,
+        kind: amountMinor > 0n ? 'income' : 'expense',
+        description: row.description,
+        externalId,
+      };
+    }),
+  );
+
+  return ok({ inserted, skipped: chosen.length - inserted });
 }

@@ -228,3 +228,46 @@ test('legal pages are reachable and state their limits', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /privacy notice/i })).toBeVisible();
   await expect(page.getByText(/no independent security audit/i)).toBeVisible();
 });
+
+test('imports a bank statement CSV once, previewing every row first', async ({ page }) => {
+  await register(page, 'statement');
+  await page.goto('/finance');
+  await page.getByLabel('Name').fill('HDFC Savings');
+  await page.getByRole('button', { name: /add account/i }).click();
+  await expect(page.getByText('Account added')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Import statement' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Import a statement');
+
+  const csv = [
+    'HDFC BANK Ltd.,,,,,,',
+    'Date,Narration,Chq./Ref.No.,Value Dt,Withdrawal Amt.,Deposit Amt.,Closing Balance',
+    '01/10/26,SALARY OCT,R1,01/10/26,,"85,000.00","85,000.00"',
+    '03/10/26,UPI-SWIGGY,R2,03/10/26,450.00,,"84,550.00"',
+    '05/10/26,ELECTRICITY,R3,05/10/26,"1,200.00",,"83,350.00"',
+  ].join('\n');
+  const file = { name: 'oct.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) };
+
+  await page.getByLabel('Statement file (.csv)').setInputFiles(file);
+  await expect(page.getByText('oct.csv · 3 rows')).toBeVisible();
+  await expect(page.getByLabel('Money out column')).toHaveValue('4');
+  await expect(page.getByLabel('Money in column')).toHaveValue('5');
+
+  await page.getByRole('button', { name: 'Preview 3 transactions' }).click();
+  await expect(page.getByText('3 of 3 ticked')).toBeVisible();
+  await expect(page.getByText('+₹83,350.00')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Import 3 transactions' }).click();
+  await expect(page.getByRole('status')).toContainText('Imported 3 transactions into HDFC Savings');
+
+  // The same file again: every row is recognised and nothing can be re-added.
+  await page.getByRole('button', { name: 'Import another' }).click();
+  await page.getByLabel('Statement file (.csv)').setInputFiles(file);
+  await page.getByRole('button', { name: 'Preview 3 transactions' }).click();
+  await expect(page.getByText('0 of 3 ticked')).toBeVisible();
+  await expect(page.getByText('Imported before')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: 'Import 0 transactions' })).toBeDisabled();
+
+  await page.goto('/finance');
+  await expect(page.getByText('UPI-SWIGGY').first()).toBeVisible();
+});

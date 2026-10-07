@@ -74,3 +74,29 @@ export const subscriptionSchema = z.object({
 export type AccountInput = z.infer<typeof accountSchema>;
 export type TransactionInput = z.infer<typeof transactionSchema>;
 export type TransferInput = z.infer<typeof transferSchema>;
+
+/**
+ * A statement as the browser read it. Every row is re-checked here: the
+ * preview is a convenience, never a source of truth.
+ */
+export const statementImportSchema = z.object({
+  accountId: z.string().length(36),
+  rows: z
+    .array(
+      z.object({
+        occurredOn: isoDate,
+        amountMinor: z
+          .string()
+          .regex(/^-?\d{1,15}$/, 'Not an amount')
+          // A pattern, not BigInt(): refinements still run after a failed regex.
+          .refine((v) => !/^-?0+$/.test(v), 'No amount'),
+        description: z.string().trim().min(1).max(240),
+        /** Unticked rows still count towards the import ids of the rows after them. */
+        selected: z.boolean().default(true),
+      }),
+    )
+    .min(1, 'There is nothing to import')
+    .max(2000, 'Import at most 2,000 rows at a time'),
+});
+
+export type StatementImportInput = z.infer<typeof statementImportSchema>;
