@@ -25,6 +25,8 @@ import {
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
 import * as decisionsRepo from '@/modules/decisions/repository';
+import { buildWealth } from '@/modules/dashboard/wealth';
+import { WealthPanel } from './wealth-panel';
 import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Today' };
@@ -49,7 +51,10 @@ export default async function TodayPage() {
   // The user's own rules, evaluated against the same read the page renders,
   // so what they are told always matches what they can see.
   await runAutomationRules(user.id, snapshot);
-  const dueDecisions = await decisionsRepo.listDueDecisions(user.id, snapshot.today);
+  const [dueDecisions, wealth] = await Promise.all([
+    decisionsRepo.listDueDecisions(user.id, snapshot.today),
+    buildWealth(user, snapshot.today),
+  ]);
 
   const nothingYet =
     !snapshot.tasks.hasData &&
@@ -70,7 +75,7 @@ export default async function TodayPage() {
         description="Everything below is from your own records."
       />
 
-      {nothingYet ? <FirstRun /> : null}
+      {nothingYet ? <FirstRun /> : <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
 
       {(snapshot.tasks.overdue > 0 ||
         snapshot.habits.atRisk.length > 0 ||

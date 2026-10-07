@@ -380,7 +380,7 @@ test('notes work like a diary: write, edit, pin, search and delete', async ({ pa
   await page.getByLabel('Title').fill('');
   await page.getByLabel('Entry').fill('Second thought about money');
   await page.getByRole('button', { name: 'Save entry' }).click();
-  await expect(page.getByText('Second thought about money')).toBeVisible();
+  await expect(today.getByText('Second thought about money')).toBeVisible();
 
   await page.getByRole('button', { name: 'Pin Morning' }).click();
   await expect(page.getByRole('region', { name: 'Pinned' }).getByText('Morning')).toBeVisible();
@@ -395,7 +395,7 @@ test('notes work like a diary: write, edit, pin, search and delete', async ({ pa
   await page.getByRole('button', { name: 'Delete Morning' }).click();
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByText('Woke early. Gym, then work.')).toHaveCount(0);
-  await expect(page.getByText('Second thought about money')).toBeVisible();
+  await expect(today.getByText('Second thought about money')).toBeVisible();
 });
 
 test('quick-add chips name and tag a task in one tap', async ({ page }) => {
@@ -467,10 +467,48 @@ test('Lifestyle keeps a diary for the day without touching habits', async ({ pag
 
   await page.getByLabel('Entry').fill('Slept 8 hours. Walked 6 km.');
   await page.getByRole('button', { name: 'Save entry' }).click();
-  await expect(page.getByText('Slept 8 hours. Walked 6 km.')).toBeVisible();
+  await expect(page.locator('article').getByText('Slept 8 hours. Walked 6 km.')).toBeVisible();
 
   await page.getByRole('link', { name: 'All notes' }).click();
   await expect(
     page.getByRole('region', { name: 'Today' }).getByText('Slept 8 hours.'),
   ).toBeVisible();
+});
+
+test('the weekly review names one thing to fix and adopts its rule in one tap', async ({
+  page,
+}) => {
+  await register(page, 'review');
+
+  // An empty week has nothing costly in it.
+  await page.goto('/review');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Week of');
+  await expect(page.getByText('Nothing costly stood out')).toBeVisible();
+
+  // Plan three tasks for today and finish none of them.
+  await page.goto('/tasks');
+  for (const title of ['Write report', 'Call bank', 'File taxes']) {
+    await page.getByLabel('What needs doing?').fill(title);
+    await page.locator('summary', { hasText: 'More options' }).click();
+    await page.getByLabel('Do it on').fill(isoDay());
+    await page.getByRole('button', { name: 'Add task' }).click();
+    await expect(page.getByText(title)).toBeVisible();
+    await page.reload();
+  }
+
+  // Today leads with the wealth panel, which links to the review.
+  await page.goto('/today');
+  await expect(page.getByRole('heading', { name: 'Wealth' })).toBeVisible();
+  await page.getByRole('link', { name: 'Weekly review' }).click();
+
+  await expect(page.getByText('The one thing to fix')).toBeVisible();
+  await expect(page.getByText('You finished 0 of the 3 tasks you planned')).toBeVisible();
+  await page.getByRole('button', { name: 'Add rule: nudge me when nothing is done' }).click();
+  await expect(
+    page.getByText('Covered: “Nudge me when nothing is done” (or a stricter rule) is on.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Add rule/ })).toHaveCount(0);
+
+  await page.goto('/rules');
+  await expect(page.getByText('Nudge me when nothing is done').first()).toBeVisible();
 });
