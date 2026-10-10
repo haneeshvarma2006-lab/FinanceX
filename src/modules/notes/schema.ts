@@ -1,7 +1,17 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { newId } from '@/lib/db/id';
 import { users } from '@/modules/identity/schema';
+import type { Ink } from './ink';
 
 /**
  * The diary: free writing, owned by one user, editable for ever.
@@ -20,7 +30,13 @@ export const notes = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
 
     title: varchar({ length: 160 }),
+    /**
+     * The words. For a handwritten page this is its transcription, which can
+     * be empty until the page has been read — the ink is then the entry.
+     */
     body: text().notNull(),
+    /** A handwritten page, as pen strokes. See ink.ts. */
+    ink: jsonb().$type<Ink>(),
     /** See NOTE_MOODS in validators.ts. Optional: not every entry is about a feeling. */
     mood: varchar({ length: 16 }),
     /** Pinned entries stay at the top, above the days. */
@@ -31,7 +47,12 @@ export const notes = pgTable(
   },
   (t) => [
     index('notes_user_created_idx').on(t.userId, t.createdAt),
-    check('notes_body_length', sql`char_length(${t.body}) between 1 and 20000`),
+    check(
+      'notes_body_length',
+      sql`char_length(${t.body}) <= 20000 and (char_length(${t.body}) >= 1 or ${t.ink} is not null)`,
+    ),
+    // A generous ceiling on one page of strokes; the app's own limit is lower.
+    check('notes_ink_size', sql`${t.ink} is null or octet_length(${t.ink}::text) <= 1500000`),
     check(
       'notes_mood_check',
       sql`${t.mood} is null or ${t.mood} in ('great','good','okay','low','rough')`,

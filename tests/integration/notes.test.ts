@@ -3,7 +3,7 @@ import { getPool } from '@/lib/db/client';
 import * as identity from '@/modules/identity/service';
 import { signUpSchema } from '@/modules/identity/validators';
 import * as repo from '@/modules/notes/repository';
-import { noteSchema } from '@/modules/notes/validators';
+import { inkNoteSchema, noteSchema } from '@/modules/notes/validators';
 
 /**
  * The diary: entries can be written, changed, pinned, searched and deleted
@@ -101,5 +101,51 @@ describe('notes', () => {
     const [still] = await repo.listNotes(owner.id);
     expect(still?.body).toBe('Private thought');
     expect(still?.pinned).toBe(false);
+  });
+});
+
+describe('handwritten pages', () => {
+  beforeEach(reset);
+
+  const ink = {
+    v: 1 as const,
+    width: 1000 as const,
+    height: 700,
+    strokes: [{ points: [100, 100, 50, 160, 140, 60, 220, 120, 55], size: 5.5 }],
+  };
+
+  it('saves the strokes without words, lists only a flag, and exports the strokes', async () => {
+    const user = await makeUser('ink@example.com');
+    const page = await repo.createNote(user.id, inkNoteSchema.parse({ ink }));
+    expect(page.body).toBe('');
+    expect(page.ink).toEqual(ink);
+
+    const [listed] = await repo.listNotes(user.id);
+    expect(listed).toMatchObject({ id: page.id, hasInk: true });
+    expect(listed).not.toHaveProperty('ink');
+
+    const [exported] = await repo.listNotesForExport(user.id);
+    expect(exported?.ink).toEqual(ink);
+
+    // The transcription becomes searchable once written.
+    await repo.updateNote(user.id, page.id, {
+      title: null,
+      body: 'Walked by the lake',
+      mood: null,
+    });
+    expect((await repo.listNotes(user.id, { search: 'lake' })).map((n) => n.id)).toEqual([page.id]);
+  });
+
+  it('refuses an entry with neither words nor ink at the database', async () => {
+    const user = await makeUser('blank@example.com');
+    await expect(repo.createNote(user.id, { title: null, body: '', mood: null })).rejects.toThrow();
+  });
+
+  it("never returns another user's page", async () => {
+    const owner = await makeUser('owner@example.com');
+    const other = await makeUser('other@example.com');
+    const page = await repo.createNote(owner.id, inkNoteSchema.parse({ ink }));
+    expect(await repo.findNote(other.id, page.id)).toBeUndefined();
+    expect(await repo.findNote(owner.id, page.id)).toBeDefined();
   });
 });

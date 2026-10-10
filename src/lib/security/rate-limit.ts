@@ -44,6 +44,14 @@ export const RULES = {
   resetPerIp: { limit: 10, windowSeconds: 3600 },
   resetPerAddress: { limit: 3, windowSeconds: 3600 },
   resetUnattributed: { limit: 300, windowSeconds: 3600 },
+
+  /**
+   * Reading handwriting is a paid API call. Per signed-in user: enough for a
+   * real diary — reading, fixing and re-reading a page several times — and a
+   * hard stop well before a stuck script could run up a bill.
+   */
+  handwritingPerHour: { limit: 30, windowSeconds: 3600 },
+  handwritingPerDay: { limit: 120, windowSeconds: 86_400 },
 } as const satisfies Record<string, RateLimitRule>;
 
 const NETWORK_RULES = {

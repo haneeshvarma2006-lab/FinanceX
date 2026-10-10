@@ -56,7 +56,7 @@ export async function GET(): Promise<NextResponse> {
     productivityRepo.listHabits(user.id),
     productivityRepo.listGoals(user.id),
     productivityRepo.listNotificationPreferences(user.id),
-    notesRepo.listNotes(user.id, { limit: 5000 }),
+    notesRepo.listNotesForExport(user.id),
     decisionsRepo.listDecisions(user.id, 5000),
   ]);
 

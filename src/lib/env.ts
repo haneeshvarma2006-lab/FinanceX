@@ -85,6 +85,14 @@ const schema = z
     RESEND_API_KEY: z.string().min(1).optional(),
 
     /**
+     * Anthropic API key for reading handwritten pages. Optional: without it,
+     * handwriting is saved as ink only and the "Read my handwriting" button
+     * says recognition is off, rather than failing. A credential: never logged.
+     * Each recognition is a paid API call on the operator's Anthropic account.
+     */
+    ANTHROPIC_API_KEY: z.string().min(1).optional(),
+
+    /**
      * Maximum Postgres connections held by ONE instance of this process.
      *
      * This matters far more on a serverless host than on a server. A long-lived

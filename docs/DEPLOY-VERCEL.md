@@ -220,3 +220,23 @@ Password reset is offered only when email can reach users. To turn it on:
 
 A delivery failure is recorded in `email_log` with the provider's HTTP status
 and never crashes the request. `/api/health` does not check email.
+
+## Handwriting recognition (optional)
+
+Handwritten diary pages always save, as pen strokes. Turning them into text
+("Read my handwriting") uses Anthropic's Claude API and is off until a key is
+set. To turn it on:
+
+1. Create an API key at <https://console.anthropic.com/> on an account with
+   billing set up. Each read is a paid call on that account.
+2. In Vercel set `ANTHROPIC_API_KEY=<key>` (Production, and Preview if you want
+   it there), then redeploy.
+
+The model is `claude-opus-5-5` at low effort, with Anthropic's server-side
+fallback turned on (`fallbacks: "default"`), so a page a safety classifier
+declines is retried on the model Anthropic recommends instead of failing.
+Calls are limited per user to 30 an hour and 120 a day (`RULES` in
+`src/lib/security/rate-limit.ts`). A rejected key shows users "Reading is
+unavailable" and logs `Handwriting recognition: the Anthropic API key was
+rejected` — the key itself is never logged. The privacy notice already
+describes what is sent and when.

@@ -357,7 +357,7 @@ test('notes work like a diary: write, edit, pin, search and delete', async ({ pa
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Notes');
   await expect(page.getByText('Your diary is empty')).toBeVisible();
 
-  await page.getByLabel('Title').fill('Morning');
+  await page.getByLabel('Title', { exact: true }).fill('Morning');
   await page.getByLabel('Entry').fill('Woke early.\nPlanned the week.');
   await page.getByRole('button', { name: 'Good', exact: true }).click();
   await page.getByRole('button', { name: 'Save entry' }).click();
@@ -377,7 +377,7 @@ test('notes work like a diary: write, edit, pin, search and delete', async ({ pa
   await expect(page.getByText('Woke early. Gym, then work.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
 
-  await page.getByLabel('Title').fill('');
+  await page.getByLabel('Title', { exact: true }).fill('');
   await page.getByLabel('Entry').fill('Second thought about money');
   await page.getByRole('button', { name: 'Save entry' }).click();
   await expect(today.getByText('Second thought about money')).toBeVisible();
@@ -511,4 +511,54 @@ test('the weekly review names one thing to fix and adopts its rule in one tap', 
 
   await page.goto('/rules');
   await expect(page.getByText('Nudge me when nothing is done').first()).toBeVisible();
+});
+
+test('a diary page can be written by hand and saved as ink', async ({ page }) => {
+  await register(page, 'handwriting');
+  await page.goto('/notes');
+  await page.getByRole('button', { name: 'Handwrite' }).click();
+
+  const form = page
+    .locator('form')
+    .filter({ has: page.getByRole('button', { name: 'Save page' }) });
+  await expect(form.getByRole('button', { name: 'Save page' })).toBeDisabled();
+  // Without an API key, the app says recognition is off rather than failing.
+  await expect(form.getByText(/Handwriting recognition is not switched on yet/)).toBeVisible();
+  await expect(form.getByRole('button', { name: 'Read my handwriting' })).toHaveCount(0);
+
+  await form.getByLabel('Page title').fill('Sunday');
+  const pad = form.getByRole('img', { name: /Blank page/ });
+  const box = (await pad.boundingBox())!;
+  // Two strokes: something like a "t".
+  await page.mouse.move(box.x + 60, box.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 64, box.y + 70, { steps: 8 });
+  await page.mouse.move(box.x + 68, box.y + 100, { steps: 8 });
+  await page.mouse.up();
+  await page.mouse.move(box.x + 45, box.y + 60);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 85, box.y + 60, { steps: 8 });
+  await page.mouse.up();
+  await expect(form.getByRole('img', { name: 'Handwritten page, 2 strokes' })).toBeVisible();
+
+  // Undo and redo the last stroke.
+  await form.getByRole('button', { name: 'Undo' }).click();
+  await expect(form.getByRole('img', { name: 'Handwritten page, 1 strokes' })).toBeVisible();
+  await form.getByRole('button', { name: 'Redo' }).click();
+
+  await form.getByRole('button', { name: 'Save page' }).click();
+  await expect(page.getByText('Page saved')).toBeVisible();
+
+  const today = page.getByRole('region', { name: 'Today' });
+  await expect(today.getByRole('heading', { name: 'Sunday' })).toBeVisible();
+  await expect(today.getByRole('img', { name: 'Sunday' })).toBeVisible();
+  await expect(today.getByText('Not read into text yet')).toBeVisible();
+
+  // The words can be added afterwards, and then search finds the page.
+  await today.getByRole('button', { name: 'Edit Sunday' }).click();
+  await today.getByLabel('What it says').fill('Long walk by the lake');
+  await today.getByRole('button', { name: 'Save changes' }).click();
+  await page.getByLabel('Search your notes').fill('lake');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByText('1 entry matches')).toBeVisible();
 });

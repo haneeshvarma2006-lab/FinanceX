@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { inkSchema } from './ink';
 
 export const NOTE_MOODS = ['great', 'good', 'okay', 'low', 'rough'] as const;
 export type NoteMood = (typeof NOTE_MOODS)[number];
@@ -34,4 +35,29 @@ export const noteSchema = z.object({
 
 export type NoteInput = z.infer<typeof noteSchema>;
 
-export const noteUpdateSchema = noteSchema.extend({ id: z.string().min(1).max(36) });
+/**
+ * A handwritten page. The words are optional: they are the transcription,
+ * which may not exist until the page has been read.
+ */
+export const inkNoteSchema = noteSchema.extend({
+  body: z
+    .string()
+    .trim()
+    .max(NOTE_BODY_MAX, `Keep one entry under ${NOTE_BODY_MAX.toLocaleString('en')} characters`)
+    .default(''),
+  ink: inkSchema,
+});
+
+export type InkNoteInput = z.infer<typeof inkNoteSchema>;
+
+/**
+ * An edit to the words of an entry. The ink of a handwritten page is never
+ * rewritten; its transcription may be emptied, which the action checks.
+ */
+export const noteUpdateSchema = noteSchema.extend({
+  id: z.string().min(1).max(36),
+  body: z
+    .string()
+    .trim()
+    .max(NOTE_BODY_MAX, `Keep one entry under ${NOTE_BODY_MAX.toLocaleString('en')} characters`),
+});

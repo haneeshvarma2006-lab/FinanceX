@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/form';
 import { PageHeader } from '@/components/ui/money';
 import { EmptyState } from '@/components/ui/states';
+import { handwritingEnabled } from '@/modules/notes/handwriting';
 import * as repo from '@/modules/notes/repository';
-import type { Note } from '@/modules/notes/schema';
+import type { NoteSummary as Note } from '@/modules/notes/repository';
 import type { NoteMood } from '@/modules/notes/validators';
 import { NotesTabs } from './tabs';
 import { NoteComposer, NoteEntry, type NoteView } from './views';
@@ -75,6 +76,7 @@ export default async function NotesPage({
     id: note.id,
     title: note.title,
     body: note.body,
+    hasInk: note.hasInk,
     mood: note.mood as NoteMood | null,
     pinned: note.pinned,
     when: withDate
@@ -107,7 +109,7 @@ export default async function NotesPage({
           icon={<PenLine className="size-4" />}
         />
         <CardBody>
-          <NoteComposer />
+          <NoteComposer canRecognize={handwritingEnabled()} />
         </CardBody>
       </Card>
 

@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/current-user';
 import { fieldErrorsFrom, type FormState } from '@/lib/result';
 import * as repo from '@/modules/notes/repository';
-import { noteSchema, noteUpdateSchema } from '@/modules/notes/validators';
+import { readHandwriting, type ReadResult } from '@/modules/notes/handwriting';
+import { inkBottom, inkPath } from '@/modules/notes/ink';
+import { inkNoteSchema, noteSchema, noteUpdateSchema } from '@/modules/notes/validators';
 
 export type { FormState };
 
@@ -27,12 +29,51 @@ function fields(formData: FormData) {
 export async function createNoteAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
 
+  const rawInk = formData.get('ink');
+
+  // A handwritten page: the strokes are the entry, the words are optional.
+  if (typeof rawInk === 'string' && rawInk !== '') {
+    let ink: unknown;
+    try {
+      ink = JSON.parse(rawInk);
+    } catch {
+      return { message: 'That page could not be saved. Try again.', tone: 'error' };
+    }
+    const parsed = inkNoteSchema.safeParse({ ...fields(formData), ink });
+    if (!parsed.success) {
+      const errors = fieldErrorsFrom(parsed.error.issues);
+      return errors.ink
+        ? { message: errors.ink, tone: 'error', fieldErrors: errors }
+        : { fieldErrors: errors };
+    }
+    await repo.createNote(user.id, parsed.data);
+    revalidateAll();
+    return { message: 'Page saved', tone: 'success' };
+  }
+
   const parsed = noteSchema.safeParse(fields(formData));
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   await repo.createNote(user.id, parsed.data);
   revalidateAll();
   return { message: 'Saved', tone: 'success' };
+}
+
+/** Read a handwritten page. Returns text for the user to check; saves nothing. */
+export async function readHandwritingAction(slices: string[]): Promise<ReadResult> {
+  const user = await requireUser();
+  if (!Array.isArray(slices) || slices.some((s) => typeof s !== 'string')) {
+    return { ok: false, reason: 'invalid', message: 'That page could not be read. Try again.' };
+  }
+  return readHandwriting(user.id, slices);
+}
+
+/** The drawing of one stored page, fetched when it scrolls into view. */
+export async function loadInkAction(id: string): Promise<{ path: string; height: number } | null> {
+  const user = await requireUser();
+  const note = await repo.findNote(user.id, String(id));
+  if (!note?.ink) return null;
+  return { path: inkPath(note.ink), height: inkBottom(note.ink) };
 }
 
 export async function updateNoteAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -42,6 +83,12 @@ export async function updateNoteAction(_prev: FormState, formData: FormData): Pr
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
 
   const { id, ...input } = parsed.data;
+  if (input.body === '') {
+    // Only a handwritten page may be left without words: the ink is its entry.
+    const existing = await repo.findNote(user.id, id);
+    if (!existing) return GONE;
+    if (!existing.ink) return { fieldErrors: { body: 'Write something first' } };
+  }
   const updated = await repo.updateNote(user.id, id, input);
   if (!updated) return GONE;
 

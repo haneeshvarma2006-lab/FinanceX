@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { PageHeader } from '@/components/ui/money';
 import * as productivity from '@/modules/productivity/service';
+import { handwritingEnabled } from '@/modules/notes/handwriting';
 import * as notesRepo from '@/modules/notes/repository';
 import type { NoteMood } from '@/modules/notes/validators';
 import { NoteComposer, NoteEntry } from '../notes/views';
@@ -99,6 +100,7 @@ export default async function HabitsPage() {
                   id: note.id,
                   title: note.title,
                   body: note.body,
+                  hasInk: note.hasInk,
                   mood: note.mood as NoteMood | null,
                   pinned: note.pinned,
                   when: time.format(note.createdAt),
@@ -109,7 +111,7 @@ export default async function HabitsPage() {
           </div>
         )}
         <CardBody>
-          <NoteComposer />
+          <NoteComposer canRecognize={handwritingEnabled()} />
         </CardBody>
       </Card>
 
