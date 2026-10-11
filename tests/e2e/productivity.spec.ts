@@ -522,9 +522,8 @@ test('a diary page can be written by hand and saved as ink', async ({ page }) =>
     .locator('form')
     .filter({ has: page.getByRole('button', { name: 'Save page' }) });
   await expect(form.getByRole('button', { name: 'Save page' })).toBeDisabled();
-  // Without an API key, the app says recognition is off rather than failing.
-  await expect(form.getByText(/Handwriting recognition is not switched on yet/)).toBeVisible();
-  await expect(form.getByRole('button', { name: 'Read my handwriting' })).toHaveCount(0);
+  // Writing only: nothing on the page offers to read or send it.
+  await expect(form.getByRole('button', { name: /read/i })).toHaveCount(0);
 
   await form.getByLabel('Page title').fill('Sunday');
   const pad = form.getByRole('img', { name: /Blank page/ });
@@ -552,11 +551,10 @@ test('a diary page can be written by hand and saved as ink', async ({ page }) =>
   const today = page.getByRole('region', { name: 'Today' });
   await expect(today.getByRole('heading', { name: 'Sunday' })).toBeVisible();
   await expect(today.getByRole('img', { name: 'Sunday' })).toBeVisible();
-  await expect(today.getByText('Not read into text yet')).toBeVisible();
 
-  // The words can be added afterwards, and then search finds the page.
+  // Typed words can go with the page, and then search finds it.
   await today.getByRole('button', { name: 'Edit Sunday' }).click();
-  await today.getByLabel('What it says').fill('Long walk by the lake');
+  await today.getByLabel('Text').fill('Long walk by the lake');
   await today.getByRole('button', { name: 'Save changes' }).click();
   await page.getByLabel('Search your notes').fill('lake');
   await page.getByRole('button', { name: 'Search' }).click();

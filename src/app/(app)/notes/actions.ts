@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/current-user';
 import { fieldErrorsFrom, type FormState } from '@/lib/result';
 import * as repo from '@/modules/notes/repository';
-import { readHandwriting, type ReadResult } from '@/modules/notes/handwriting';
 import { inkBottom, inkPath } from '@/modules/notes/ink';
 import { inkNoteSchema, noteSchema, noteUpdateSchema } from '@/modules/notes/validators';
 
@@ -57,15 +56,6 @@ export async function createNoteAction(_prev: FormState, formData: FormData): Pr
   await repo.createNote(user.id, parsed.data);
   revalidateAll();
   return { message: 'Saved', tone: 'success' };
-}
-
-/** Read a handwritten page. Returns text for the user to check; saves nothing. */
-export async function readHandwritingAction(slices: string[]): Promise<ReadResult> {
-  const user = await requireUser();
-  if (!Array.isArray(slices) || slices.some((s) => typeof s !== 'string')) {
-    return { ok: false, reason: 'invalid', message: 'That page could not be read. Try again.' };
-  }
-  return readHandwriting(user.id, slices);
 }
 
 /** The drawing of one stored page, fetched when it scrolls into view. */

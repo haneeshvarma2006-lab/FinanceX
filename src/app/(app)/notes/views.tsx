@@ -1,7 +1,7 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
-import { Keyboard, PenTool, Pencil, Pin, PinOff, ScanText, Trash2 } from 'lucide-react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { Keyboard, PenTool, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
@@ -19,11 +19,10 @@ import {
   deleteNoteAction,
   loadInkAction,
   pinNoteAction,
-  readHandwritingAction,
   updateNoteAction,
   type FormState,
 } from './actions';
-import { InkPad, renderForReading } from './ink-pad';
+import { InkPad } from './ink-pad';
 
 const MOOD_TONE = {
   great: 'positive',
@@ -86,7 +85,7 @@ function submitOnModEnter(event: React.KeyboardEvent<HTMLTextAreaElement>) {
  * Write an entry by typing or by hand. The two are separate forms so that
  * switching never loses what was written in the other.
  */
-export function NoteComposer({ canRecognize }: { canRecognize: boolean }) {
+export function NoteComposer() {
   const [mode, setMode] = useState<'type' | 'hand'>('type');
   const tab = (active: boolean) =>
     cn(
@@ -126,21 +125,22 @@ export function NoteComposer({ canRecognize }: { canRecognize: boolean }) {
         <TypedComposer />
       </div>
       <div hidden={mode !== 'hand'}>
-        <HandwrittenComposer canRecognize={canRecognize} />
+        <HandwrittenComposer />
       </div>
     </div>
   );
 }
 
-function HandwrittenComposer({ canRecognize }: { canRecognize: boolean }) {
+/**
+ * A page written by hand, as in a paper diary. The writing is the entry;
+ * nothing reads it or sends it anywhere — it is saved exactly as written.
+ */
+function HandwrittenComposer() {
   const [state, action, pending] = useActionState<FormState, FormData>(createNoteAction, {});
   const [ink, setInk] = useState<Ink | null>(null);
   const [page, setPage] = useState(0);
   const [title, setTitle] = useState('');
-  const [transcript, setTranscript] = useState('');
   const [mood, setMood] = useState('');
-  const [read, setRead] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
-  const [reading, startReading] = useTransition();
 
   // A saved page makes way for a fresh one.
   const [seen, setSeen] = useState(state);
@@ -150,29 +150,8 @@ function HandwrittenComposer({ canRecognize }: { canRecognize: boolean }) {
       setPage((n) => n + 1);
       setInk(null);
       setTitle('');
-      setTranscript('');
       setMood('');
-      setRead(null);
     }
-  }
-
-  function readPage() {
-    if (!ink) return;
-    setRead(null);
-    startReading(async () => {
-      const result = await readHandwritingAction(renderForReading(ink));
-      if (result.ok) {
-        setTranscript(result.text);
-        setRead({
-          tone: 'success',
-          text: result.text
-            ? 'Read. Check the words below and fix anything it got wrong.'
-            : 'No writing could be read on this page.',
-        });
-      } else {
-        setRead({ tone: 'error', text: result.message });
-      }
-    });
   }
 
   return (
@@ -193,49 +172,6 @@ function HandwrittenComposer({ canRecognize }: { canRecognize: boolean }) {
       />
 
       <InkPad key={page} onChange={setInk} />
-
-      <div className="flex flex-col gap-2">
-        {canRecognize ? (
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={readPage}
-              loading={reading}
-              disabled={!ink}
-              icon={<ScanText aria-hidden className="size-4" />}
-              className="self-start"
-            >
-              Read my handwriting
-            </Button>
-            <p className="text-xs text-pretty text-text-muted">
-              Sends an image of this page to Anthropic&apos;s Claude to read it into text, so the
-              page becomes searchable. Nothing is sent until you tap.
-            </p>
-          </>
-        ) : (
-          <p className="text-xs text-pretty text-text-muted">
-            Handwriting recognition is not switched on yet, so pages are saved as you write them. On
-            an iPad with Apple Pencil you can also write straight into the Type box — iPadOS turns
-            it into text as you go.
-          </p>
-        )}
-        {read && <FormAlert tone={read.tone}>{read.text}</FormAlert>}
-      </div>
-
-      {(canRecognize || transcript) && (
-        <TextareaField
-          label="What it says"
-          name="body"
-          rows={4}
-          maxLength={NOTE_BODY_MAX}
-          placeholder={canRecognize ? 'Tap “Read my handwriting”, or type it here' : 'Optional'}
-          hint="Optional. These words are what search finds."
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-          error={state.fieldErrors?.body}
-        />
-      )}
 
       <MoodPicker value={mood} onChange={setMood} />
 
@@ -358,15 +294,11 @@ export function NoteEntry({ note }: { note: NoteView }) {
       </div>
 
       {note.hasInk && <InkPage id={note.id} label={note.title ?? 'Handwritten page'} />}
-      {note.hasInk && (
-        <p className="mt-3 text-xs font-medium text-text-muted">
-          {note.body ? 'What it says' : 'Not read into text yet — edit to add the words.'}
-        </p>
-      )}
       <p
         className={cn(
           'mt-2 text-sm leading-7 break-words whitespace-pre-wrap text-text-secondary sm:text-base sm:leading-7',
-          note.hasInk && 'mt-1',
+          note.hasInk && 'mt-3',
+          !note.body && 'hidden',
           long && !open && 'line-clamp-6',
         )}
       >
@@ -563,14 +495,12 @@ function NoteEditor({ note, onDone }: { note: NoteView; onDone: () => void }) {
           const end = event.currentTarget.value.length;
           event.currentTarget.setSelectionRange(end, end);
         }}
-        label={note.hasInk ? 'What it says' : 'Entry'}
+        label={note.hasInk ? 'Text' : 'Entry'}
         name="body"
         rows={8}
         required={!note.hasInk}
         hint={
-          note.hasInk
-            ? 'The words on your handwritten page. Optional; search finds these.'
-            : undefined
+          note.hasInk ? 'Optional typed words to go with the page. Search finds these.' : undefined
         }
         maxLength={NOTE_BODY_MAX}
         defaultValue={note.body}

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/form';
 import { PageHeader } from '@/components/ui/money';
 import { EmptyState } from '@/components/ui/states';
-import { handwritingEnabled } from '@/modules/notes/handwriting';
 import * as repo from '@/modules/notes/repository';
 import type { NoteSummary as Note } from '@/modules/notes/repository';
 import type { NoteMood } from '@/modules/notes/validators';
@@ -109,7 +108,7 @@ export default async function NotesPage({
           icon={<PenLine className="size-4" />}
         />
         <CardBody>
-          <NoteComposer canRecognize={handwritingEnabled()} />
+          <NoteComposer />
         </CardBody>
       </Card>
 

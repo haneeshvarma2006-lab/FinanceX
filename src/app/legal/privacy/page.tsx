@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Privacy notice</h1>
-      <p className="numeric text-xs text-text-muted">Version 2026-10-10 · Draft</p>
+      <p className="numeric text-xs text-text-muted">Version 2026-10-11 · Draft</p>
 
       <p>
         <strong>This is a draft, not reviewed by a lawyer.</strong> It accurately describes what the
@@ -50,16 +50,10 @@ export default function PrivacyPage() {
 
       <h2>Who it is shared with</h2>
       <p>
-        Nobody, with one exception you control. {brand.name} has no analytics provider, no email
-        provider and no payment provider configured. If that changes, this notice changes with it
-        and its version is bumped.
-      </p>
-      <p>
-        <strong>Reading handwriting.</strong> When the operator has switched it on, a handwritten
-        page shows a “Read my handwriting” button. Tapping it sends an image of that one page to
-        Anthropic&apos;s Claude API, which returns the words it reads. Nothing is sent unless you
-        tap, and nothing else from your account is sent with it. What Anthropic does with the image
-        is governed by Anthropic&apos;s own terms for its API, not by this notice.
+        Nobody. {brand.name} has no third-party processors configured — no analytics provider, no
+        email provider, no payment provider. Handwritten pages are stored as you drew them and are
+        never sent anywhere to be read. If that changes, this notice changes with it and its version
+        is bumped.
       </p>
 
       <h2>Email</h2>

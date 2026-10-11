@@ -436,32 +436,3 @@ export function InkPad({
     </div>
   );
 }
-
-/**
- * Render a page for reading: black ink on white, in slices short enough
- * that the writing stays large in each image. Returns base64 PNGs, top to
- * bottom, without the data-URL prefix.
- */
-export function renderForReading(ink: Ink): string[] {
-  const SLICE = 1400;
-  const bottom = ink.strokes.reduce((m, s) => {
-    for (let i = 1; i < s.points.length; i += 3) m = Math.max(m, s.points[i]!);
-    return m;
-  }, 0);
-  const total = Math.min(ink.height, bottom + INK_LINE_GAP);
-  const slices: string[] = [];
-  for (let top = 0; top < total; top += SLICE) {
-    const h = Math.min(SLICE, total - top);
-    const canvas = document.createElement('canvas');
-    canvas.width = INK_WIDTH;
-    canvas.height = Math.ceil(h);
-    const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.translate(0, -top);
-    ctx.fillStyle = 'black';
-    for (const stroke of ink.strokes) ctx.fill(toPath(stroke));
-    slices.push(canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, ''));
-  }
-  return slices;
-}
