@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { Keyboard, PenTool, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
+import { PenTool, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
@@ -82,118 +82,32 @@ function submitOnModEnter(event: React.KeyboardEvent<HTMLTextAreaElement>) {
 }
 
 /**
- * Write an entry by typing or by hand. The two are separate forms so that
- * switching never loses what was written in the other.
+ * One entry, the way Apple Notes works: words, and if you like a drawing
+ * under them. The words can be typed, or written with Apple Pencil straight
+ * into the box — iPadOS turns the handwriting into text on the iPad itself
+ * (Scribble); nothing here reads or sends it. The drawing is kept exactly as
+ * drawn.
  */
 export function NoteComposer() {
-  const [mode, setMode] = useState<'type' | 'hand'>('type');
-  const tab = (active: boolean) =>
-    cn(
-      'inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm transition-colors duration-[var(--duration-fast)]',
-      active
-        ? 'bg-text-primary font-medium text-surface-sunken'
-        : 'text-text-secondary hover:text-text-primary',
-    );
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div
-        role="group"
-        aria-label="How to write"
-        className="ui-card inline-flex gap-1 self-start rounded-full p-1"
-      >
-        <button
-          type="button"
-          aria-pressed={mode === 'type'}
-          onClick={() => setMode('type')}
-          className={tab(mode === 'type')}
-        >
-          <Keyboard aria-hidden className="size-4" />
-          Type
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'hand'}
-          onClick={() => setMode('hand')}
-          className={tab(mode === 'hand')}
-        >
-          <PenTool aria-hidden className="size-4" />
-          Handwrite
-        </button>
-      </div>
-      <div hidden={mode !== 'type'}>
-        <TypedComposer />
-      </div>
-      <div hidden={mode !== 'hand'}>
-        <HandwrittenComposer />
-      </div>
-    </div>
-  );
-}
-
-/**
- * A page written by hand, as in a paper diary. The writing is the entry;
- * nothing reads it or sends it anywhere — it is saved exactly as written.
- */
-function HandwrittenComposer() {
-  const [state, action, pending] = useActionState<FormState, FormData>(createNoteAction, {});
-  const [ink, setInk] = useState<Ink | null>(null);
-  const [page, setPage] = useState(0);
-  const [title, setTitle] = useState('');
-  const [mood, setMood] = useState('');
-
-  // A saved page makes way for a fresh one.
-  const [seen, setSeen] = useState(state);
-  if (state !== seen) {
-    setSeen(state);
-    if (state.tone === 'success') {
-      setPage((n) => n + 1);
-      setInk(null);
-      setTitle('');
-      setMood('');
-    }
-  }
-
-  return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
-      {state.message && (
-        <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
-      )}
-      <input type="hidden" name="ink" value={ink ? JSON.stringify(ink) : ''} />
-
-      <Field
-        label="Page title"
-        name="title"
-        placeholder="Optional"
-        maxLength={160}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        error={state.fieldErrors?.title}
-      />
-
-      <InkPad key={page} onChange={setInk} />
-
-      <MoodPicker value={mood} onChange={setMood} />
-
-      <Button type="submit" loading={pending} disabled={!ink} className="self-start">
-        Save page
-      </Button>
-    </form>
-  );
-}
-
-function TypedComposer() {
   const [state, action, pending] = useActionState<FormState, FormData>(createNoteAction, {});
   const title = useClearingField(state);
   const body = useClearingField(state);
   const [mood, setMood] = useState('');
+  const [drawing, setDrawing] = useState(false);
+  const [ink, setInk] = useState<Ink | null>(null);
+  const [page, setPage] = useState(0);
 
-  // The mood clears with the text once a save lands. Adjusted during render
-  // rather than in an effect, so there is no frame showing the old mood.
+  // A saved entry makes way for a fresh one. Adjusted during render rather
+  // than in an effect, so no frame shows the old mood or drawing.
   const [seen, setSeen] = useState(state);
   if (state !== seen) {
     setSeen(state);
-    if (state.tone === 'success') setMood('');
+    if (state.tone === 'success') {
+      setMood('');
+      setInk(null);
+      setDrawing(false);
+      setPage((n) => n + 1);
+    }
   }
 
   return (
@@ -209,6 +123,7 @@ function TypedComposer() {
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
+      <input type="hidden" name="ink" value={ink ? JSON.stringify(ink) : ''} />
 
       <Field
         label="Title"
@@ -224,15 +139,45 @@ function TypedComposer() {
         label="Entry"
         name="body"
         rows={6}
-        required
+        required={!ink}
         maxLength={NOTE_BODY_MAX}
         placeholder="What happened today? What did you decide, and why?"
+        hint="Type, or on iPad write here with Apple Pencil — iPadOS turns your handwriting into text."
         value={body.value}
         onChange={body.onChange}
         onKeyDown={submitOnModEnter}
         error={state.fieldErrors?.body}
         className="text-base leading-7"
       />
+
+      {drawing ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-text-secondary">Drawing</p>
+            <button
+              type="button"
+              onClick={() => {
+                setDrawing(false);
+                setInk(null);
+              }}
+              className="text-xs text-text-muted underline-offset-4 hover:text-text-primary hover:underline"
+            >
+              Remove drawing
+            </button>
+          </div>
+          <InkPad key={page} onChange={setInk} />
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setDrawing(true)}
+          icon={<PenTool aria-hidden className="size-4" />}
+          className="self-start"
+        >
+          Add drawing
+        </Button>
+      )}
 
       <MoodPicker value={mood} onChange={setMood} />
 
@@ -293,11 +238,9 @@ export function NoteEntry({ note }: { note: NoteView }) {
         <NoteActions note={note} onEdit={() => setEditing(true)} />
       </div>
 
-      {note.hasInk && <InkPage id={note.id} label={note.title ?? 'Handwritten page'} />}
       <p
         className={cn(
           'mt-2 text-sm leading-7 break-words whitespace-pre-wrap text-text-secondary sm:text-base sm:leading-7',
-          note.hasInk && 'mt-3',
           !note.body && 'hidden',
           long && !open && 'line-clamp-6',
         )}
@@ -313,6 +256,7 @@ export function NoteEntry({ note }: { note: NoteView }) {
           {open ? 'Show less' : 'Read more'}
         </button>
       )}
+      {note.hasInk && <InkPage id={note.id} label={note.title ?? 'Drawing'} />}
     </article>
   );
 }
@@ -495,13 +439,11 @@ function NoteEditor({ note, onDone }: { note: NoteView; onDone: () => void }) {
           const end = event.currentTarget.value.length;
           event.currentTarget.setSelectionRange(end, end);
         }}
-        label={note.hasInk ? 'Text' : 'Entry'}
+        label="Entry"
         name="body"
         rows={8}
         required={!note.hasInk}
-        hint={
-          note.hasInk ? 'Optional typed words to go with the page. Search finds these.' : undefined
-        }
+        hint={note.hasInk ? 'Optional: this entry has a drawing.' : undefined}
         maxLength={NOTE_BODY_MAX}
         defaultValue={note.body}
         onKeyDown={submitOnModEnter}

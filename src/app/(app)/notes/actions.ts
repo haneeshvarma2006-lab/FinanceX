@@ -47,7 +47,7 @@ export async function createNoteAction(_prev: FormState, formData: FormData): Pr
     }
     await repo.createNote(user.id, parsed.data);
     revalidateAll();
-    return { message: 'Page saved', tone: 'success' };
+    return { message: 'Saved', tone: 'success' };
   }
 
   const parsed = noteSchema.safeParse(fields(formData));

@@ -513,19 +513,18 @@ test('the weekly review names one thing to fix and adopts its rule in one tap', 
   await expect(page.getByText('Nudge me when nothing is done').first()).toBeVisible();
 });
 
-test('a diary page can be written by hand and saved as ink', async ({ page }) => {
+test('an entry can carry a drawing, like Apple Notes', async ({ page }) => {
   await register(page, 'handwriting');
   await page.goto('/notes');
-  await page.getByRole('button', { name: 'Handwrite' }).click();
 
   const form = page
     .locator('form')
-    .filter({ has: page.getByRole('button', { name: 'Save page' }) });
-  await expect(form.getByRole('button', { name: 'Save page' })).toBeDisabled();
-  // Writing only: nothing on the page offers to read or send it.
+    .filter({ has: page.getByRole('button', { name: 'Save entry' }) });
+  // Writing only: nothing on the page offers to read or send the drawing.
   await expect(form.getByRole('button', { name: /read/i })).toHaveCount(0);
 
-  await form.getByLabel('Page title').fill('Sunday');
+  await form.getByLabel('Title', { exact: true }).fill('Sunday');
+  await form.getByRole('button', { name: 'Add drawing' }).click();
   const pad = form.getByRole('img', { name: /Blank page/ });
   const box = (await pad.boundingBox())!;
   // Two strokes: something like a "t".
@@ -545,16 +544,19 @@ test('a diary page can be written by hand and saved as ink', async ({ page }) =>
   await expect(form.getByRole('img', { name: 'Handwritten page, 1 strokes' })).toBeVisible();
   await form.getByRole('button', { name: 'Redo' }).click();
 
-  await form.getByRole('button', { name: 'Save page' }).click();
-  await expect(page.getByText('Page saved')).toBeVisible();
+  // A drawing on its own is a complete entry; no words are required.
+  await form.getByRole('button', { name: 'Save entry' }).click();
+  await expect(form.getByText('Saved')).toBeVisible();
+  // The composer is fresh again, drawing closed.
+  await expect(form.getByRole('button', { name: 'Add drawing' })).toBeVisible();
 
   const today = page.getByRole('region', { name: 'Today' });
   await expect(today.getByRole('heading', { name: 'Sunday' })).toBeVisible();
   await expect(today.getByRole('img', { name: 'Sunday' })).toBeVisible();
 
-  // Typed words can go with the page, and then search finds it.
+  // Words can be added to it later, and then search finds the entry.
   await today.getByRole('button', { name: 'Edit Sunday' }).click();
-  await today.getByLabel('Text').fill('Long walk by the lake');
+  await today.getByLabel('Entry').fill('Long walk by the lake');
   await today.getByRole('button', { name: 'Save changes' }).click();
   await page.getByLabel('Search your notes').fill('lake');
   await page.getByRole('button', { name: 'Search' }).click();
