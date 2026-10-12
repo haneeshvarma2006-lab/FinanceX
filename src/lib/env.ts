@@ -85,6 +85,20 @@ const schema = z
     RESEND_API_KEY: z.string().min(1).optional(),
 
     /**
+     * Where bill photos are kept.
+     *
+     * "auto" uses Vercel Blob when BLOB_READ_WRITE_TOKEN is set (Vercel adds
+     * it when a Blob store is connected to the project) and otherwise keeps
+     * no photos. "local" writes to BILL_STORAGE_DIR on this machine — for
+     * development and the end-to-end tests only; a serverless host has no
+     * lasting disk. "none" keeps no photos.
+     */
+    BILL_STORAGE: z.enum(['auto', 'vercel-blob', 'local', 'none']).default('auto'),
+    BILL_STORAGE_DIR: z.string().default('.data/bills'),
+    /** The Vercel Blob store's token. A credential: never logged. */
+    BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+
+    /**
      * Maximum Postgres connections held by ONE instance of this process.
      *
      * This matters far more on a serverless host than on a server. A long-lived
@@ -112,6 +126,13 @@ const schema = z
     // Choosing a provider without its credential would otherwise boot fine and
     // fail on the first send — as a user staring at a reset form that never
     // delivers. Refuse at startup instead.
+    if (env.BILL_STORAGE === 'vercel-blob' && !env.BLOB_READ_WRITE_TOKEN) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['BLOB_READ_WRITE_TOKEN'],
+        message: 'BLOB_READ_WRITE_TOKEN is required when BILL_STORAGE is "vercel-blob"',
+      });
+    }
     if (env.EMAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {
       ctx.addIssue({
         code: 'custom',

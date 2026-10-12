@@ -3,6 +3,7 @@ import { db } from '@/lib/db/client';
 import { newId } from '@/lib/db/id';
 import {
   accounts,
+  bills,
   budgets,
   categories,
   netWorthSnapshots,
@@ -10,6 +11,7 @@ import {
   subscriptions,
   transactions,
   type Account,
+  type Bill,
   type Budget,
   type Category,
   type Subscription,
@@ -637,4 +639,80 @@ export async function expensesNear(
     )
     .orderBy(asc(transactions.occurredOn))
     .limit(5);
+}
+
+/** A bill photo's record. The image itself lives in object storage. */
+export async function insertBill(
+  userId: string,
+  input: {
+    id: string;
+    transactionId: string | null;
+    storageKey: string;
+    contentType: string;
+    sizeBytes: number;
+    merchant: string | null;
+    amountMinor: bigint | null;
+    currency: string | null;
+    billDate: string | null;
+  },
+): Promise<Bill> {
+  const [row] = await db
+    .insert(bills)
+    .values({ userId, ...input })
+    .returning();
+  if (!row) throw new Error('Bill insert returned no row');
+  return row;
+}
+
+export async function findBill(userId: string, id: string): Promise<Bill | undefined> {
+  const [row] = await db
+    .select()
+    .from(bills)
+    .where(and(eq(bills.id, id), eq(bills.userId, userId)))
+    .limit(1);
+  return row;
+}
+
+export async function listBills(userId: string, limit = 500): Promise<Bill[]> {
+  return db
+    .select()
+    .from(bills)
+    .where(eq(bills.userId, userId))
+    .orderBy(desc(bills.createdAt))
+    .limit(limit);
+}
+
+/** Which of these transactions have a bill photo, and which photo. */
+export async function billIdsForTransactions(
+  userId: string,
+  transactionIds: readonly string[],
+): Promise<Map<string, string>> {
+  if (transactionIds.length === 0) return new Map();
+  const rows = await db
+    .select({ id: bills.id, transactionId: bills.transactionId })
+    .from(bills)
+    .where(and(eq(bills.userId, userId), inArray(bills.transactionId, [...transactionIds])))
+    .orderBy(desc(bills.createdAt));
+  const map = new Map<string, string>();
+  for (const r of rows)
+    if (r.transactionId && !map.has(r.transactionId)) map.set(r.transactionId, r.id);
+  return map;
+}
+
+/** Removes the record and returns where its photo was, so the photo can go too. */
+export async function deleteBill(userId: string, id: string): Promise<string | null> {
+  const [row] = await db
+    .delete(bills)
+    .where(and(eq(bills.id, id), eq(bills.userId, userId)))
+    .returning({ storageKey: bills.storageKey });
+  return row?.storageKey ?? null;
+}
+
+/** Every photo key an account owns, for deleting them with the account. */
+export async function billKeysForUser(userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ storageKey: bills.storageKey })
+    .from(bills)
+    .where(eq(bills.userId, userId));
+  return rows.map((r) => r.storageKey);
 }

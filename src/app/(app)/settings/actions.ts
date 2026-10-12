@@ -1,5 +1,6 @@
 'use server';
 
+import { deleteAllBillPhotos } from '@/modules/finance/bills';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth/current-user';
@@ -160,8 +161,10 @@ export async function deleteAccount(_prev: ActionState, formData: FormData): Pro
     ...(await getRequestContext()),
   });
 
-  // Every child table cascades from users.id, so this removes the data rather
-  // than hiding it.
+  // Bill photos live outside the database, so they go first; then every
+  // child table cascades from users.id, which removes the data rather than
+  // hiding it.
+  await deleteAllBillPhotos(user.id);
   await repo.hardDeleteUser(user.id);
   await clearSessionCookie();
 

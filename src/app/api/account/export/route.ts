@@ -39,6 +39,7 @@ export async function GET(): Promise<NextResponse> {
     notificationPreferences,
     notes,
     decisions,
+    bills,
   ] = await Promise.all([
     financeRepo.listAccounts(user.id, true),
     financeRepo.listCategories(user.id),
@@ -58,6 +59,7 @@ export async function GET(): Promise<NextResponse> {
     productivityRepo.listNotificationPreferences(user.id),
     notesRepo.listNotesForExport(user.id),
     decisionsRepo.listDecisions(user.id, 5000),
+    financeRepo.listBills(user.id, 100_000),
   ]);
 
   const payload = {
@@ -76,7 +78,17 @@ export async function GET(): Promise<NextResponse> {
     productivity: { projects, tasks, habits, goals },
     notes,
     decisions,
-    finance: { accounts, categories, transactions, budgets, subscriptions, netWorth },
+    finance: {
+      accounts,
+      categories,
+      transactions,
+      budgets,
+      subscriptions,
+      netWorth,
+      // The records of kept bill photos. Each photo opens at /api/bills/<id>
+      // while signed in; the images are not inlined into this file.
+      bills: bills.map(({ storageKey: _key, ...bill }) => bill),
+    },
     trading: { tradingAccounts, strategies, trades },
     emailPreferences: preferences,
     notificationPreferences,

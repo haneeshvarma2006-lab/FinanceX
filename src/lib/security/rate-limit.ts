@@ -44,6 +44,13 @@ export const RULES = {
   resetPerIp: { limit: 10, windowSeconds: 3600 },
   resetPerAddress: { limit: 3, windowSeconds: 3600 },
   resetUnattributed: { limit: 300, windowSeconds: 3600 },
+
+  /**
+   * Bill photos go to paid object storage. Per user: far more than anyone
+   * photographs in a real day, and a hard stop for a runaway script.
+   */
+  billUploadsPerHour: { limit: 60, windowSeconds: 3600 },
+  billUploadsPerDay: { limit: 300, windowSeconds: 86_400 },
 } as const satisfies Record<string, RateLimitRule>;
 
 const NETWORK_RULES = {

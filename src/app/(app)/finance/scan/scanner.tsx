@@ -1,22 +1,43 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { startTransition, useActionState, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Camera, Check, ImageUp, Loader2, RotateCcw, ScanLine } from 'lucide-react';
 import type { Worker } from 'tesseract.js';
 import { isCurrency, parseAmount, type Currency } from '@nestedflow/domain/money';
 import { Button } from '@/components/ui/button';
-import { Field, FormAlert, SelectField } from '@/components/ui/form';
+import { CheckboxField, Field, FormAlert, SelectField } from '@/components/ui/form';
 import { cn } from '@/lib/cn';
 import { readReceipt, type ReceiptGuess } from '@/modules/finance/receipt';
-import { createTransaction, type FormState } from '../actions';
-import { findBillMatchesAction, type BillMatch } from './actions';
+import {
+  findBillMatchesAction,
+  saveScannedBillAction,
+  type BillMatch,
+  type SaveBillState,
+} from './actions';
 
 type Account = { id: string; name: string; currency: string };
 type Category = { id: string; name: string };
 
 /** Long edge of the image handed to the reader: sharp enough for small print. */
 const READ_EDGE = 1800;
+/** Long edge of the copy kept with the expense: readable, and about 200–400 KB. */
+const KEEP_EDGE = 1600;
+
+/**
+ * The copy of the photo that is kept: a JPEG redrawn from pixels, so none of
+ * the original file's metadata — location, camera, time — survives.
+ */
+async function forKeeping(file: File): Promise<Blob | null> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, KEEP_EDGE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((done) => canvas.toBlob(done, 'image/jpeg', 0.72));
+}
 
 /**
  * Draw the photo onto a canvas, scaled, in grey with its contrast stretched.
@@ -85,12 +106,21 @@ export function BillScanner({
   accounts,
   categories,
   today,
+  canKeepPhotos,
 }: {
   accounts: Account[];
   categories: Category[];
   today: string;
+  /** Whether photo storage is switched on for this deployment. */
+  canKeepPhotos: boolean;
 }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createTransaction, {});
+  const [state, action, pending] = useActionState<SaveBillState, FormData>(
+    saveScannedBillAction,
+    {},
+  );
+  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [keepPhoto, setKeepPhoto] = useState(canKeepPhotos);
+  const formRef = useRef<HTMLFormElement>(null);
   const worker = useRef<Promise<Worker> | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'reading' | 'read' | 'failed'>('idle');
@@ -125,6 +155,7 @@ export function BillScanner({
 
   function reset() {
     setPreview(null);
+    setPhoto(null);
     setPhase('idle');
     setGuess(null);
     setRawText('');
@@ -138,13 +169,21 @@ export function BillScanner({
 
   // A saved expense makes way for the next bill.
   const [seen, setSeen] = useState(state);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<string | null>(null);
   if (state !== seen) {
     setSeen(state);
     if (state.tone === 'success') {
-      setSaved(true);
+      setSaved(state.message ?? 'Saved.');
       reset();
     }
+  }
+
+  /** Send the form with the kept photo attached, optionally onto an existing expense. */
+  function submit(form: HTMLFormElement, attachTo?: string) {
+    const data = new FormData(form);
+    if (attachTo) data.set('attachTo', attachTo);
+    if (keepPhoto && photo) data.set('photo', photo, 'bill.jpg');
+    startTransition(() => action(data));
   }
 
   async function checkMatches(value: string, day: string) {
@@ -165,8 +204,13 @@ export function BillScanner({
   async function onFile(file: File | undefined) {
     if (!file) return;
     reset();
-    setSaved(false);
+    setSaved(null);
     setPreview(URL.createObjectURL(file));
+    if (canKeepPhotos) {
+      void forKeeping(file)
+        .then(setPhoto)
+        .catch(() => setPhoto(null));
+    }
     setPhase('reading');
     setProgress(0);
 
@@ -245,11 +289,7 @@ export function BillScanner({
 
   return (
     <div className="flex flex-col gap-5">
-      {saved && phase === 'idle' && (
-        <FormAlert tone="success">
-          Expense added. Scan the next one whenever you&apos;re ready.
-        </FormAlert>
-      )}
+      {saved && phase === 'idle' && <FormAlert tone="success">{saved}</FormAlert>}
 
       {phase === 'idle' && (
         <div className="flex flex-col gap-3">
@@ -258,8 +298,9 @@ export function BillScanner({
             {picker(false, 'Choose a photo', ImageUp, false)}
           </div>
           <p className="text-xs text-pretty text-text-muted">
-            The bill is read on this device. The photo is not uploaded or kept — only the expense
-            you confirm is saved.
+            {canKeepPhotos
+              ? 'The bill is read on this device. If you keep the photo, a smaller copy — with its location and camera details removed — is stored privately with the expense, visible only to you.'
+              : 'The bill is read on this device. The photo is not uploaded or kept — only the expense you confirm is saved.'}
           </p>
         </div>
       )}
@@ -301,8 +342,15 @@ export function BillScanner({
             )}
 
             {phase === 'read' && guess && (
-              <form action={action} className="flex flex-col gap-4" noValidate>
-                <input type="hidden" name="kind" value="expense" />
+              <form
+                ref={formRef}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submit(e.currentTarget);
+                }}
+                className="flex flex-col gap-4"
+                noValidate
+              >
                 <p className="inline-flex items-center gap-2 text-sm text-text-primary">
                   <ScanLine aria-hidden className="size-4 text-text-muted" />
                   {guess.total
@@ -326,10 +374,22 @@ export function BillScanner({
                       ))}
                     </ul>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Button type="button" size="sm" onClick={reset}>
-                        <Check aria-hidden className="size-3.5" />
-                        It&apos;s recorded — done
-                      </Button>
+                      {keepPhoto && photo ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          loading={pending}
+                          onClick={() => formRef.current && submit(formRef.current, matches[0]!.id)}
+                        >
+                          <Check aria-hidden className="size-3.5" />
+                          Attach the photo to it
+                        </Button>
+                      ) : (
+                        <Button type="button" size="sm" onClick={reset}>
+                          <Check aria-hidden className="size-3.5" />
+                          It&apos;s recorded — done
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         size="sm"
@@ -403,6 +463,16 @@ export function BillScanner({
                     ))}
                   </SelectField>
                 </div>
+
+                {canKeepPhotos && (
+                  <CheckboxField
+                    name="keepPhoto"
+                    label="Keep the photo with the expense"
+                    hint="Stored privately; only you can open it. You can delete it any time."
+                    checked={keepPhoto}
+                    onChange={(e) => setKeepPhoto(e.target.checked)}
+                  />
+                )}
 
                 <div className="flex flex-wrap gap-2">
                   <Button

@@ -58,6 +58,7 @@ inline SVG from the library, so no icon request leaves the origin either.
 | `perfect-freehand`           | 1.2.3   | MIT        |
 | `tesseract.js`               | 7.0.0   | Apache-2.0 |
 | `@tesseract.js-data/eng`     | 1.0.0   | MIT        |
+| `@vercel/blob`               | 2.8.1   | Apache-2.0 |
 
 ### The bill reader
 
@@ -68,6 +69,10 @@ Scanning a bill runs Tesseract entirely in the browser. `tesseract.js`
 The English model is `eng.traineddata` from Tesseract's `tessdata_best`
 (Apache-2.0), packaged by `@tesseract.js-data/eng` (MIT). Nothing is loaded
 from a CDN, and no bill, photo or text is sent anywhere to be read.
+
+Keeping a bill photo is separate and optional: the browser re-encodes it as a
+smaller JPEG (which drops location and camera metadata) and it is stored in a
+private Vercel Blob store through `@vercel/blob` (Apache-2.0).
 
 ## Development dependencies
 

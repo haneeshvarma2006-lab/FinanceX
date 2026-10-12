@@ -60,6 +60,9 @@ export default defineConfig({
       PORT: String(PORT),
       NODE_ENV: 'production',
       DATABASE_URL: 'postgresql://nestedflow:nestedflow@localhost:5432/nestedflow_e2e',
+      // Bill photos go to a folder here, so upload, view and delete run end to end.
+      BILL_STORAGE: 'local',
+      BILL_STORAGE_DIR: '.data/e2e-bills',
       AUTH_SECRET: 'e2e-secret-at-least-32-characters-long-for-playwright',
       APP_URL: baseURL,
       TRUST_PROXY_HEADERS: 'false',

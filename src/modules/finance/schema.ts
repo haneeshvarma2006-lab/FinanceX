@@ -4,6 +4,7 @@ import {
   check,
   date,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -254,6 +255,48 @@ export const recordRevisions = pgTable(
     index('record_revisions_user_idx').on(t.userId, t.createdAt),
   ],
 );
+
+/**
+ * Photos of bills, kept privately in object storage (see lib/storage/bills.ts).
+ *
+ * The database holds only where the photo is and what it was for; the image
+ * itself is never in Postgres. A photo outlives the expense it was attached
+ * to — deleting the expense leaves it in Bills, unattached — and goes when
+ * the user deletes it or their account.
+ */
+export const bills = pgTable(
+  'bills',
+  {
+    id: varchar({ length: 36 }).primaryKey().$defaultFn(newId),
+    userId: varchar({ length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    transactionId: varchar({ length: 36 }).references(() => transactions.id, {
+      onDelete: 'set null',
+    }),
+
+    /** The object's key in the store: bills/<userId>/<id>.jpg */
+    storageKey: varchar({ length: 300 }).notNull(),
+    contentType: varchar({ length: 40 }).notNull(),
+    sizeBytes: integer().notNull(),
+
+    /** What was read off the bill, for the gallery and search. */
+    merchant: varchar({ length: 120 }),
+    amountMinor: bigint({ mode: 'bigint' }),
+    currency: varchar({ length: 3 }),
+    billDate: date(),
+
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('bills_user_created_idx').on(t.userId, t.createdAt),
+    index('bills_transaction_idx').on(t.transactionId),
+    uniqueIndex('bills_storage_key').on(t.storageKey),
+    check('bills_size_positive', sql`${t.sizeBytes} > 0`),
+  ],
+);
+
+export type Bill = typeof bills.$inferSelect;
 
 export const accountsRelations = relations(accounts, ({ many }) => ({
   transactions: many(transactions),

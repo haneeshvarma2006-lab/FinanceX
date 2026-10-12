@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
 import { todayFor } from '@/modules/dashboard/service';
+import { billPhotosEnabled } from '@/modules/finance/bills';
 import * as repo from '@/modules/finance/repository';
 import { BillScanner } from './scanner';
 
@@ -22,7 +23,7 @@ export default async function ScanBillPage() {
         eyebrow="Money"
         accent="finance"
         title="Scan a bill"
-        description="Photograph a bill and it becomes an expense: the total, the date and the shop are read on your phone, and you check them before anything is saved."
+        description="Photograph a bill and it becomes an expense: the total, the date and the shop are read on your phone, you check them, and the photo can be kept with the expense."
       />
       <Card accent="finance">
         <CardHeader
@@ -38,6 +39,7 @@ export default async function ScanBillPage() {
               .filter((c) => c.kind === 'expense')
               .map((c) => ({ id: c.id, name: c.name }))}
             today={todayFor(user.timezone)}
+            canKeepPhotos={billPhotosEnabled()}
           />
         </CardBody>
       </Card>

@@ -273,8 +273,11 @@ test('imports a bank statement CSV once, previewing every row first', async ({ p
   await expect(page.getByText('UPI-SWIGGY').first()).toBeVisible();
 });
 
-test('scans a bill photo on the device and adds it as an expense once', async ({ page }) => {
-  test.setTimeout(120_000);
+test('scans a bill photo on the device and adds it as an expense once', async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(150_000);
   await register(page, 'scan');
   await page.goto('/finance');
   await page.getByLabel('Name').fill('HDFC Savings');
@@ -314,8 +317,9 @@ test('scans a bill photo on the device and adds it as an expense once', async ({
   await expect(page.getByLabel('Amount')).toHaveValue('1638.00', { timeout: 90_000 });
   await expect(page.getByLabel('Date')).toHaveValue('2026-10-11');
   await expect(page.getByLabel('Description')).toHaveValue(/spice garden/i);
+  await expect(page.getByLabel('Keep the photo with the expense')).toBeChecked();
   await page.getByRole('button', { name: 'Add expense' }).click();
-  await expect(page.getByText('Expense added')).toBeVisible();
+  await expect(page.getByText('Expense added with its bill photo')).toBeVisible();
 
   // The same bill again is recognised as already recorded.
   await page.locator('input[type=file]').last().setInputFiles({
@@ -325,4 +329,36 @@ test('scans a bill photo on the device and adds it as an expense once', async ({
   });
   await expect(page.getByText('This looks already recorded')).toBeVisible({ timeout: 90_000 });
   await expect(page.getByRole('button', { name: 'Add expense' })).toBeDisabled();
+
+  // The kept photo hangs off the expense and lives in the Bills gallery.
+  await page.goto('/finance');
+  await page.getByRole('button', { name: 'Show what you spent this month' }).click();
+  await expect(page.getByRole('link', { name: /bill photo for spice garden/i })).toBeVisible();
+  await page.getByRole('link', { name: 'Bills', exact: true }).click();
+  await page.getByRole('link', { name: /bill from spice garden/i }).click();
+  await expect(page).toHaveURL(/\/finance\/bills\/[\w-]+$/);
+  const url = new URL(page.url());
+  const photoUrl = `/api/bills/${url.pathname.split('/').pop()}`;
+
+  // Only its owner can open it — re-encoded as JPEG on the device.
+  const own = await page.request.get(photoUrl);
+  expect(own.status()).toBe(200);
+  expect(own.headers()['content-type']).toBe('image/jpeg');
+  expect([...(await own.body()).subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+
+  const stranger = await browser.newContext();
+  const other = await stranger.newPage();
+  expect((await other.request.get(photoUrl)).status()).toBe(401);
+  await register(other, 'scan-stranger');
+  expect((await other.request.get(photoUrl)).status()).toBe(404);
+  await stranger.close();
+
+  // Deleting the photo keeps the expense.
+  await page.getByRole('button', { name: 'Delete photo' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page).toHaveURL(/\/finance\/bills$/);
+  await expect(page.getByText('No bills kept yet')).toBeVisible();
+  expect((await page.request.get(photoUrl)).status()).toBe(404);
+  await page.goto('/finance');
+  await expect(page.getByText('Spice Garden').first()).toBeVisible();
 });

@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Privacy notice</h1>
-      <p className="numeric text-xs text-text-muted">Version 2026-10-11 · Draft</p>
+      <p className="numeric text-xs text-text-muted">Version 2026-10-12 · Draft</p>
 
       <p>
         <strong>This is a draft, not reviewed by a lawyer.</strong> It accurately describes what the
@@ -52,8 +52,17 @@ export default function PrivacyPage() {
       <p>
         Nobody. {brand.name} has no third-party processors configured — no analytics provider, no
         email provider, no payment provider. Handwritten pages are stored as you drew them and are
-        never sent anywhere to be read. If that changes, this notice changes with it and its version
-        is bumped.
+        never sent anywhere to be read. Bills you scan are read on your own device. If that changes,
+        this notice changes with it and its version is bumped.
+      </p>
+
+      <h2>Bill photos</h2>
+      <p>
+        When you choose to keep a bill&apos;s photo, a smaller copy is made on your device — which
+        removes its location, camera and time details — and stored in a private file store run by
+        Vercel, the company that hosts {brand.name}, in Singapore. It has no public link: it opens
+        only through {brand.name}, only for your signed-in account. You can delete any photo, and
+        deleting your account deletes them all.
       </p>
 
       <h2>Email</h2>

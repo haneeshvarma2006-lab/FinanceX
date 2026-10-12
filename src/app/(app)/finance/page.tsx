@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FileUp, ScanLine, Wallet } from 'lucide-react';
+import { FileUp, Receipt, ScanLine, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
@@ -40,6 +40,10 @@ export default async function FinancePage() {
       repo.spendByCategory(user.id, start, end),
     ]);
 
+  const billFor = await repo.billIdsForTransactions(
+    user.id,
+    monthTx.map((tx) => tx.id),
+  );
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
   const totalBalance = [...balances.values()].reduce((a, b) => a + b, 0n);
@@ -66,6 +70,13 @@ export default async function FinancePage() {
             >
               <FileUp aria-hidden className="size-4" />
               Import statement
+            </Link>
+            <Link
+              href="/finance/bills"
+              className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+            >
+              <Receipt aria-hidden className="size-4" />
+              Bills
             </Link>
           </div>
         }
@@ -104,6 +115,7 @@ export default async function FinancePage() {
                     rows={monthTx.filter((tx) => tx.kind === 'income')}
                     accountName={accountName}
                     categoryName={categoryName}
+                    billFor={billFor}
                     empty="No income recorded this month yet."
                   />
                 ),
@@ -129,6 +141,7 @@ export default async function FinancePage() {
                         rows={monthTx.filter((tx) => tx.kind === 'expense')}
                         accountName={accountName}
                         categoryName={categoryName}
+                        billFor={billFor}
                         empty="Nothing spent this month yet."
                       />
                     }
@@ -361,11 +374,14 @@ function TransactionHistory({
   rows,
   accountName,
   categoryName,
+  billFor,
   empty,
 }: {
   rows: Tx[];
   accountName: Map<string, string>;
   categoryName: Map<string, string>;
+  /** Transaction id → its kept bill photo. */
+  billFor: Map<string, string>;
   empty: string;
 }) {
   if (rows.length === 0) return <p className="text-sm text-text-muted">{empty}</p>;
@@ -380,7 +396,19 @@ function TransactionHistory({
               {tx.categoryId ? ` · ${categoryName.get(tx.categoryId) ?? ''}` : ''}
             </p>
           </div>
-          <Money minor={tx.amountMinor} currency={tx.currency as Currency} signed />
+          <span className="flex shrink-0 items-center gap-2">
+            {billFor.has(tx.id) && (
+              <Link
+                href={`/finance/bills/${billFor.get(tx.id)}`}
+                aria-label={`Bill photo for ${tx.description}`}
+                title="Bill photo"
+                className="inline-flex size-7 items-center justify-center rounded-full text-text-muted hover:bg-surface-raised hover:text-text-primary"
+              >
+                <Receipt aria-hidden className="size-3.5" />
+              </Link>
+            )}
+            <Money minor={tx.amountMinor} currency={tx.currency as Currency} signed />
+          </span>
         </li>
       ))}
     </ul>
