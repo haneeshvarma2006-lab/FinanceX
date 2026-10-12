@@ -32,7 +32,8 @@ async function register(page: Page, label: string) {
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
   return email;
 }

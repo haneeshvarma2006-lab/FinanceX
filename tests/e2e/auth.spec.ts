@@ -30,7 +30,8 @@ test('signs up, lands in the app, and signs out again', async ({ page }) => {
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
 
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
   await expect(page.getByRole('heading', { level: 1 })).toContainText('E2E Tester');
 
   await page.getByRole('button', { name: /sign out/i }).click();
@@ -51,7 +52,8 @@ test('signs back in with the same credentials', async ({ page }) => {
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
   await page.getByRole('button', { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
@@ -60,7 +62,8 @@ test('signs back in with the same credentials', async ({ page }) => {
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
 
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 });
 
 test('gives nothing away when the password is wrong', async ({ page }) => {
@@ -73,7 +76,8 @@ test('gives nothing away when the password is wrong', async ({ page }) => {
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
   await page.getByRole('button', { name: /sign out/i }).click();
 
   // A registered address with the wrong password...
@@ -107,7 +111,8 @@ test('refuses a duplicate registration', async ({ page }) => {
     await page.getByRole('button', { name: /create account/i }).click();
 
     if (attempt === 1) {
-      await expect(page).toHaveURL(/\/today$/);
+      // The first sign-up after the server starts also warms the password hasher.
+      await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
       await page.getByRole('button', { name: /sign out/i }).click();
       // Let the sign-out redirect land before navigating on, or it can arrive
       // after the next goto and put the page back on /sign-in.

@@ -55,6 +55,19 @@ inline SVG from the library, so no icon request leaves the origin either.
 | `tailwind-merge`             | 3.7.0   | MIT        |
 | `uuidv7`                     | 1.2.1   | Apache-2.0 |
 | `zod`                        | 4.6.5   | MIT        |
+| `perfect-freehand`           | 1.2.3   | MIT        |
+| `tesseract.js`               | 7.0.0   | Apache-2.0 |
+| `@tesseract.js-data/eng`     | 1.0.0   | MIT        |
+
+### The bill reader
+
+Scanning a bill runs Tesseract entirely in the browser. `tesseract.js`
+(Apache-2.0) and its WebAssembly engine `tesseract.js-core` 7.0.0
+(Apache-2.0, installed with it) are copied into `public/ocr` by
+`scripts/copy-ocr-assets.mjs` at build time and served from this origin.
+The English model is `eng.traineddata` from Tesseract's `tessdata_best`
+(Apache-2.0), packaged by `@tesseract.js-data/eng` (MIT). Nothing is loaded
+from a CDN, and no bill, photo or text is sent anywhere to be read.
 
 ## Development dependencies
 

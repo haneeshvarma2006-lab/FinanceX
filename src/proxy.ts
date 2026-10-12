@@ -24,6 +24,10 @@ export default function proxy(request: NextRequest): NextResponse {
     `img-src 'self' blob: data:`,
     `font-src 'self'`,
     `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
+    // The on-phone bill reader runs in a worker served from /ocr, which has
+    // its own, narrower policy (next.config.ts). Pages may only start workers
+    // from this origin.
+    `worker-src 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
@@ -60,6 +64,7 @@ export default function proxy(request: NextRequest): NextResponse {
 export const config = {
   matcher: [
     // Everything except static assets, which need no dynamic headers.
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // /ocr is the bill reader's engine; it carries its own headers.
+    '/((?!_next/static|_next/image|favicon.ico|ocr/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

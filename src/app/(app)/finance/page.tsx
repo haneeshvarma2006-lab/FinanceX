@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FileUp, Wallet } from 'lucide-react';
+import { FileUp, ScanLine, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
@@ -52,13 +52,22 @@ export default async function FinancePage() {
         title="Finance"
         description={`Everything here is entered or imported by you. ${brand.name} connects to no bank.`}
         action={
-          <Link
-            href="/finance/import"
-            className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
-          >
-            <FileUp aria-hidden className="size-4" />
-            Import statement
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/finance/scan"
+              className="inline-flex h-9.5 items-center gap-2 rounded-full bg-text-primary px-4 text-sm font-medium text-surface-sunken shadow-(--shadow-raised)"
+            >
+              <ScanLine aria-hidden className="size-4" />
+              Scan a bill
+            </Link>
+            <Link
+              href="/finance/import"
+              className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+            >
+              <FileUp aria-hidden className="size-4" />
+              Import statement
+            </Link>
+          </div>
         }
       />
 

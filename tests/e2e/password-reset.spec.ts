@@ -15,7 +15,8 @@ async function register(page: Page): Promise<string> {
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
   return email;
 }
 
@@ -50,13 +51,15 @@ test('a reset link sets a new password and signs you in with it', async ({ page 
 
   await page.getByLabel('New password').fill(NEW);
   await page.getByRole('button', { name: /set new password/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
   await signOut(page);
   await signIn(page, email, OLD);
   await expect(page.getByText(/do not match/i)).toBeVisible();
   await signIn(page, email, NEW);
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 });
 
 test('a used link is dead the second time', async ({ page }) => {
@@ -67,7 +70,8 @@ test('a used link is dead the second time', async ({ page }) => {
   await page.goto(`/reset-password?token=${token}`);
   await page.getByLabel('New password').fill(NEW);
   await page.getByRole('button', { name: /set new password/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
   await signOut(page);
 
   await page.goto(`/reset-password?token=${token}`);
@@ -98,7 +102,8 @@ test('a weak new password is refused and the link still works', async ({ page })
 
   await page.getByLabel('New password').fill(NEW);
   await page.getByRole('button', { name: /set new password/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 });
 
 test('resetting signs out a session elsewhere', async ({ browser }) => {

@@ -602,3 +602,39 @@ export async function insertImportedTransactions(
     return inserted;
   });
 }
+
+/* ---------------------------------------------------------------- bills --- */
+
+/**
+ * Expenses of exactly this amount within a few days of a bill's date: what
+ * a scanned bill is checked against, so a bill already typed in or imported
+ * from a statement is not recorded twice. Card and UPI payments often post a
+ * day or two after the bill, hence the window.
+ */
+export async function expensesNear(
+  userId: string,
+  amountMinor: bigint,
+  from: string,
+  to: string,
+): Promise<{ id: string; occurredOn: string; description: string; accountName: string }[]> {
+  return db
+    .select({
+      id: transactions.id,
+      occurredOn: transactions.occurredOn,
+      description: transactions.description,
+      accountName: accounts.name,
+    })
+    .from(transactions)
+    .innerJoin(accounts, eq(accounts.id, transactions.accountId))
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.kind, 'expense'),
+        eq(transactions.amountMinor, -amountMinor),
+        gte(transactions.occurredOn, from),
+        lte(transactions.occurredOn, to),
+      ),
+    )
+    .orderBy(asc(transactions.occurredOn))
+    .limit(5);
+}

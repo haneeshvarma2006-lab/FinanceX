@@ -8,7 +8,16 @@ import nextTs from 'eslint-config-next/typescript';
  * that decays the first time someone is in a hurry.
  */
 const config = [
-  { ignores: ['.next/**', 'node_modules/**', 'coverage/**', 'db/migrations/**'] },
+  {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'coverage/**',
+      'db/migrations/**',
+      // Third-party, minified: copied in by scripts/copy-ocr-assets.mjs.
+      'public/ocr/**',
+    ],
+  },
 
   ...next,
   ...nextTs,

@@ -21,7 +21,8 @@ async function register(page: Page, label: string) {
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
   return email;
 }
@@ -270,4 +271,58 @@ test('imports a bank statement CSV once, previewing every row first', async ({ p
 
   await page.goto('/finance');
   await expect(page.getByText('UPI-SWIGGY').first()).toBeVisible();
+});
+
+test('scans a bill photo on the device and adds it as an expense once', async ({ page }) => {
+  test.setTimeout(120_000);
+  await register(page, 'scan');
+  await page.goto('/finance');
+  await page.getByLabel('Name').fill('HDFC Savings');
+  await page.getByRole('button', { name: /add account/i }).click();
+  await expect(page.getByText('Account added')).toBeVisible();
+
+  // A restaurant bill, rendered and photographed in the browser itself.
+  const bill = await page.context().newPage();
+  await bill.setViewportSize({ width: 420, height: 640 });
+  await bill.setContent(`
+    <body style="margin:0;background:#f4f1ea;font:20px/1.5 'Courier New',monospace;color:#222">
+      <div style="padding:28px">
+        <div style="text-align:center;font-weight:bold;font-size:24px">SPICE GARDEN</div>
+        <div style="text-align:center">MG Road, Bengaluru</div>
+        <div>Date: 11/10/2026  Time: 21:42</div>
+        <div>Paneer Tikka        320.00</div>
+        <div>Butter Naan         240.00</div>
+        <div>Sub Total         1,560.00</div>
+        <div>CGST 2.5%            39.00</div>
+        <div>SGST 2.5%            39.00</div>
+        <div style="font-weight:bold">Grand Total   Rs. 1,638.00</div>
+        <div style="text-align:center">Thank you</div>
+      </div>
+    </body>`);
+  const photo = await bill.screenshot({ type: 'png' });
+  await bill.close();
+
+  await page.getByRole('link', { name: 'Scan a bill' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Scan a bill');
+  await page.locator('input[type=file]').last().setInputFiles({
+    name: 'bill.png',
+    mimeType: 'image/png',
+    buffer: photo,
+  });
+
+  // Read on the device: Tesseract runs in the browser, under the app's CSP.
+  await expect(page.getByLabel('Amount')).toHaveValue('1638.00', { timeout: 90_000 });
+  await expect(page.getByLabel('Date')).toHaveValue('2026-10-11');
+  await expect(page.getByLabel('Description')).toHaveValue(/spice garden/i);
+  await page.getByRole('button', { name: 'Add expense' }).click();
+  await expect(page.getByText('Expense added')).toBeVisible();
+
+  // The same bill again is recognised as already recorded.
+  await page.locator('input[type=file]').last().setInputFiles({
+    name: 'bill.png',
+    mimeType: 'image/png',
+    buffer: photo,
+  });
+  await expect(page.getByText('This looks already recorded')).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByRole('button', { name: 'Add expense' })).toBeDisabled();
 });

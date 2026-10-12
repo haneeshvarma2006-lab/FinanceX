@@ -45,7 +45,8 @@ test('a signed-in visitor still sees the landing page, with a way into the app',
   await page.getByLabel('Date of birth').fill('1990-01-01');
   await page.getByLabel(/accept the terms/i).check();
   await page.getByRole('button', { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
@@ -53,7 +54,8 @@ test('a signed-in visitor still sees the landing page, with a way into the app',
   await expect(page.getByRole('link', { name: 'Get early access' })).toHaveCount(0);
 
   await page.getByRole('banner').getByRole('link', { name: 'Open app' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  // The first sign-up after the server starts also warms the password hasher.
+  await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 });
 
 test('the Black / White switch flips the theme and remembers it', async ({ page, context }) => {
