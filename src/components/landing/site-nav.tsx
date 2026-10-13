@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Wordmark } from '@/components/ui/wordmark';
+import { LogoMark } from '@/components/ui/logo-mark';
 import { MobileMenu } from './mobile-menu';
 import { ScrollProgress } from './motion';
 import { ButtonLink } from './primitives';
@@ -22,7 +23,10 @@ export function SiteNav({ signedIn = false }: { signedIn?: boolean }) {
       <header className="lp-nav-in sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
         <div className="lp-card mx-auto flex h-14 max-w-5xl items-center gap-6 rounded-full pr-2 pl-5 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
           <Link href="/" aria-label="Home" className="rounded-md">
-            <Wordmark className="text-base text-brand-ink" />
+            <span className="inline-flex items-center gap-2">
+              <LogoMark />
+              <Wordmark className="text-base text-brand-ink" />
+            </span>
           </Link>
 
           <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">

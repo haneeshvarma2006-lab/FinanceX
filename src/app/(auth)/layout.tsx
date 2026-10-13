@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/current-user';
 import { brand } from '@/lib/brand';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Wordmark } from '@/components/ui/wordmark';
+import { LogoMark } from '@/components/ui/logo-mark';
 
 /**
  * The account screens share the landing page's atmosphere — one horizon of
@@ -27,6 +28,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
       <div className="enter w-full max-w-sm">
         <Link href="/" className="mb-8 flex flex-col items-center gap-3 text-center">
+          <LogoMark className="size-14 drop-shadow-[0_8px_24px_var(--accent-tasks)]" />
           <Wordmark className="text-3xl tracking-tighter text-text-primary" />
           <span className="inline-flex items-center gap-2 text-xs text-text-muted">
             <span aria-hidden className="flex gap-1">

@@ -21,7 +21,8 @@ async function register(page: Page): Promise<string> {
 }
 
 async function signOut(page: Page) {
-  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
 }
 

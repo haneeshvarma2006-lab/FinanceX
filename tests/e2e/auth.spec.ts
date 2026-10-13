@@ -32,9 +32,11 @@ test('signs up, lands in the app, and signs out again', async ({ page }) => {
 
   // The first sign-up after the server starts also warms the password hasher.
   await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('E2E Tester');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('E2E');
 
-  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
 
   // The session is destroyed server-side, so going back does not restore it.
@@ -55,7 +57,9 @@ test('signs back in with the same credentials', async ({ page }) => {
   // The first sign-up after the server starts also warms the password hasher.
   await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 
-  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
 
   await page.getByLabel('Email').fill(email);
@@ -78,7 +82,8 @@ test('gives nothing away when the password is wrong', async ({ page }) => {
   await page.getByRole('button', { name: /create account/i }).click();
   // The first sign-up after the server starts also warms the password hasher.
   await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
-  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
 
   // A registered address with the wrong password...
   await page.getByLabel('Email').fill(email);
@@ -113,7 +118,8 @@ test('refuses a duplicate registration', async ({ page }) => {
     if (attempt === 1) {
       // The first sign-up after the server starts also warms the password hasher.
       await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
-      await page.getByRole('button', { name: /sign out/i }).click();
+      await page.getByRole('button', { name: 'Account', exact: true }).click();
+      await page.getByRole('menuitem', { name: /sign out/i }).click();
       // Let the sign-out redirect land before navigating on, or it can arrive
       // after the next goto and put the page back on /sign-in.
       await expect(page).toHaveURL(/\/sign-in$/);

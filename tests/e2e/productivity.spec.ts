@@ -30,8 +30,8 @@ test('dashboard shows honest empty states, not invented data', async ({ page }) 
   await register(page, 'empty');
 
   // A brand-new account must not display a balance, a streak or a win rate.
-  await expect(page.getByText(/nothing here yet — and that is correct/i)).toBeVisible();
-  await expect(page.getByText(/never invent a balance/i)).toBeVisible();
+  await expect(page.getByText(/set up your system/i)).toBeVisible();
+  await expect(page.getByText(/never invents a balance/i)).toBeVisible();
 
   await expect(page.getByText('No tasks yet')).toBeVisible();
   await expect(page.getByText('No habits yet')).toBeVisible();
@@ -284,11 +284,15 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
     ['Goals', /goals/i],
     ['Finance', /finance/i],
     ['Trading', /trading journal/i],
-    ['Settings', /settings/i],
   ] as const) {
     await page.getByRole('link', { name: link, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(heading);
   }
+
+  // Settings lives in the account menu.
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(/settings/i);
 });
 
 test('the old habits address lands on Lifestyle', async ({ page }) => {

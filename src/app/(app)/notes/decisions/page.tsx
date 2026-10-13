@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Scale } from 'lucide-react';
+import { NotebookPen, Scale } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
@@ -64,8 +64,9 @@ export default async function DecisionsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Diary"
+        icon={<NotebookPen />}
         title="Notes"
-        description="Write a decision down before you know how it turns out, then judge it later against what you wrote — not against memory."
+        description="Write a decision down now. Judge it later against what you wrote, not memory."
       />
       <NotesTabs />
 

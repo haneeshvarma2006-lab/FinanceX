@@ -58,12 +58,13 @@ export default async function GoalsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Start here"
-        accent="habits"
+        accent="goals"
+        icon={<Target />}
         title="Goals"
-        description="What you are building toward. Tasks, money and trades all point here — each goal shows the work that moves it and can follow an account by itself."
+        description="What you're working toward. Tasks, money and trades all point here."
       />
 
-      <Card accent="habits">
+      <Card accent="goals">
         <CardHeader title="Active" description={`${active.length} in progress`} />
         <CardBody className={active.length === 0 ? 'p-0' : 'flex flex-col gap-5'}>
           {active.length === 0 ? (
@@ -86,7 +87,7 @@ export default async function GoalsPage() {
       </Card>
 
       {closed.length > 0 && (
-        <Card accent="habits">
+        <Card accent="goals">
           <CardHeader title="Completed" description={`${closed.length} finished`} />
           <CardBody className="p-0">
             <ul className="divide-y divide-border-subtle">
@@ -108,7 +109,7 @@ export default async function GoalsPage() {
         </Card>
       )}
 
-      <Card accent="habits">
+      <Card accent="goals">
         <CardHeader title="Set a goal" />
         <CardBody>
           <AddGoalForm

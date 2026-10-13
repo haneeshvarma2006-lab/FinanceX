@@ -169,7 +169,8 @@ test('enforces the same tenancy boundary as the web', async ({ page, request }) 
   const aliceEmail = await register(page, 'alice');
 
   // Sign out so the second account registers into a clean browser session.
-  await page.getByRole('button', { name: /sign out/i }).click();
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
 
   const bobEmail = await register(page, 'bob');

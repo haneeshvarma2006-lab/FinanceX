@@ -11,7 +11,6 @@ import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import { AddAccountForm, AddTransactionForm, AddTransferForm } from './forms';
 import { DeleteTransactionButton } from './forms';
-import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Finance' };
 
@@ -53,27 +52,29 @@ export default async function FinancePage() {
       <PageHeader
         eyebrow="Money"
         accent="finance"
+        icon={<Wallet />}
         title="Finance"
-        description={`Everything here is entered or imported by you. ${brand.name} connects to no bank.`}
+        description="Accounts, spending and bills. Entered by you, never linked to a bank."
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:flex">
             <Link
               href="/finance/scan"
-              className="inline-flex h-9.5 items-center gap-2 rounded-full bg-text-primary px-4 text-sm font-medium text-surface-sunken shadow-(--shadow-raised)"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm bg-text-primary text-surface-sunken shadow-(--shadow-raised)"
             >
               <ScanLine aria-hidden className="size-4" />
               Scan a bill
             </Link>
             <Link
               href="/finance/import"
-              className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm border border-border-subtle bg-surface-overlay text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
             >
               <FileUp aria-hidden className="size-4" />
-              Import statement
+              <span className="sm:hidden">Import</span>
+              <span className="hidden sm:inline">Import statement</span>
             </Link>
             <Link
               href="/finance/bills"
-              className="inline-flex h-9.5 items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay px-4 text-sm text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm border border-border-subtle bg-surface-overlay text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
             >
               <Receipt aria-hidden className="size-4" />
               Bills

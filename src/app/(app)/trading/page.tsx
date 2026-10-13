@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { AlertTriangle, ExternalLink, LineChart } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Info, LineChart } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
@@ -57,22 +57,21 @@ export default async function TradingPage() {
       <PageHeader
         eyebrow="Markets"
         accent="trading"
+        icon={<LineChart />}
         title="Trading journal"
-        description={`A record of trades you placed elsewhere. ${brand.name} cannot place orders.`}
+        description="Journal the trades you place with your broker, and learn what actually pays."
       />
 
-      {/* Required disclosure, not a footnote. */}
-      <Card tone="warning">
-        <CardBody>
-          <p className="text-sm text-pretty text-text-secondary">
-            <strong className="text-text-primary">Every figure here is yours.</strong> All prices
-            and quantities were entered by you; {brand.name} fetches no market data and connects to
-            no broker. Statistics describe trades you have already recorded and say nothing about
-            future results — past performance does not indicate future performance. Nothing here is
-            financial advice.
-          </p>
-        </CardBody>
-      </Card>
+      {/* Required disclosure, not a footnote: a slim banner rather than a
+          wall of text, every clause still there. */}
+      <aside className="flex gap-3 rounded-2xl border border-warning/30 bg-warning-soft px-4 py-3 text-xs text-pretty text-text-secondary sm:text-sm">
+        <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
+        <p>
+          <strong className="text-text-primary">Every figure here is yours.</strong> You enter the
+          prices and quantities; {brand.name} fetches no market data and connects to no broker. Past
+          performance does not indicate future performance. Not financial advice.
+        </p>
+      </aside>
 
       {performance && primary && (
         <>
@@ -120,105 +119,22 @@ export default async function TradingPage() {
         </>
       )}
 
-      {/* ------------------------------------------------ what the journal shows */}
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <Card accent="trading">
-          <CardHeader
-            title="Psychology"
-            description="What each feeling you tagged has cost or earned."
-          />
-          <CardBody className="flex flex-col gap-4">
-            {journal.afterLoss.trades > 0 && (
-              <p className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning-soft px-3 py-2.5 text-xs text-pretty text-text-primary">
-                <AlertTriangle aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warning" />
-                <span>
-                  {journal.afterLoss.trades} trade{journal.afterLoss.trades === 1 ? '' : 's'} opened
-                  within an hour of a loss
-                  {journal.afterLoss.closed > 0 && (
-                    <>
-                      {' '}
-                      — together{' '}
-                      <Money
-                        minor={journal.afterLoss.netPnlMinor}
-                        currency={journalCurrency as Currency}
-                        signed
-                      />
-                    </>
-                  )}
-                  . Worth asking whether any were revenge trades.
-                </span>
-              </p>
-            )}
-            {journal.emotions.length === 0 ? (
-              <p className="text-sm text-pretty text-text-muted">
-                Tag how you felt in each trade’s journal — fear, greed, FOMO, revenge, or calm and
-                disciplined — and this shows what each one does to your results.
-              </p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-border-subtle">
-                {journal.emotions.map((group) => (
-                  <li
-                    key={group.key}
-                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="flex items-center gap-2 text-sm">
-                      <Badge tone={COSTLY_EMOTIONS.includes(group.key) ? 'negative' : 'positive'}>
-                        {EMOTION_LABELS[group.key as keyof typeof EMOTION_LABELS] ?? group.key}
-                      </Badge>
-                      <span className="numeric text-xs text-text-muted">
-                        {group.trades} trade{group.trades === 1 ? '' : 's'}
-                        {group.closed > 0
-                          ? ` · ${Math.round((group.wins / group.closed) * 100)}% won`
-                          : ''}
-                      </span>
-                    </span>
-                    {group.closed > 0 && (
-                      <Money
-                        minor={group.netPnlMinor}
-                        currency={journalCurrency as Currency}
-                        signed
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+          <CardHeader title="Add a trading account" />
+          <CardBody>
+            <AddTradingAccountForm defaultCurrency={user.baseCurrency} />
           </CardBody>
         </Card>
 
         <Card accent="trading">
-          <CardHeader title="Setups" description="Which of your setups actually pay." />
-          <CardBody className="flex flex-col gap-5">
-            {journal.setups.length > 0 && (
-              <ul className="flex flex-col divide-y divide-border-subtle">
-                {journal.setups.map((group) => (
-                  <li
-                    key={group.key}
-                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm text-text-primary">
-                        {group.label}
-                      </span>
-                      <span className="numeric text-xs text-text-muted">
-                        {group.trades} trade{group.trades === 1 ? '' : 's'}
-                        {group.closed > 0
-                          ? ` · ${Math.round((group.wins / group.closed) * 100)}% won`
-                          : ''}
-                      </span>
-                    </span>
-                    {group.closed > 0 && (
-                      <Money
-                        minor={group.netPnlMinor}
-                        currency={journalCurrency as Currency}
-                        signed
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
+          <CardHeader title="Log a trade" />
+          <CardBody>
+            {accounts.length === 0 ? (
+              <p className="text-sm text-text-muted">Add a trading account first.</p>
+            ) : (
+              <AddTradeForm accounts={accounts} strategies={strategies} />
             )}
-            <AddSetupForm />
           </CardBody>
         </Card>
       </div>
@@ -379,22 +295,105 @@ export default async function TradingPage() {
         </CardBody>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* ------------------------------------------------ what the journal shows */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <Card accent="trading">
-          <CardHeader title="Add a trading account" />
-          <CardBody>
-            <AddTradingAccountForm defaultCurrency={user.baseCurrency} />
+          <CardHeader
+            title="Psychology"
+            description="What each feeling you tagged has cost or earned."
+          />
+          <CardBody className="flex flex-col gap-4">
+            {journal.afterLoss.trades > 0 && (
+              <p className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning-soft px-3 py-2.5 text-xs text-pretty text-text-primary">
+                <AlertTriangle aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warning" />
+                <span>
+                  {journal.afterLoss.trades} trade{journal.afterLoss.trades === 1 ? '' : 's'} opened
+                  within an hour of a loss
+                  {journal.afterLoss.closed > 0 && (
+                    <>
+                      {' '}
+                      — together{' '}
+                      <Money
+                        minor={journal.afterLoss.netPnlMinor}
+                        currency={journalCurrency as Currency}
+                        signed
+                      />
+                    </>
+                  )}
+                  . Worth asking whether any were revenge trades.
+                </span>
+              </p>
+            )}
+            {journal.emotions.length === 0 ? (
+              <p className="text-sm text-pretty text-text-muted">
+                Tag how you felt in each trade’s journal — fear, greed, FOMO, revenge, or calm and
+                disciplined — and this shows what each one does to your results.
+              </p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-border-subtle">
+                {journal.emotions.map((group) => (
+                  <li
+                    key={group.key}
+                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                  >
+                    <span className="flex items-center gap-2 text-sm">
+                      <Badge tone={COSTLY_EMOTIONS.includes(group.key) ? 'negative' : 'positive'}>
+                        {EMOTION_LABELS[group.key as keyof typeof EMOTION_LABELS] ?? group.key}
+                      </Badge>
+                      <span className="numeric text-xs text-text-muted">
+                        {group.trades} trade{group.trades === 1 ? '' : 's'}
+                        {group.closed > 0
+                          ? ` · ${Math.round((group.wins / group.closed) * 100)}% won`
+                          : ''}
+                      </span>
+                    </span>
+                    {group.closed > 0 && (
+                      <Money
+                        minor={group.netPnlMinor}
+                        currency={journalCurrency as Currency}
+                        signed
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
 
         <Card accent="trading">
-          <CardHeader title="Log a trade" />
-          <CardBody>
-            {accounts.length === 0 ? (
-              <p className="text-sm text-text-muted">Add a trading account first.</p>
-            ) : (
-              <AddTradeForm accounts={accounts} strategies={strategies} />
+          <CardHeader title="Setups" description="Which of your setups actually pay." />
+          <CardBody className="flex flex-col gap-5">
+            {journal.setups.length > 0 && (
+              <ul className="flex flex-col divide-y divide-border-subtle">
+                {journal.setups.map((group) => (
+                  <li
+                    key={group.key}
+                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-text-primary">
+                        {group.label}
+                      </span>
+                      <span className="numeric text-xs text-text-muted">
+                        {group.trades} trade{group.trades === 1 ? '' : 's'}
+                        {group.closed > 0
+                          ? ` · ${Math.round((group.wins / group.closed) * 100)}% won`
+                          : ''}
+                      </span>
+                    </span>
+                    {group.closed > 0 && (
+                      <Money
+                        minor={group.netPnlMinor}
+                        currency={journalCurrency as Currency}
+                        signed
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
+            <AddSetupForm />
           </CardBody>
         </Card>
       </div>

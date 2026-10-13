@@ -39,6 +39,7 @@ export default async function BillsPage() {
       <PageHeader
         eyebrow="Money"
         accent="finance"
+        icon={<Receipt />}
         title="Bills"
         description="Photos of your bills, kept privately with the expenses they belong to. Only you can open them."
         action={

@@ -52,8 +52,9 @@ export default async function RulesPage() {
       <PageHeader
         eyebrow="Automation"
         accent="accent"
+        icon={<Workflow />}
         title="Rules"
-        description={`What ${brand.name} watches for, and what it does about it. All of it yours to change.`}
+        description={`What ${brand.name} watches for, and what it does about it.`}
       />
 
       <Card accent="accent">

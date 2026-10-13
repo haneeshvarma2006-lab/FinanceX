@@ -65,8 +65,9 @@ export default async function TasksPage({
       <PageHeader
         eyebrow="Work"
         accent="tasks"
+        icon={<CheckSquare />}
         title="Tasks"
-        description="What you have decided to do, and when."
+        description="What you've decided to do, and when."
       />
 
       <Card accent="tasks">

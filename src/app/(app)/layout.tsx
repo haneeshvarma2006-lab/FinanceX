@@ -18,17 +18,43 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MainNav, type NavItem } from '@/components/ui/nav';
 import { signOutAction } from '../(auth)/actions';
 import { Wordmark } from '@/components/ui/wordmark';
+import { LogoMark } from '@/components/ui/logo-mark';
+import { AccountMenu } from '@/components/ui/account-menu';
 
 const ICON = 'size-4';
 
 const NAV: readonly NavItem[] = [
-  { href: '/today', label: 'Today', accent: 'accent', icon: <LayoutGrid className={ICON} /> },
-  { href: '/goals', label: 'Goals', accent: 'habits', icon: <Target className={ICON} /> },
-  { href: '/tasks', label: 'Tasks', accent: 'tasks', icon: <CheckSquare className={ICON} /> },
+  {
+    href: '/today',
+    label: 'Today',
+    accent: 'accent',
+    icon: <LayoutGrid className={ICON} />,
+    primary: true,
+  },
+  { href: '/goals', label: 'Goals', accent: 'goals', icon: <Target className={ICON} /> },
+  {
+    href: '/tasks',
+    label: 'Tasks',
+    accent: 'tasks',
+    icon: <CheckSquare className={ICON} />,
+    primary: true,
+  },
   { href: '/lifestyle', label: 'Lifestyle', accent: 'habits', icon: <Flame className={ICON} /> },
   { href: '/notes', label: 'Notes', accent: 'accent', icon: <NotebookPen className={ICON} /> },
-  { href: '/finance', label: 'Finance', accent: 'finance', icon: <Wallet className={ICON} /> },
-  { href: '/trading', label: 'Trading', accent: 'trading', icon: <LineChart className={ICON} /> },
+  {
+    href: '/finance',
+    label: 'Finance',
+    accent: 'finance',
+    icon: <Wallet className={ICON} />,
+    primary: true,
+  },
+  {
+    href: '/trading',
+    label: 'Trading',
+    accent: 'trading',
+    icon: <LineChart className={ICON} />,
+    primary: true,
+  },
   { href: '/rules', label: 'Rules', accent: 'accent', icon: <Workflow className={ICON} /> },
 ] as const;
 
@@ -83,7 +109,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             href="/today"
             className="shrink-0 rounded-[var(--radius-control)] text-text-primary"
           >
-            <Wordmark className="text-sm" />
+            <span className="inline-flex items-center gap-2">
+              <LogoMark />
+              <Wordmark className="text-sm" />
+            </span>
           </Link>
 
           <span aria-hidden className="hidden h-4 w-px shrink-0 bg-border-subtle sm:block" />
@@ -94,46 +123,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <ThemeToggle />
             <NotificationBell count={unread} />
 
-            {/* One link at every width: the avatar on a phone, the word from
-                sm up. The label keeps its name the same for assistive tech. */}
-            <Link
-              href="/settings"
-              aria-label="Settings"
-              className="inline-flex h-8 items-center rounded-full text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary sm:px-3"
-            >
-              <span
-                aria-hidden
-                className="inline-flex size-8 items-center justify-center rounded-full bg-linear-to-br from-tasks via-trading to-finance text-xs font-semibold text-surface-sunken ring-2 ring-surface-sunken sm:hidden"
-              >
-                {initial(user.displayName)}
-              </span>
-              <span className="hidden sm:inline">Settings</span>
-            </Link>
-
             <span aria-hidden className="mx-1 hidden h-4 w-px bg-border-subtle sm:block" />
 
-            <span className="hidden items-center gap-2 sm:inline-flex">
-              <span
-                aria-hidden
-                className="inline-flex size-7 items-center justify-center rounded-full bg-linear-to-br from-tasks via-trading to-finance text-xs font-semibold text-surface-sunken"
-              >
-                {initial(user.displayName)}
-              </span>
-              <span className="max-w-32 truncate text-sm text-text-secondary">
-                {user.displayName}
-              </span>
-            </span>
-
-            <form action={signOutAction}>
-              <button
-                type="submit"
-                aria-label="Sign out"
-                className="inline-flex size-8 items-center justify-center rounded-full text-sm text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-surface-raised hover:text-text-primary sm:w-auto sm:px-3"
-              >
-                <LogOut aria-hidden className="size-4 sm:hidden" />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
-            </form>
+            <AccountMenu
+              name={user.displayName}
+              email={user.email}
+              signOut={
+                <form action={signOutAction}>
+                  <button
+                    type="submit"
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-negative-soft hover:text-negative"
+                  >
+                    <LogOut aria-hidden className="size-4" />
+                    Sign out
+                  </button>
+                </form>
+              }
+            />
           </div>
         </div>
       </header>
@@ -146,9 +153,4 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </main>
     </div>
   );
-}
-
-/** The first letter of the display name, for the avatar. Never empty. */
-function initial(name: string): string {
-  return (name.trim()[0] ?? '?').toUpperCase();
 }

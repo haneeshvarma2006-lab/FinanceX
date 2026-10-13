@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { NotebookPen, Repeat } from 'lucide-react';
+import { Flame, NotebookPen, Repeat } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
@@ -42,8 +42,9 @@ export default async function HabitsPage() {
       <PageHeader
         eyebrow="Daily life"
         accent="habits"
+        icon={<Flame />}
         title="Lifestyle"
-        description={`The habits that make up your days. Streaks are counted in your own timezone (${user.timezone}).`}
+        description={`The habits that make up your days. Streaks count in your timezone (${user.timezone}).`}
       />
 
       <Card accent="habits">

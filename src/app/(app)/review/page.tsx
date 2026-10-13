@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarRange,
   CheckSquare,
   Flame,
   LineChart,
@@ -73,15 +74,15 @@ export default async function ReviewPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Weekly review"
+        accent="tasks"
+        icon={<CalendarRange />}
         title={
           <>
             Week of <em>{rangeLabel(week.start, week.end, locale)}</em>
           </>
         }
         description={
-          isCurrent
-            ? `So far — ${elapsed} of 7 days. Every figure is counted from your own records.`
-            : 'Every figure is counted from your own records.'
+          isCurrent ? `So far: ${elapsed} of 7 days.` : 'How the week went, from your own records.'
         }
       />
 

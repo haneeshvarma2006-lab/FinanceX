@@ -24,8 +24,9 @@ export default async function NotificationsPage() {
       <PageHeader
         eyebrow="Inbox"
         accent="accent"
+        icon={<Bell />}
         title="Notifications"
-        description="Raised from your own data. Nothing is sent by email — no provider is configured."
+        description="Alerts raised from your own data."
         action={
           <Link href="/settings/notifications" className="text-sm text-accent hover:underline">
             Preferences

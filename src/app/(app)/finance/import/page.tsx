@@ -5,7 +5,6 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
 import { EmptyState } from '@/components/ui/states';
-import { brand } from '@/lib/brand';
 import * as repo from '@/modules/finance/repository';
 import { ImportWizard } from './wizard';
 
@@ -20,8 +19,9 @@ export default async function ImportPage() {
       <PageHeader
         eyebrow="Money"
         accent="finance"
+        icon={<FileUp />}
         title="Import a statement"
-        description={`Download your monthly statement as CSV from your bank's website and add it here. The file is read in your browser; ${brand.name} never connects to your bank and never sees your banking password.`}
+        description="Add the CSV statement from your bank's website. It's read in your browser, with no bank login, ever."
       />
 
       {accounts.length === 0 ? (

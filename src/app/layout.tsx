@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 // Self-hosted Inter (SIL OFL-1.1). Bundled as local woff2 by the build — no
 // request ever leaves the origin for a font. See docs/LICENSES.md.
 import '@fontsource-variable/inter';
@@ -9,6 +9,7 @@ import '@fontsource-variable/inter';
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
+import { Splash } from '@/components/splash';
 import { brand } from '@/lib/brand';
 import { parseTheme, THEME_COOKIE } from '@/lib/theme';
 
@@ -30,6 +31,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Black unless the visitor chose White; rendered on the server so the
   // first paint is already the right theme.
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  // The proxy's per-request CSP nonce, which the splash's one inline script needs.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html
@@ -38,7 +41,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === 'light' ? 'light' : undefined}
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        <Splash nonce={nonce} />
+        {children}
+      </body>
     </html>
   );
 }

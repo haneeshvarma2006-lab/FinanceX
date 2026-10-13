@@ -124,24 +124,50 @@ export function Badge({
   );
 }
 
-const EYEBROW_DOT = {
-  tasks: 'bg-tasks',
-  habits: 'bg-habits',
-  finance: 'bg-finance',
-  trading: 'bg-trading',
-  accent: 'bg-accent',
+const EYEBROW_TEXT = {
+  tasks: 'text-tasks',
+  goals: 'text-warning',
+  habits: 'text-habits',
+  finance: 'text-finance',
+  trading: 'text-trading',
+  accent: 'text-text-muted',
+} as const;
+
+const ICON_TILE = {
+  tasks: 'bg-tasks/14 text-tasks ring-tasks/30 shadow-[0_8px_32px_-8px_var(--accent-tasks)]',
+  goals: 'bg-warning/14 text-warning ring-warning/30 shadow-[0_8px_32px_-8px_var(--warning)]',
+  habits: 'bg-habits/14 text-habits ring-habits/30 shadow-[0_8px_32px_-8px_var(--accent-habits)]',
+  finance:
+    'bg-finance/14 text-finance ring-finance/30 shadow-[0_8px_32px_-8px_var(--accent-finance)]',
+  trading:
+    'bg-trading/14 text-trading ring-trading/30 shadow-[0_8px_32px_-8px_var(--accent-trading)]',
+  accent: 'bg-surface-raised text-text-primary ring-border-strong',
+} as const;
+
+const WASH = {
+  tasks: 'var(--accent-tasks)',
+  goals: 'var(--warning)',
+  habits: 'var(--accent-habits)',
+  finance: 'var(--accent-finance)',
+  trading: 'var(--accent-trading)',
+  accent: 'var(--text-primary)',
 } as const;
 
 /**
- * The top of every screen. A small eyebrow names the section in its domain
- * colour; the title is set large and tight, as on the landing page, so each
- * screen opens with one confident line rather than a form label.
+ * The top of every screen, and the clearest signal of where you are.
+ *
+ * Each area owns a colour — Tasks blue, Goals amber, Lifestyle teal, Finance
+ * green, Trading violet — and its header says so three ways at once: a soft
+ * wash of that colour behind the title, a lit icon tile, and the eyebrow set
+ * in it. The label always says the same thing, so colour is never the only
+ * signal.
  */
 export function PageHeader({
   title,
   description,
   action,
   eyebrow,
+  icon,
   accent = 'accent',
 }: {
   /** An <em> inside is set in softer ink, as on the landing page. */
@@ -149,27 +175,58 @@ export function PageHeader({
   description?: string;
   action?: React.ReactNode;
   eyebrow?: string;
-  accent?: keyof typeof EYEBROW_DOT;
+  /** The area's icon, shown in a lit tile beside the title. */
+  icon?: React.ReactNode;
+  accent?: keyof typeof EYEBROW_TEXT;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4 pb-1">
-      <div className="min-w-0">
-        {eyebrow && (
-          <p className="mb-3 inline-flex items-center gap-2 text-xs font-medium tracking-wide text-text-muted uppercase">
-            <span aria-hidden className={cn('size-1.5 rounded-full', EYEBROW_DOT[accent])} />
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="ui-ink pb-1 text-3xl font-semibold tracking-tighter text-balance sm:text-5xl">
-          {title}
-        </h1>
-        {description && (
-          <p className="mt-2 max-w-prose text-sm text-pretty text-text-secondary sm:text-base">
-            {description}
-          </p>
-        )}
+    <header className="relative pb-1">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -left-24 -z-10 h-72 w-[min(42rem,100vw)] opacity-[0.22] blur-3xl sm:-top-32"
+        style={{
+          background: `radial-gradient(closest-side, ${WASH[accent]}, transparent)`,
+        }}
+      />
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-5">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-4">
+            {icon && (
+              <span
+                aria-hidden
+                className={cn(
+                  'inline-flex size-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset sm:size-14',
+                  '[&>svg]:size-6 sm:[&>svg]:size-7',
+                  ICON_TILE[accent],
+                )}
+              >
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0">
+              {eyebrow && (
+                <p
+                  className={cn(
+                    'mb-1 text-xs font-semibold tracking-widest uppercase',
+                    EYEBROW_TEXT[accent],
+                  )}
+                >
+                  {eyebrow}
+                </p>
+              )}
+              <h1 className="ui-ink text-3xl leading-tight font-semibold tracking-tighter text-balance sm:text-5xl">
+                {title}
+              </h1>
+            </div>
+          </div>
+          {description && (
+            <p className="mt-3 max-w-prose text-sm text-pretty text-text-secondary sm:text-base">
+              {description}
+            </p>
+          )}
+        </div>
+        {action && <div className="w-full shrink-0 sm:w-auto">{action}</div>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
     </header>
   );
 }

@@ -22,8 +22,9 @@ export default async function ScanBillPage() {
       <PageHeader
         eyebrow="Money"
         accent="finance"
+        icon={<ScanLine />}
         title="Scan a bill"
-        description="Photograph a bill and it becomes an expense: the total, the date and the shop are read on your phone, you check them, and the photo can be kept with the expense."
+        description="Snap a bill. The total, date and shop are read on your phone; you check them and it's added."
       />
       <Card accent="finance">
         <CardHeader

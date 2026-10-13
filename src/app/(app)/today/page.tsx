@@ -69,10 +69,9 @@ export default async function TodayPage() {
         eyebrow={longDate(snapshot.today)}
         title={
           <>
-            Good to see you, <em>{user.displayName}</em>
+            {greeting(renderedAt, user.timezone)}, <em>{firstName(user.displayName)}</em>
           </>
         }
-        description="Everything below is from your own records."
       />
 
       {nothingYet ? <FirstRun /> : <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
@@ -116,7 +115,7 @@ export default async function TodayPage() {
                   key={goal.id}
                   href="/goals"
                   icon={<Target aria-hidden className="size-4" />}
-                  accent="habits"
+                  accent="goals"
                   title={`${goal.title} is behind pace`}
                   detail={`At ${goal.percent}%, with less time left than that.`}
                 />
@@ -164,10 +163,10 @@ export default async function TodayPage() {
       {/* Goals sit above everything else: the rest of the page is how they
           get done, so they come first. */}
       {!nothingYet && (
-        <Card accent="habits">
+        <Card accent="goals">
           <CardHeader
             title="Your goals"
-            accent="habits"
+            accent="goals"
             icon={<Target aria-hidden className="size-4" />}
             description={
               snapshot.goals.hasData
@@ -183,7 +182,7 @@ export default async function TodayPage() {
                 title="Start with a goal"
                 body="An emergency fund, a prop challenge, a business. Tasks, money and trades can all point at it."
                 href="/goals"
-                accent="habits"
+                accent="goals"
                 cta="Set your first goal"
               />
             ) : (
@@ -478,8 +477,19 @@ function Attention({
   );
 }
 
+/** Each blank's button wears its area's colour, so the four read as four. */
+const CTA: Record<Accent, string> = {
+  tasks: 'bg-tasks hover:bg-tasks/90',
+  goals: 'bg-warning hover:bg-warning/90',
+  habits: 'bg-habits hover:bg-habits/90',
+  finance: 'bg-finance hover:bg-finance/90',
+  trading: 'bg-trading hover:bg-trading/90',
+  accent: 'bg-text-primary hover:bg-text-primary/90',
+};
+
 const GLOW: Record<Accent, string> = {
   tasks: 'bg-tasks/25',
+  goals: 'bg-warning/25',
   habits: 'bg-habits/25',
   finance: 'bg-finance/25',
   trading: 'bg-trading/25',
@@ -522,9 +532,10 @@ function Blank({
         href={href}
         className={cn(
           'group mt-5 inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-medium',
-          'bg-text-primary text-surface-sunken shadow-(--shadow-raised)',
+          'text-surface-sunken shadow-(--shadow-raised)',
           'transition-[background-color,box-shadow] duration-[var(--duration-fast)] ease-(--ease-out-soft)',
-          'hover:bg-text-primary/90 hover:shadow-(--shadow-overlay)',
+          'hover:shadow-(--shadow-overlay)',
+          CTA[accent],
         )}
       >
         {cta}
@@ -540,7 +551,7 @@ function Blank({
 const QUICK_STARTS = [
   {
     href: '/goals',
-    accent: 'habits',
+    accent: 'goals',
     icon: Target,
     title: 'Set a goal',
     body: 'What all of this is for.',
@@ -596,12 +607,11 @@ function FirstRun() {
             Welcome to {brand.name}
           </p>
           <h2 className="mt-4 text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">
-            Nothing here yet — and that is correct
+            Let&apos;s set up your system
           </h2>
           <p className="mt-2 text-sm text-pretty text-text-secondary">
-            {brand.name} will never invent a balance, a streak, or a win rate to make this page look
-            busy. Every number on this dashboard comes from something you entered — start with
-            whichever you would actually use tomorrow.
+            Pick the one you&apos;d use tomorrow. {brand.name} never invents a balance, streak or
+            win rate. Every number here comes from you.
           </p>
         </div>
 
@@ -643,6 +653,28 @@ function FirstRun() {
       </div>
     </Card>
   );
+}
+
+/** Morning, afternoon or evening where the user is, not where the server is. */
+function greeting(at: number, timeZone: string): string {
+  let hour = 12;
+  try {
+    hour = Number(
+      new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone }).format(
+        new Date(at),
+      ),
+    );
+  } catch {
+    // An unknown zone keeps the neutral midday greeting.
+  }
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/** "Haneesh Varma" → "Haneesh". A single name is used whole. */
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
 }
 
 /** `2026-09-27` → `Sunday, 27 September`. The ISO day is already the user's own. */

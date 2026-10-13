@@ -14,10 +14,11 @@ import { CardGlow } from './card-glow';
  */
 
 /** Which domain a card belongs to. Colour is never the only signal. */
-export type Accent = 'tasks' | 'habits' | 'finance' | 'trading' | 'accent';
+export type Accent = 'tasks' | 'goals' | 'habits' | 'finance' | 'trading' | 'accent';
 
 export const ACCENT_CHIP: Record<Accent, string> = {
   tasks: 'bg-tasks/12 text-tasks ring-tasks/25',
+  goals: 'bg-warning/12 text-warning ring-warning/25',
   habits: 'bg-habits/12 text-habits ring-habits/25',
   finance: 'bg-finance/12 text-finance ring-finance/25',
   trading: 'bg-trading/12 text-trading ring-trading/25',
@@ -29,8 +30,9 @@ export const ACCENT_CHIP: Record<Accent, string> = {
  * treatment the landing page gives its connected steps. It says which part of
  * the product a card belongs to before a word of it is read.
  */
-const GLOW_COLOR: Record<Accent, string> = {
+export const AREA_COLOR: Record<Accent, string> = {
   tasks: 'var(--accent-tasks)',
+  goals: 'var(--warning)',
   habits: 'var(--accent-habits)',
   finance: 'var(--accent-finance)',
   trading: 'var(--accent-trading)',
@@ -39,6 +41,7 @@ const GLOW_COLOR: Record<Accent, string> = {
 
 const ACCENT_EDGE: Record<Accent, string> = {
   tasks: 'before:via-tasks/70',
+  goals: 'before:via-warning/70',
   habits: 'before:via-habits/70',
   finance: 'before:via-finance/70',
   trading: 'before:via-trading/70',
@@ -90,7 +93,19 @@ export function Card({
         className,
       )}
     >
-      <CardGlow color={GLOW_COLOR[accent ?? 'accent']} />
+      <CardGlow color={AREA_COLOR[accent ?? 'accent']} />
+      {/* A wash of the area's colour across the top of the card, so a Finance
+          card and a Trading card differ at a glance, not only in their icon. */}
+      {accent && accent !== 'accent' && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 rounded-2xl"
+          style={{
+            background: `radial-gradient(120% 70% at 0% 0%, color-mix(in oklch, ${AREA_COLOR[accent]} 17%, transparent), transparent 70%)`,
+            boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${AREA_COLOR[accent]} 22%, transparent)`,
+          }}
+        />
+      )}
       {children}
     </Tag>
   );

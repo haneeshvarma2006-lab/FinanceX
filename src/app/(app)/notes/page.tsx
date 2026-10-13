@@ -96,8 +96,9 @@ export default async function NotesPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Diary"
+        icon={<NotebookPen />}
         title="Notes"
-        description="Write what happened, what you decided and why. Come back and change it whenever you like — entries stay private to your account."
+        description="What happened, what you decided and why. Private to you."
       />
       <NotesTabs />
 
