@@ -57,8 +57,8 @@ export function AddTradingAccountForm({ defaultCurrency }: { defaultCurrency: st
           error={state.fieldErrors?.environment}
         >
           {TRADE_ENVIRONMENTS.map((e) => (
-            <option key={e} value={e} className="capitalize">
-              {e}
+            <option key={e} value={e}>
+              {e[0]!.toUpperCase() + e.slice(1)}
             </option>
           ))}
         </SelectField>
@@ -138,8 +138,8 @@ export function AddTradeForm({
 
         <SelectField label="Asset class" name="assetClass" defaultValue="equity">
           {ASSET_CLASSES.map((a) => (
-            <option key={a} value={a} className="capitalize">
-              {a}
+            <option key={a} value={a}>
+              {a[0]!.toUpperCase() + a.slice(1)}
             </option>
           ))}
         </SelectField>

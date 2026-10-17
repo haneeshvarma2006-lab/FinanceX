@@ -43,6 +43,7 @@ test('starter rules are visible and editable, not hidden logic', async ({ page }
     await expect(page.getByText(name, { exact: true })).toBeVisible();
   }
 
+  await page.getByText('How rules work').click();
   await expect(page.getByText(/data, not code/i)).toBeVisible();
 });
 
@@ -132,6 +133,7 @@ test('a user-created rule creates a task when it matches', async ({ page }) => {
   await register(page, 'createtask');
 
   await page.goto('/rules');
+  await page.getByRole('button', { name: 'New rule' }).click();
   await page.getByLabel('Name this rule').fill('Triage overdue work');
   await page.getByLabel('Condition').selectOption('tasks_overdue');
   await page.getByLabel('Threshold').fill('1');
@@ -164,11 +166,13 @@ test('a money threshold is compared exactly', async ({ page }) => {
   await register(page, 'money');
 
   await page.goto('/finance');
+  await page.getByRole('button', { name: 'New account' }).click();
   await page.getByLabel('Name').fill('Current');
   await page.getByRole('button', { name: /add account/i }).click();
   await expect(page.getByText('Account added')).toBeVisible();
 
   await page.goto('/rules');
+  await page.getByRole('button', { name: 'New rule' }).click();
   await page.getByLabel('Name this rule').fill('Spending watch');
   await page.getByLabel('Condition').selectOption('spent_more_than');
   await page.getByLabel('Amount').fill('1000.00');
@@ -178,6 +182,7 @@ test('a money threshold is compared exactly', async ({ page }) => {
 
   // Exactly at the threshold: "more than" means this must not fire.
   await page.goto('/finance');
+  await page.getByRole('button', { name: 'Add transaction' }).click();
   await page.getByLabel('Description').first().fill('Exactly at the line');
   await page.getByLabel('Amount').first().fill('1000.00');
   await page.getByRole('button', { name: /record transaction/i }).click();
@@ -189,6 +194,7 @@ test('a money threshold is compared exactly', async ({ page }) => {
 
   // One paisa over: a float comparison could get this wrong.
   await page.goto('/finance');
+  await page.getByRole('button', { name: 'Add transaction' }).click();
   await page.getByLabel('Description').first().fill('One paisa over');
   await page.getByLabel('Amount').first().fill('0.01');
   await page.getByRole('button', { name: /record transaction/i }).click();
@@ -203,6 +209,7 @@ test('rejects a rule with an empty action title', async ({ page }) => {
   await register(page, 'invalid');
   await page.goto('/rules');
 
+  await page.getByRole('button', { name: 'New rule' }).click();
   await page.getByLabel('Name this rule').fill('Incomplete');
   await page.getByRole('button', { name: /create rule/i }).click();
 

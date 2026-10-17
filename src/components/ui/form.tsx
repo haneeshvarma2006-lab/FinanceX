@@ -6,7 +6,8 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
+import { useSheet } from './sheet';
 import { cn } from '@/lib/cn';
 
 /**
@@ -236,7 +237,13 @@ export function CheckboxField({
   );
 }
 
-/** Form-level message. role="alert" so a failed submit is announced. */
+/**
+ * Form-level message. role="alert" so a failed submit is announced.
+ *
+ * Inside a Sheet, a success message is not shown here at all: the sheet
+ * closes and repeats it as a toast, which is where the eye goes once the
+ * panel has gone.
+ */
 export function FormAlert({
   children,
   tone = 'error',
@@ -244,6 +251,18 @@ export function FormAlert({
   children: React.ReactNode;
   tone?: 'error' | 'success';
 }) {
+  const sheet = useSheet();
+  const handOff = sheet !== null && tone === 'success';
+  const text = typeof children === 'string' ? children : 'Saved';
+
+  useEffect(() => {
+    if (handOff) sheet.done(text);
+    // The sheet object is rebuilt every render; the message is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handOff, text]);
+
+  if (handOff) return null;
+
   return (
     <p
       role="alert"

@@ -3,6 +3,7 @@ import { NotebookPen, Scale } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
 import { EmptyState } from '@/components/ui/states';
 import { todayFor } from '@/modules/dashboard/service';
 import * as repo from '@/modules/decisions/repository';
@@ -104,13 +105,27 @@ export default async function DecisionsPage() {
       )}
 
       <Card>
-        <CardHeader
-          title="Log a decision"
-          description="Thirty seconds now saves you from hindsight later."
-          icon={<Scale className="size-4" />}
-        />
-        <CardBody>
-          <DecisionForm suggestedReview={addDays(today, DEFAULT_REVIEW_DAYS)} />
+        <CardBody className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-overlay text-text-secondary ring-1 ring-border-subtle ring-inset"
+            >
+              <Scale className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-text-primary">Made a call?</p>
+              <p className="text-xs text-text-secondary">
+                Thirty seconds now saves you from hindsight later.
+              </p>
+            </div>
+          </div>
+          <Sheet
+            label="Log a decision"
+            description="Write it down before you know how it turns out."
+          >
+            <DecisionForm suggestedReview={addDays(today, DEFAULT_REVIEW_DAYS)} />
+          </Sheet>
         </CardBody>
       </Card>
 

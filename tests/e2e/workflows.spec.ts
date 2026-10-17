@@ -59,26 +59,30 @@ test('records income, expense and a transfer with correct totals', async ({ page
 
   // Two accounts.
   for (const name of ['Current', 'Savings']) {
+    await page.getByRole('button', { name: 'New account' }).click();
     await page.getByLabel('Name').fill(name);
     await page.getByRole('button', { name: /add account/i }).click();
     await expect(page.getByText('Account added')).toBeVisible();
   }
 
   // Income of 85,000.
+  await page.getByRole('button', { name: 'Add transaction' }).click();
   await page.getByLabel('Description').first().fill('Salary');
-  await page.getByLabel('Type').nth(1).selectOption('income');
+  await page.getByLabel('Type').selectOption('income');
   await page.getByLabel('Amount').first().fill('85000.00');
   await page.getByRole('button', { name: /record transaction/i }).click();
   await expect(page.getByText('Transaction recorded')).toBeVisible();
 
   // Expense of 5,000.
+  await page.getByRole('button', { name: 'Add transaction' }).click();
   await page.getByLabel('Description').first().fill('Groceries');
-  await page.getByLabel('Type').nth(1).selectOption('expense');
+  await page.getByLabel('Type').selectOption('expense');
   await page.getByLabel('Amount').first().fill('5000.00');
   await page.getByRole('button', { name: /record transaction/i }).click();
   await expect(page.getByText('Transaction recorded')).toBeVisible();
 
   // A transfer of 20,000 between the user's own accounts.
+  await page.getByRole('button', { name: 'Move money' }).click();
   await page.getByLabel('From').selectOption({ index: 0 });
   await page.getByLabel('To').selectOption({ index: 1 });
   await page.getByLabel('Amount').last().fill('20000.00');
@@ -102,9 +106,13 @@ test('rejects an amount with impossible precision', async ({ page }) => {
   await register(page, 'precision');
   await page.goto('/finance');
 
+  await page.getByRole('button', { name: 'New account' }).click();
+
   await page.getByLabel('Name').fill('Wallet');
   await page.getByRole('button', { name: /add account/i }).click();
   await expect(page.getByText('Account added')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add transaction' }).click();
 
   await page.getByLabel('Description').first().fill('Too precise');
   await page.getByLabel('Amount').first().fill('10.5678');
@@ -117,11 +125,13 @@ test('journals a trade and derives P&L from its fills', async ({ page }) => {
   await register(page, 'trading');
   await page.goto('/trading');
 
+  await page.getByRole('button', { name: 'New trading account' }).click();
   await page.getByLabel('Name').fill('Main');
   await page.getByLabel('Starting balance').fill('100000.00');
   await page.getByRole('button', { name: /add trading account/i }).click();
   await expect(page.getByText('Trading account added')).toBeVisible();
 
+  await page.getByRole('button', { name: 'New trade' }).click();
   await page.getByLabel('Symbol').fill('INFY');
   await page.getByRole('button', { name: /log trade/i }).click();
   await expect(page.getByText(/trade created/i)).toBeVisible();
@@ -233,6 +243,7 @@ test('legal pages are reachable and state their limits', async ({ page }) => {
 test('imports a bank statement CSV once, previewing every row first', async ({ page }) => {
   await register(page, 'statement');
   await page.goto('/finance');
+  await page.getByRole('button', { name: 'New account' }).click();
   await page.getByLabel('Name').fill('HDFC Savings');
   await page.getByRole('button', { name: /add account/i }).click();
   await expect(page.getByText('Account added')).toBeVisible();
@@ -280,6 +291,7 @@ test('scans a bill photo on the device and adds it as an expense once', async ({
   test.setTimeout(150_000);
   await register(page, 'scan');
   await page.goto('/finance');
+  await page.getByRole('button', { name: 'New account' }).click();
   await page.getByLabel('Name').fill('HDFC Savings');
   await page.getByRole('button', { name: /add account/i }).click();
   await expect(page.getByText('Account added')).toBeVisible();

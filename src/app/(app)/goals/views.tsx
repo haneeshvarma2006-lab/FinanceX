@@ -253,25 +253,26 @@ function CheckpointForm({ goalId, unit }: { goalId: string; unit: string | null 
     <form action={action} className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="goalId" value={goalId} />
 
-      <div className="w-32">
+      <div className="w-40">
         <Field
-          label="Now at"
+          label={unit ? `Now at (${unit})` : 'Now at'}
           name="value"
           required
           inputMode="decimal"
-          hint={unit ?? undefined}
           error={state.fieldErrors?.value}
         />
       </div>
 
-      <Button type="submit" variant="secondary" size="sm" loading={pending}>
+      <Button type="submit" variant="secondary" loading={pending}>
         Record
       </Button>
 
       {state.message && (
         <span
           role="status"
-          className={state.tone === 'error' ? 'text-xs text-negative' : 'text-xs text-positive'}
+          className={
+            state.tone === 'error' ? 'w-full text-xs text-negative' : 'w-full text-xs text-positive'
+          }
         >
           {state.message}
         </span>

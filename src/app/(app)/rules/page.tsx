@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Workflow } from 'lucide-react';
+import { ChevronDown, Workflow } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
 import * as repo from '@/modules/rules/repository';
 import { TRIGGERS, isTriggerType } from '@/modules/rules/triggers';
 import { ACTIONS, isActionType } from '@/modules/rules/actions';
@@ -46,6 +47,16 @@ export default async function RulesPage() {
   ]);
 
   const ruleName = new Map(rules.map((r) => [r.id, r.name]));
+  // The latest check per rule, not every check: the same five lines
+  // repeated once per visit buried the one that mattered.
+  const latest = runs.filter((run, i) => runs.findIndex((r) => r.ruleId === run.ruleId) === i);
+  const when = new Intl.DateTimeFormat(user.locale || 'en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: user.timezone,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,6 +66,28 @@ export default async function RulesPage() {
         icon={<Workflow />}
         title="Rules"
         description={`What ${brand.name} watches for, and what it does about it.`}
+        action={
+          <Sheet
+            label="New rule"
+            description="When something happens, do one thing about it."
+            className="w-full sm:w-auto"
+          >
+            <AddRuleForm
+              triggers={Object.entries(TRIGGERS).map(([value, t]) => ({
+                value,
+                label: t.label,
+                // Which extra input the condition needs, if any.
+                needs:
+                  'count' in t.config.shape
+                    ? 'count'
+                    : 'amount' in t.config.shape
+                      ? 'amount'
+                      : null,
+              }))}
+              actions={Object.entries(ACTIONS).map(([value, a]) => ({ value, label: a.label }))}
+            />
+          </Sheet>
+        }
       />
 
       <Card accent="accent">
@@ -94,25 +127,9 @@ export default async function RulesPage() {
       </Card>
 
       <Card accent="accent">
-        <CardHeader title="Create a rule" />
-        <CardBody>
-          <AddRuleForm
-            triggers={Object.entries(TRIGGERS).map(([value, t]) => ({
-              value,
-              label: t.label,
-              // Which extra input the condition needs, if any.
-              needs:
-                'count' in t.config.shape ? 'count' : 'amount' in t.config.shape ? 'amount' : null,
-            }))}
-            actions={Object.entries(ACTIONS).map(([value, a]) => ({ value, label: a.label }))}
-          />
-        </CardBody>
-      </Card>
-
-      <Card accent="accent">
         <CardHeader
-          title="Activity"
-          description="Every evaluation, including the ones that did not match — so you can see why."
+          title="Recent activity"
+          description="The last check of each rule, and why it did or didn't act."
           action={runs.length > 0 ? <PruneButton /> : undefined}
         />
         <CardBody className="p-0">
@@ -123,7 +140,7 @@ export default async function RulesPage() {
             />
           ) : (
             <ul className="divide-y divide-border-subtle">
-              {runs.map((run) => (
+              {latest.map((run) => (
                 <li
                   key={run.id}
                   className="flex flex-wrap items-start justify-between gap-3 px-5 py-3"
@@ -138,7 +155,7 @@ export default async function RulesPage() {
                     <p className="mt-0.5 text-xs text-pretty text-text-secondary">{run.reason}</p>
                   </div>
                   <span className="numeric shrink-0 text-xs text-text-muted">
-                    {run.firedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC
+                    {when.format(run.firedAt)}
                   </span>
                 </li>
               ))}
@@ -147,30 +164,24 @@ export default async function RulesPage() {
         </CardBody>
       </Card>
 
-      <Card accent="accent">
-        <CardHeader title="How rules work" />
-        <CardBody>
-          <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-pretty text-text-secondary">
-            <li>
-              A rule is <strong className="text-text-primary">data, not code</strong>. It names one
-              condition and one action from a fixed list. There is no expression to write, and
-              nothing you enter is ever executed.
-            </li>
-            <li>
-              Rules are checked against your own records when you open the dashboard. They never
-              read anything outside your account.
-            </li>
-            <li>
-              The same condition on the same day acts once. Re-checking it shows as{' '}
-              <em>already handled</em> rather than repeating.
-            </li>
-            <li>
-              The five rules you started with are ordinary rows — retune them, switch them off, or
-              delete them.
-            </li>
-          </ul>
-        </CardBody>
-      </Card>
+      <details className="group rounded-2xl border border-border-subtle/70 px-5 py-4 text-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-text-primary [&::-webkit-details-marker]:hidden">
+          How rules work
+          <ChevronDown
+            aria-hidden
+            className="size-4 text-text-muted transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-pretty text-text-secondary">
+          <li>
+            Each rule is one condition and one action, picked from a list: data, not code. Nothing
+            you type is ever run.
+          </li>
+          <li>Rules check your own records when you open Today. Nothing outside your account.</li>
+          <li>A rule acts once a day at most, so you are never spammed.</li>
+          <li>The five you started with are yours to change, pause or delete.</li>
+        </ul>
+      </details>
     </div>
   );
 }

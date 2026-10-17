@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { FileUp, Receipt, ScanLine, Wallet } from 'lucide-react';
+import { ArrowLeftRight, FileUp, Receipt, ScanLine, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
@@ -11,6 +11,9 @@ import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
 import { AddAccountForm, AddTransactionForm, AddTransferForm } from './forms';
 import { DeleteTransactionButton } from './forms';
+import { Sheet } from '@/components/ui/sheet';
+import { shortDay } from '@/lib/dates';
+import { todayFor } from '@/modules/dashboard/service';
 
 export const metadata: Metadata = { title: 'Finance' };
 
@@ -22,8 +25,14 @@ function monthBounds(now = new Date()) {
   return { start, end };
 }
 
-export default async function FinancePage() {
+export default async function FinancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const user = await requireUser();
+  const { new: opening } = await searchParams;
+  const today = todayFor(user.timezone);
   const currency = user.baseCurrency as Currency;
   const { start, end } = monthBounds();
 
@@ -56,17 +65,27 @@ export default async function FinancePage() {
         title="Finance"
         description="Accounts, spending and bills. Entered by you, never linked to a bank."
         action={
-          <div className="grid grid-cols-3 gap-2 sm:flex">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+            {accounts.length > 0 && (
+              <Sheet
+                label="Add transaction"
+                description="Money in or out of one of your accounts."
+                defaultOpen={opening === 'transaction'}
+                className="col-span-3 h-12 text-base sm:order-last sm:h-10 sm:text-sm"
+              >
+                <AddTransactionForm accounts={accounts} categories={categories} />
+              </Sheet>
+            )}
             <Link
               href="/finance/scan"
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm bg-text-primary text-surface-sunken shadow-(--shadow-raised)"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-overlay py-3 text-xs font-medium text-text-primary shadow-(--shadow-edge) hover:border-border-strong sm:h-10 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm"
             >
               <ScanLine aria-hidden className="size-4" />
               Scan a bill
             </Link>
             <Link
               href="/finance/import"
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm border border-border-subtle bg-surface-overlay text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-overlay py-3 text-xs font-medium text-text-primary shadow-(--shadow-edge) hover:border-border-strong sm:h-10 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm"
             >
               <FileUp aria-hidden className="size-4" />
               <span className="sm:hidden">Import</span>
@@ -74,7 +93,7 @@ export default async function FinancePage() {
             </Link>
             <Link
               href="/finance/bills"
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-3 text-xs font-medium sm:h-9.5 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm border border-border-subtle bg-surface-overlay text-text-primary shadow-(--shadow-edge) hover:border-border-strong"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-overlay py-3 text-xs font-medium text-text-primary shadow-(--shadow-edge) hover:border-border-strong sm:h-10 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm"
             >
               <Receipt aria-hidden className="size-4" />
               Bills
@@ -117,6 +136,7 @@ export default async function FinancePage() {
                     accountName={accountName}
                     categoryName={categoryName}
                     billFor={billFor}
+                    today={today}
                     empty="No income recorded this month yet."
                   />
                 ),
@@ -143,6 +163,7 @@ export default async function FinancePage() {
                         accountName={accountName}
                         categoryName={categoryName}
                         billFor={billFor}
+                        today={today}
                         empty="Nothing spent this month yet."
                       />
                     }
@@ -157,14 +178,41 @@ export default async function FinancePage() {
       <Card accent="finance">
         <CardHeader
           title="Accounts"
-          description="Balances are derived from your ledger, never stored separately."
+          description={accounts.length === 0 ? 'Where your money lives' : undefined}
+          action={
+            // One stable spot for "New account", empty or not: the sheet has
+            // to survive the first account appearing, or its confirmation
+            // would vanish with the empty state.
+            <div className="flex gap-1">
+              {accounts.length >= 2 && (
+                <Sheet
+                  label="Move money"
+                  variant="ghost"
+                  icon={<ArrowLeftRight />}
+                  description="Between your own accounts. Not counted as income or spending."
+                  className="h-8 px-3 text-xs"
+                >
+                  <AddTransferForm accounts={accounts} />
+                </Sheet>
+              )}
+              <Sheet
+                label="New account"
+                variant={accounts.length === 0 ? 'primary' : 'secondary'}
+                description="Cash, a bank account or a card."
+                defaultOpen={opening === 'account'}
+                className="h-8 px-3 text-xs"
+              >
+                <AddAccountForm defaultCurrency={currency} />
+              </Sheet>
+            </div>
+          }
         />
         <CardBody className="p-0">
           {accounts.length === 0 ? (
             <EmptyState
               icon={<Wallet aria-hidden className="size-5" />}
               title="No accounts yet"
-              description="Add a cash, bank or card account to start recording transactions against it."
+              description="Tap New account to add your bank account, cash or a card. Then record what you spend."
             />
           ) : (
             <ul className="divide-y divide-border-subtle">
@@ -214,45 +262,17 @@ export default async function FinancePage() {
         </Card>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card accent="finance">
-          <CardHeader title="Add an account" />
-          <CardBody>
-            <AddAccountForm defaultCurrency={currency} />
-          </CardBody>
-        </Card>
-
-        <Card accent="finance">
-          <CardHeader title="Record a transaction" />
-          <CardBody>
-            {accounts.length === 0 ? (
-              <p className="text-sm text-text-muted">Add an account first.</p>
-            ) : (
-              <AddTransactionForm accounts={accounts} categories={categories} />
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
-      {accounts.length >= 2 && (
-        <Card accent="finance">
-          <CardHeader
-            title="Move money between your accounts"
-            description="Recorded as two balanced entries, and excluded from income and spending totals."
-          />
-          <CardBody>
-            <AddTransferForm accounts={accounts} />
-          </CardBody>
-        </Card>
-      )}
-
       <Card accent="finance">
         <CardHeader title="Recent transactions" />
         <CardBody className="p-0">
           {transactions.length === 0 ? (
             <EmptyState
               title="Nothing recorded yet"
-              description="Transactions you add will appear here, newest first."
+              description={
+                accounts.length === 0
+                  ? 'Add an account first, then your spending shows up here.'
+                  : 'Tap Add transaction, or scan a bill.'
+              }
             />
           ) : (
             <ul className="divide-y divide-border-subtle">
@@ -261,9 +281,10 @@ export default async function FinancePage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm text-text-primary">{tx.description}</p>
                     <p className="numeric mt-0.5 text-xs text-text-muted">
-                      {tx.occurredOn} · {accountName.get(tx.accountId) ?? 'Account'}
+                      {shortDay(tx.occurredOn, today)} ·{' '}
+                      {accountName.get(tx.accountId) ?? 'Account'}
                       {tx.categoryId ? ` · ${categoryName.get(tx.categoryId) ?? ''}` : ''}
-                      {tx.kind === 'transfer' ? ' · transfer' : ''}
+                      {tx.kind === 'transfer' ? ' · Transfer' : ''}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -292,7 +313,7 @@ function BalanceDetail({
   total: bigint;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-text-muted">No accounts yet — add one below.</p>;
+    return <p className="text-sm text-text-muted">No accounts yet.</p>;
   }
   return (
     <ul className="flex flex-col gap-3">
@@ -376,6 +397,7 @@ function TransactionHistory({
   accountName,
   categoryName,
   billFor,
+  today,
   empty,
 }: {
   rows: Tx[];
@@ -383,6 +405,7 @@ function TransactionHistory({
   categoryName: Map<string, string>;
   /** Transaction id → its kept bill photo. */
   billFor: Map<string, string>;
+  today: string;
   empty: string;
 }) {
   if (rows.length === 0) return <p className="text-sm text-text-muted">{empty}</p>;
@@ -393,7 +416,7 @@ function TransactionHistory({
           <div className="min-w-0">
             <p className="truncate text-sm text-text-primary">{tx.description}</p>
             <p className="numeric mt-0.5 text-xs text-text-muted">
-              {tx.occurredOn} · {accountName.get(tx.accountId) ?? 'Account'}
+              {shortDay(tx.occurredOn, today)} · {accountName.get(tx.accountId) ?? 'Account'}
               {tx.categoryId ? ` · ${categoryName.get(tx.categoryId) ?? ''}` : ''}
             </p>
           </div>

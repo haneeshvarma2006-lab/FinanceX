@@ -6,6 +6,7 @@ import { Check, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
+import { MoreOptions } from '@/components/ui/more-options';
 import { cn } from '@/lib/cn';
 import { createHabitAction, toggleHabitAction, type FormState } from './actions';
 
@@ -16,7 +17,11 @@ type Streak = {
   last30: number;
 };
 
-export function AddHabitForm() {
+/**
+ * One field and one button, like adding a task: the habit's name is all a
+ * new habit needs. How often and why sit under "More options".
+ */
+export function AddHabitForm({ autoFocus = false }: { autoFocus?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createHabitAction, {});
   const titleField = useClearingField(state);
 
@@ -24,44 +29,51 @@ export function AddHabitForm() {
     <form
       action={action}
       onSubmit={titleField.markSubmitted}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-3"
       noValidate
     >
       {state.message && (
         <FormAlert tone={state.tone === 'success' ? 'success' : 'error'}>{state.message}</FormAlert>
       )}
 
-      <Field
-        label="Habit"
-        name="name"
-        required
-        maxLength={120}
-        value={titleField.value}
-        onChange={titleField.onChange}
-        error={state.fieldErrors?.name}
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField label="How often" name="cadence" defaultValue="daily">
-          <option value="daily">Every day</option>
-          <option value="weekly">Every week</option>
-        </SelectField>
-
-        <Field
-          label="Times per period"
-          name="targetPerPeriod"
-          type="number"
-          min="1"
-          max="50"
-          defaultValue="1"
-        />
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <Field
+            label="Habit"
+            name="name"
+            required
+            maxLength={120}
+            placeholder="Morning walk, read 20 pages…"
+            autoFocus={autoFocus}
+            value={titleField.value}
+            onChange={titleField.onChange}
+            error={state.fieldErrors?.name}
+          />
+        </div>
+        <Button type="submit" loading={pending} className={state.fieldErrors?.name ? 'mb-6' : ''}>
+          Add habit
+        </Button>
       </div>
 
-      <TextareaField label="Why this matters" name="description" rows={2} maxLength={500} />
+      <MoreOptions>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField label="How often" name="cadence" defaultValue="daily">
+            <option value="daily">Every day</option>
+            <option value="weekly">Every week</option>
+          </SelectField>
 
-      <Button type="submit" loading={pending} className="self-start">
-        Add habit
-      </Button>
+          <Field
+            label="Times per period"
+            name="targetPerPeriod"
+            type="number"
+            min="1"
+            max="50"
+            defaultValue="1"
+          />
+        </div>
+
+        <TextareaField label="Why this matters" name="description" rows={2} maxLength={500} />
+      </MoreOptions>
     </form>
   );
 }

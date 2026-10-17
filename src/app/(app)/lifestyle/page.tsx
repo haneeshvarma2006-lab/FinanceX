@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Flame, NotebookPen, Repeat } from 'lucide-react';
+import { Flame, NotebookPen, PenLine, Repeat } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
 import * as productivity from '@/modules/productivity/service';
 import * as notesRepo from '@/modules/notes/repository';
 import type { NoteMood } from '@/modules/notes/validators';
@@ -18,8 +19,13 @@ function todayFor(timezone: string, at: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(at);
 }
 
-export default async function HabitsPage() {
+export default async function HabitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const user = await requireUser();
+  const { new: opening } = await searchParams;
   const today = todayFor(user.timezone);
 
   const [habits, recentNotes] = await Promise.all([
@@ -44,17 +50,17 @@ export default async function HabitsPage() {
         accent="habits"
         icon={<Flame />}
         title="Lifestyle"
-        description={`The habits that make up your days. Streaks count in your timezone (${user.timezone}).`}
+        description="The habits that make up your days, and a few lines about each one."
       />
 
       <Card accent="habits">
-        <CardHeader title="Today" description="Tap to log. Logging twice does not count twice." />
+        <CardHeader title="Today" description="Tap a habit to mark it done." />
         <CardBody className="p-0">
           {habits.length === 0 ? (
             <EmptyState
               icon={<Repeat aria-hidden className="size-5" />}
               title="No habits yet"
-              description="Start with one you can do on your worst day. A streak of one small thing beats an abandoned list of five."
+              description="Add one below. One small thing every day beats a list of five you drop."
             />
           ) : (
             <ul className="divide-y divide-border-subtle">
@@ -74,12 +80,19 @@ export default async function HabitsPage() {
             </ul>
           )}
         </CardBody>
+        <CardBody className="border-t border-border-subtle/70">
+          <AddHabitForm autoFocus={opening === 'habit'} />
+        </CardBody>
       </Card>
 
       <Card accent="habits">
         <CardHeader
           title="Today's diary"
-          description="A few lines about the day. Everything you write lives in Notes."
+          description={
+            todaysNotes.length > 0
+              ? `${todaysNotes.length} entr${todaysNotes.length === 1 ? 'y' : 'ies'} today`
+              : 'A few lines about the day'
+          }
           icon={<NotebookPen className="size-4" />}
           accent="habits"
           action={
@@ -110,15 +123,20 @@ export default async function HabitsPage() {
             ))}
           </div>
         )}
-        <CardBody>
-          <NoteComposer />
-        </CardBody>
-      </Card>
-
-      <Card accent="habits">
-        <CardHeader title="Add a habit" />
-        <CardBody>
-          <AddHabitForm />
+        <CardBody className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-text-secondary">
+            {todaysNotes.length > 0
+              ? 'Anything else worth remembering?'
+              : 'How did today go? It all lives in Notes.'}
+          </p>
+          <Sheet
+            label="Write about today"
+            variant="secondary"
+            icon={<PenLine />}
+            title="Today's diary"
+          >
+            <NoteComposer />
+          </Sheet>
         </CardBody>
       </Card>
     </div>

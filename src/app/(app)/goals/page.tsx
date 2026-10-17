@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
 import * as repo from '@/modules/productivity/repository';
 import * as financeRepo from '@/modules/finance/repository';
 import * as tradingRepo from '@/modules/trading/repository';
@@ -16,8 +17,13 @@ function todayFor(timezone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date());
 }
 
-export default async function GoalsPage() {
+export default async function GoalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const user = await requireUser();
+  const { new: opening } = await searchParams;
   const today = todayFor(user.timezone);
 
   // Goals that follow an account are brought up to date before they render.
@@ -62,6 +68,24 @@ export default async function GoalsPage() {
         icon={<Target />}
         title="Goals"
         description="What you're working toward. Tasks, money and trades all point here."
+        action={
+          <Sheet
+            label="New goal"
+            description="Something you can measure, with a date to reach it by."
+            defaultOpen={opening === 'goal'}
+            className="w-full sm:w-auto"
+          >
+            <AddGoalForm
+              habits={habits.map((h) => ({ id: h.id, name: h.name }))}
+              accounts={accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
+              tradingAccounts={tradingAccounts.map((a) => ({
+                id: a.id,
+                name: a.name,
+                currency: a.currency,
+              }))}
+            />
+          </Sheet>
+        }
       />
 
       <Card accent="goals">
@@ -71,7 +95,7 @@ export default async function GoalsPage() {
             <EmptyState
               icon={<Target aria-hidden className="size-5" />}
               title="No goals yet"
-              description="A goal is a target with a number and a date. Without both, it is a wish — start with one you could check off this quarter."
+              description="Tap New goal and pick one thing to reach this quarter: a number and a date."
             />
           ) : (
             active.map((goal) => (
@@ -108,21 +132,6 @@ export default async function GoalsPage() {
           </CardBody>
         </Card>
       )}
-
-      <Card accent="goals">
-        <CardHeader title="Set a goal" />
-        <CardBody>
-          <AddGoalForm
-            habits={habits.map((h) => ({ id: h.id, name: h.name }))}
-            accounts={accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
-            tradingAccounts={tradingAccounts.map((a) => ({
-              id: a.id,
-              name: a.name,
-              currency: a.currency,
-            }))}
-          />
-        </CardBody>
-      </Card>
     </div>
   );
 }

@@ -181,7 +181,7 @@ export default async function TodayPage() {
                 icon={<Target aria-hidden className="size-5" />}
                 title="Start with a goal"
                 body="An emergency fund, a prop challenge, a business. Tasks, money and trades can all point at it."
-                href="/goals"
+                href="/goals?new=goal"
                 accent="goals"
                 cta="Set your first goal"
               />
@@ -217,7 +217,7 @@ export default async function TodayPage() {
         </Card>
       )}
 
-      <div className="cascade-grid grid items-start gap-5 lg:grid-cols-2">
+      <div className="cascade-grid grid gap-5 lg:grid-cols-2">
         {/* ---------------------------------------------------------- tasks */}
         <Card accent="tasks">
           <CardHeader
@@ -294,7 +294,7 @@ export default async function TodayPage() {
                 icon={<Flame aria-hidden className="size-5" />}
                 title="No habits yet"
                 body="Pick one you could do on your worst day."
-                href="/lifestyle"
+                href="/lifestyle?new=habit"
                 accent="habits"
                 cta="Add your first habit"
               />
@@ -334,7 +334,7 @@ export default async function TodayPage() {
                 icon={<Wallet aria-hidden className="size-5" />}
                 title="No accounts yet"
                 body="Add an account, then record what you actually spent."
-                href="/finance"
+                href="/finance?new=account"
                 accent="finance"
                 cta="Add an account"
               />
@@ -389,7 +389,7 @@ export default async function TodayPage() {
                 icon={<LineChart aria-hidden className="size-5" />}
                 title="No trading account yet"
                 body={`Journal trades you placed elsewhere. ${brand.name} places no orders.`}
-                href="/trading"
+                href="/trading?new=account"
                 accent="trading"
                 cta="Set up the journal"
               />
@@ -508,7 +508,12 @@ function Blank({
   icon: React.ReactNode;
   title: string;
   body: string;
-  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading';
+  href:
+    | '/tasks'
+    | '/lifestyle?new=habit'
+    | '/goals?new=goal'
+    | '/finance?new=account'
+    | '/trading?new=account';
   cta: string;
   accent: Accent;
 }) {
@@ -550,7 +555,7 @@ function Blank({
 
 const QUICK_STARTS = [
   {
-    href: '/goals',
+    href: '/goals?new=goal',
     accent: 'goals',
     icon: Target,
     title: 'Set a goal',
@@ -564,14 +569,14 @@ const QUICK_STARTS = [
     body: 'One task you want finished today.',
   },
   {
-    href: '/finance',
+    href: '/finance?new=account',
     accent: 'finance',
     icon: Wallet,
     title: 'Track your money',
     body: 'Add an account, then what you spent.',
   },
   {
-    href: '/trading',
+    href: '/trading?new=account',
     accent: 'trading',
     icon: LineChart,
     title: 'Journal a trade',

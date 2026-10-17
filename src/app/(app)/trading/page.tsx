@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
 import type { Currency } from '@nestedflow/domain/money';
 import { formatDecimal, parseDecimal, plannedRewardRisk } from '@nestedflow/domain/trading';
 import { COSTLY_EMOTIONS, EMOTION_LABELS } from '@/modules/trading/validators';
@@ -20,8 +21,13 @@ import { brand } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Trading journal' };
 
-export default async function TradingPage() {
+export default async function TradingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const user = await requireUser();
+  const { new: opening } = await searchParams;
 
   const [accounts, strategies] = await Promise.all([
     repo.listTradingAccounts(user.id),
@@ -60,6 +66,30 @@ export default async function TradingPage() {
         icon={<LineChart />}
         title="Trading journal"
         description="Journal the trades you place with your broker, and learn what actually pays."
+        action={
+          // The account sheet keeps its place whether or not one exists yet,
+          // so it survives the first account appearing.
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Sheet
+              label={accounts.length === 0 ? 'New trading account' : 'New account'}
+              variant={accounts.length === 0 ? 'primary' : 'secondary'}
+              description="Your broker account, or a paper account to practise with."
+              defaultOpen={opening === 'account'}
+              className={accounts.length === 0 ? 'col-span-2' : undefined}
+            >
+              <AddTradingAccountForm defaultCurrency={user.baseCurrency} />
+            </Sheet>
+            {accounts.length > 0 && (
+              <Sheet
+                label="New trade"
+                description="Name it now. Add the buys and sells from the trade's journal."
+                defaultOpen={opening === 'trade'}
+              >
+                <AddTradeForm accounts={accounts} strategies={strategies} />
+              </Sheet>
+            )}
+          </div>
+        }
       />
 
       {/* Required disclosure, not a footnote: a slim banner rather than a
@@ -78,7 +108,7 @@ export default async function TradingPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-medium text-text-primary">{primary.name}</h2>
             <Badge tone={primary.environment === 'live' ? 'accent' : 'warning'}>
-              {primary.environment}
+              {cap(primary.environment)}
             </Badge>
           </div>
 
@@ -119,37 +149,21 @@ export default async function TradingPage() {
         </>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card accent="trading">
-          <CardHeader title="Add a trading account" />
-          <CardBody>
-            <AddTradingAccountForm defaultCurrency={user.baseCurrency} />
-          </CardBody>
-        </Card>
-
-        <Card accent="trading">
-          <CardHeader title="Log a trade" />
-          <CardBody>
-            {accounts.length === 0 ? (
-              <p className="text-sm text-text-muted">Add a trading account first.</p>
-            ) : (
-              <AddTradeForm accounts={accounts} strategies={strategies} />
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
       <Card accent="trading">
         <CardHeader
           title="Trades"
-          description="Entry and exit prices are calculated from your executions, not typed in."
+          description="Prices come from the buys and sells you add to each trade."
         />
         <CardBody className="p-0">
           {trades.length === 0 ? (
             <EmptyState
               icon={<LineChart aria-hidden className="size-5" />}
-              title="No trades recorded"
-              description="Create a trade, then add the fills that opened and closed it."
+              title="No trades yet"
+              description={
+                accounts.length === 0
+                  ? 'Add your trading account first, then log your first trade.'
+                  : 'Tap New trade, then add the buys and sells that opened and closed it.'
+              }
             />
           ) : (
             <ul className="divide-y divide-border-subtle">
@@ -165,14 +179,14 @@ export default async function TradingPage() {
                         <p className="flex flex-wrap items-center gap-2 text-sm text-text-primary">
                           <span className="font-semibold">{trade.symbol}</span>
                           <Badge tone={trade.direction === 'long' ? 'positive' : 'negative'}>
-                            {trade.direction}
+                            {cap(trade.direction)}
                           </Badge>
-                          <Badge>{trade.status}</Badge>
+                          <Badge>{cap(trade.status)}</Badge>
                           {trade.strategyId && setupName.get(trade.strategyId) && (
                             <Badge tone="accent">{setupName.get(trade.strategyId)}</Badge>
                           )}
                           {account && account.environment !== 'live' && (
-                            <Badge tone="warning">{account.environment}</Badge>
+                            <Badge tone="warning">{cap(account.environment)}</Badge>
                           )}
                           {journal.soonAfterLoss.has(trade.id) && (
                             <Badge tone="warning">Within an hour of a loss</Badge>
@@ -362,7 +376,20 @@ export default async function TradingPage() {
         </Card>
 
         <Card accent="trading">
-          <CardHeader title="Setups" description="Which of your setups actually pay." />
+          <CardHeader
+            title="Setups"
+            description="Which of your setups actually pay."
+            action={
+              <Sheet
+                label="New setup"
+                variant="secondary"
+                description="A pattern you trade, with the rules that make it valid."
+                className="h-8 px-3 text-xs"
+              >
+                <AddSetupForm />
+              </Sheet>
+            }
+          />
           <CardBody className="flex flex-col gap-5">
             {journal.setups.length > 0 && (
               <ul className="flex flex-col divide-y divide-border-subtle">
@@ -393,10 +420,19 @@ export default async function TradingPage() {
                 ))}
               </ul>
             )}
-            <AddSetupForm />
+            {journal.setups.length === 0 && (
+              <p className="text-sm text-pretty text-text-muted">
+                Name the setups you trade, then pick one when you log a trade.
+              </p>
+            )}
           </CardBody>
         </Card>
       </div>
     </div>
   );
+}
+
+/** `live` → `Live`: stored values read as labels. */
+function cap(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

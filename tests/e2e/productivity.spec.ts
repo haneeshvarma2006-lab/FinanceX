@@ -158,6 +158,8 @@ test('tracks a goal to completion with exact progress', async ({ page }) => {
   await register(page, 'goal');
   await page.goto('/goals');
 
+  await page.getByRole('button', { name: 'New goal' }).click();
+
   await page.getByLabel('What are you aiming for?').fill('Read 10 books');
   await page.getByLabel('Target', { exact: true }).fill('10');
   await page.getByLabel('Unit').fill('books');
@@ -185,6 +187,8 @@ test('tracks a goal to completion with exact progress', async ({ page }) => {
 test('a money goal keeps exact precision', async ({ page }) => {
   await register(page, 'moneygoal');
   await page.goto('/goals');
+
+  await page.getByRole('button', { name: 'New goal' }).click();
 
   await page.getByLabel('What are you aiming for?').fill('Emergency fund');
   await page.getByLabel('Kind').selectOption('financial');
@@ -433,6 +437,7 @@ test('the decision journal logs, reviews and reopens a decision', async ({ page 
   await expect(page).toHaveURL(/\/notes\/decisions$/);
   await expect(page.getByText('No decisions yet')).toBeVisible();
 
+  await page.getByRole('button', { name: 'Log a decision' }).click();
   await page.getByLabel('What did you decide?').fill('Stop trading the first 15 minutes');
   await page.getByLabel('Why').fill('Most of my losses come from the open.');
   await page.getByLabel('Area').selectOption('trading');
@@ -468,8 +473,9 @@ test('the decision journal logs, reviews and reopens a decision', async ({ page 
 test('Lifestyle keeps a diary for the day without touching habits', async ({ page }) => {
   await register(page, 'diary');
   await page.goto('/lifestyle');
-  await expect(page.getByRole('heading', { name: 'Add a habit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add habit' })).toBeVisible();
 
+  await page.getByRole('button', { name: 'Write about today' }).click();
   await page.getByLabel('Entry').fill('Slept 8 hours. Walked 6 km.');
   await page.getByRole('button', { name: 'Save entry' }).click();
   await expect(page.locator('article').getByText('Slept 8 hours. Walked 6 km.')).toBeVisible();

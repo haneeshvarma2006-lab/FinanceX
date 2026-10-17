@@ -3,11 +3,12 @@
 import { useActionState, useState } from 'react';
 import { useClearingField } from '@/components/ui/use-clearing-field';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Check, ChevronRight, RotateCcw, Target, Trash2 } from 'lucide-react';
+import { Check, RotateCcw, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { controlClass, Field, FormAlert, SelectField, TextareaField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
+import { MoreOptions } from '@/components/ui/more-options';
 import { setParam } from '@/lib/navigation';
 import { TASK_CATEGORY_ICONS, TaskCategoryTag } from '@/components/ui/task-category';
 import {
@@ -53,42 +54,6 @@ const PRIORITY_RAIL: Record<1 | 2 | 3 | 4, string> = {
   3: 'before:bg-transparent',
   4: 'before:bg-transparent',
 };
-
-/**
- * Progressive disclosure, so the list owns the page rather than the form.
- *
- * Capturing a task has to be one field and one click, because anything slower
- * gets done on paper instead. Everything that refines a task — when, how
- * often, which project — is real and stays one click away, not removed.
- */
-function MoreOptions({ children }: { children: React.ReactNode }) {
-  return (
-    <details className="group">
-      <summary
-        className={cn(
-          'inline-flex cursor-pointer list-none items-center gap-1',
-          'rounded-[var(--radius-control)] py-1 pr-2 pl-1.5',
-          'text-xs text-text-secondary select-none',
-          'transition-colors duration-[var(--duration-fast)] ease-(--ease-out-soft)',
-          'hover:bg-surface-overlay hover:text-text-primary',
-          '[&::-webkit-details-marker]:hidden',
-        )}
-      >
-        <ChevronRight
-          aria-hidden
-          className={cn(
-            'size-3.5 text-text-muted',
-            'transition-transform duration-[var(--duration-fast)] ease-(--ease-out-soft)',
-            'group-open:rotate-90',
-          )}
-        />
-        More options
-      </summary>
-
-      <div className="mt-4 flex flex-col gap-4 border-t border-border-subtle pt-4">{children}</div>
-    </details>
-  );
-}
 
 export function AddTaskForm({
   projects,
@@ -285,17 +250,14 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="min-w-48 flex-1">
-        <label
-          htmlFor="task-search"
-          className="mb-1.5 block text-xs font-medium text-text-secondary"
-        >
+        <label htmlFor="task-search" className="sr-only">
           Search
         </label>
         <input
           id="task-search"
           type="search"
           defaultValue={searchParams.get('q') ?? ''}
-          placeholder="Title or notes"
+          placeholder="Search tasks"
           onChange={(event) => {
             const value = event.target.value;
             // Debounced by the browser's own input cadence is not enough; a
@@ -311,10 +273,7 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
       </div>
 
       <div>
-        <label
-          htmlFor="task-status"
-          className="mb-1.5 block text-xs font-medium text-text-secondary"
-        >
+        <label htmlFor="task-status" className="sr-only">
           Show
         </label>
         <select
@@ -330,10 +289,7 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
 
       {projects.length > 0 && (
         <div>
-          <label
-            htmlFor="task-project"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
+          <label htmlFor="task-project" className="sr-only">
             Project
           </label>
           <select
@@ -353,7 +309,7 @@ export function TaskFilters({ projects }: { projects: Project[] }) {
       )}
 
       <div>
-        <label htmlFor="task-sort" className="mb-1.5 block text-xs font-medium text-text-secondary">
+        <label htmlFor="task-sort" className="sr-only">
           Sort by
         </label>
         <select

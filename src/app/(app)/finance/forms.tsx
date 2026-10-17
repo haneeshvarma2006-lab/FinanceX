@@ -38,8 +38,8 @@ export function AddAccountForm({ defaultCurrency }: { defaultCurrency: string })
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField label="Type" name="kind" defaultValue="bank" error={state.fieldErrors?.kind}>
           {ACCOUNT_KINDS.map((kind) => (
-            <option key={kind} value={kind} className="capitalize">
-              {kind}
+            <option key={kind} value={kind}>
+              {kind[0]!.toUpperCase() + kind.slice(1)}
             </option>
           ))}
         </SelectField>
@@ -112,7 +112,6 @@ export function AddTransactionForm({
           required
           inputMode="decimal"
           placeholder="0.00"
-          hint="A positive number — the type above sets the direction."
           error={state.fieldErrors?.amount}
         />
       </div>
