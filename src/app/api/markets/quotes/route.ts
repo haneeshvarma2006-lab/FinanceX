@@ -1,23 +1,23 @@
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { getEnv } from '@/lib/env';
 import { consume, RULES } from '@/lib/security/rate-limit';
 import { isInstrumentId, MAX_KEYED } from '@/modules/markets/catalog';
-import { keyedQuote } from '@/modules/markets/twelvedata';
+import { keyedQuotes, marketProvider } from '@/modules/markets/service';
 
 /**
  * Keyed market quotes — spot gold, forex, shares — for the signed-in user.
  *
- * The browser sends instrument ids; this asks the provider with the server's
- * key, through a cache shared by every viewer for the poll interval. Without
- * a key it answers `configured: false` rather than inventing a number.
+ * The browser sends instrument ids; the markets service answers from the
+ * shared cache, asking the provider with the server's key only when a price
+ * is due and the allowance has room. Without a key it answers
+ * `configured: false` rather than inventing a number.
  */
 export async function GET(request: Request): Promise<Response> {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: 'Not signed in' }, { status: 401 });
 
-  const env = getEnv();
+  const provider = marketProvider();
   const headers = { 'Cache-Control': 'private, no-store' };
-  if (!env.TWELVE_DATA_API_KEY) {
+  if (!provider) {
     return Response.json({ configured: false }, { headers });
   }
 
@@ -38,17 +38,14 @@ export async function GET(request: Request): Promise<Response> {
     ),
   ].slice(0, MAX_KEYED);
 
-  const now = Date.now();
-  const ttl = env.MARKET_POLL_SECONDS * 1000;
-  const entries = await Promise.all(
-    ids.map(async (id) => [id, await keyedQuote(id, env.TWELVE_DATA_API_KEY!, ttl, now)] as const),
-  );
+  const quotes = await keyedQuotes(ids, provider);
 
   return Response.json(
     {
       configured: true,
-      intervalSeconds: env.MARKET_POLL_SECONDS,
-      quotes: Object.fromEntries(entries),
+      provider: provider.label,
+      intervalSeconds: provider.refreshSeconds,
+      quotes,
     },
     { headers },
   );

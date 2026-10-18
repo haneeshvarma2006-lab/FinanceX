@@ -70,9 +70,9 @@ export default function PrivacyPage() {
         Crypto prices on Live markets come from Binance&apos;s public market-data service, which
         your browser connects to directly, so Binance sees your IP address, as any website you visit
         would. Nothing about you or your account is sent: only which coins to stream. Prices for
-        gold, forex and shares are fetched by {brand.name}&apos;s server from Twelve Data, which
-        receives only the symbols asked for, never who asked. Which markets you watch is kept in
-        your browser, not on our servers.
+        gold, forex and shares are fetched by {brand.name}&apos;s server from a market-data provider
+        (Alpha Vantage or Twelve Data), which receives only the symbols asked for, never who asked.
+        Which markets you watch is kept in your browser, not on our servers.
       </p>
 
       <h2>Email</h2>

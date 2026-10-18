@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   binanceIdFor,
   cleanWatchlist,
@@ -8,7 +8,15 @@ import {
   resolveInstrument,
 } from '@/modules/markets/catalog';
 import { parseTickerMessage, streamUrl } from '@/modules/markets/binance';
-import { clearQuoteCache, keyedQuote, parseQuote, requestFor } from '@/modules/markets/twelvedata';
+import { fetchTwelveData, parseQuote, requestFor } from '@/modules/markets/twelvedata';
+import {
+  alphaRequestFor,
+  alphaUrl,
+  fetchAlphaVantage,
+  parseExchangeRate,
+  parseGlobalQuote,
+  parseSpot,
+} from '@/modules/markets/alphavantage';
 
 const ticker = (data: Record<string, unknown>) =>
   JSON.stringify({
@@ -84,8 +92,6 @@ describe('the catalogue', () => {
 });
 
 describe('Twelve Data quotes', () => {
-  afterEach(() => clearQuoteCache());
-
   it('reads a quote', () => {
     expect(
       parseQuote(
@@ -119,6 +125,7 @@ describe('Twelve Data quotes', () => {
     ).toEqual({
       ok: false,
       error: 'Data plan limit reached',
+      limited: true,
     });
     expect(
       parseQuote({ code: 401, message: '**apikey** parameter is incorrect', status: 'error' }, 0),
@@ -137,31 +144,131 @@ describe('Twelve Data quotes', () => {
     expect(requestFor('td:XAU/USD')).toEqual({ symbol: 'XAU/USD' });
   });
 
-  it('asks the provider once per symbol per interval, however many ask', async () => {
+  it('asks with the symbol and exchange, and the key only as a parameter', async () => {
     const fetcher = vi.fn(async () =>
-      Response.json({ close: '4081.76', percent_change: '0.1' }),
+      Response.json({ close: '2950.10' }),
     ) as unknown as typeof fetch;
-
-    const [a, b] = await Promise.all([
-      keyedQuote('td:XAU/USD', 'secret-key', 60_000, 1_000, fetcher),
-      keyedQuote('td:XAU/USD', 'secret-key', 60_000, 1_000, fetcher),
-    ]);
-    await keyedQuote('td:XAU/USD', 'secret-key', 60_000, 30_000, fetcher);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(a).toEqual(b);
-
-    await keyedQuote('td:XAU/USD', 'secret-key', 60_000, 62_000, fetcher);
-    expect(fetcher).toHaveBeenCalledTimes(2);
-
+    const quote = await fetchTwelveData('td:RELIANCE@NSE', 'secret-key', 5, fetcher);
+    expect(quote).toMatchObject({ ok: true, price: 2950.1, at: 5 });
     const url = (fetcher as unknown as { mock: { calls: [URL][] } }).mock.calls[0]![0];
-    expect(url.searchParams.get('symbol')).toBe('XAU/USD');
+    expect(url.searchParams.get('symbol')).toBe('RELIANCE');
+    expect(url.searchParams.get('exchange')).toBe('NSE');
+    expect(url.searchParams.get('apikey')).toBe('secret-key');
   });
 
   it('survives the provider being down', async () => {
     const fetcher = vi.fn(async () => {
       throw new Error('ECONNRESET');
     }) as unknown as typeof fetch;
-    expect(await keyedQuote('td:EUR/USD', 'k', 60_000, 0, fetcher)).toEqual({
+    expect(await fetchTwelveData('td:EUR/USD', 'k', 0, fetcher)).toEqual({
+      ok: false,
+      error: 'Provider unavailable',
+    });
+  });
+});
+
+describe('Alpha Vantage', () => {
+  it('picks the right function for each kind of market', () => {
+    expect(alphaRequestFor('td:XAU/USD')).toEqual({ fn: 'GOLD_SILVER_SPOT', symbol: 'XAU' });
+    expect(alphaRequestFor('td:XAG/USD')).toEqual({ fn: 'GOLD_SILVER_SPOT', symbol: 'XAG' });
+    expect(alphaRequestFor('td:EUR/USD')).toEqual({
+      fn: 'CURRENCY_EXCHANGE_RATE',
+      from: 'EUR',
+      to: 'USD',
+    });
+    expect(alphaRequestFor('td:RELIANCE@NSE')).toEqual({
+      fn: 'GLOBAL_QUOTE',
+      symbol: 'RELIANCE.BSE',
+    });
+    expect(alphaRequestFor('td:AAPL')).toEqual({ fn: 'GLOBAL_QUOTE', symbol: 'AAPL' });
+
+    const url = alphaUrl(alphaRequestFor('td:USD/INR'), 'k123');
+    expect(url.origin + url.pathname).toBe('https://www.alphavantage.co/query');
+    expect(url.searchParams.get('function')).toBe('CURRENCY_EXCHANGE_RATE');
+    expect(url.searchParams.get('from_currency')).toBe('USD');
+    expect(url.searchParams.get('to_currency')).toBe('INR');
+  });
+
+  it('reads a global quote, including its percent sign', () => {
+    expect(
+      parseGlobalQuote(
+        {
+          'Global Quote': {
+            '01. symbol': 'AAPL',
+            '03. high': '258.10',
+            '04. low': '254.20',
+            '05. price': '256.6000',
+            '10. change percent': '-3.0271%',
+          },
+        },
+        7,
+      ),
+    ).toEqual({
+      ok: true,
+      price: 256.6,
+      changePercent: -3.0271,
+      high: 258.1,
+      low: 254.2,
+      marketOpen: null,
+      currency: null,
+      at: 7,
+    });
+    expect(parseGlobalQuote({ 'Global Quote': {} }, 0)).toEqual({
+      ok: false,
+      error: 'Symbol not found',
+    });
+  });
+
+  it('reads an exchange rate and its UTC refresh time', () => {
+    const quote = parseExchangeRate(
+      {
+        'Realtime Currency Exchange Rate': {
+          '1. From_Currency Code': 'USD',
+          '3. To_Currency Code': 'INR',
+          '5. Exchange Rate': '84.12500000',
+          '6. Last Refreshed': '2026-10-18 10:15:01',
+          '7. Time Zone': 'UTC',
+        },
+      },
+      0,
+    );
+    expect(quote).toMatchObject({ ok: true, price: 84.125, currency: 'INR' });
+    expect(quote.ok && quote.at).toBe(Date.parse('2026-10-18T10:15:01Z'));
+  });
+
+  it('finds the spot price wherever the metals endpoint puts it', () => {
+    expect(
+      parseSpot({ symbol: 'XAU', price: '4081.76', timestamp: '2026-10-18' }, 0),
+    ).toMatchObject({
+      ok: true,
+      price: 4081.76,
+    });
+    expect(parseSpot({ data: [{ spot_price: 32.5 }] }, 0)).toMatchObject({ ok: true, price: 32.5 });
+    expect(parseSpot({ symbol: 'XAU' }, 0)).toEqual({ ok: false, error: 'No price yet' });
+  });
+
+  it('recognises the limit and plan messages it sends as a 200', () => {
+    expect(
+      parseGlobalQuote(
+        {
+          Information:
+            'We have detected your API key as XXXX and our standard API rate limit is 25 requests per day.',
+        },
+        0,
+      ),
+    ).toEqual({ ok: false, error: 'Data plan limit reached', limited: true });
+    expect(
+      parseSpot({ Information: 'This is a premium endpoint. Subscribe to a premium plan.' }, 0),
+    ).toEqual({ ok: false, error: 'Not on your data plan' });
+    expect(parseGlobalQuote({ 'Error Message': 'Invalid API call.' }, 0)).toEqual({
+      ok: false,
+      error: 'Symbol not found',
+    });
+  });
+
+  it('never throws on a bad answer', async () => {
+    const broken = vi.fn(async () => new Response('<html>')) as unknown as typeof fetch;
+    expect(await fetchAlphaVantage('td:XAU/USD', 'k', 0, broken)).toEqual({
       ok: false,
       error: 'Provider unavailable',
     });

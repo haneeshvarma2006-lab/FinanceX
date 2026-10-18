@@ -116,6 +116,24 @@ Set these in Project Settings → Environment Variables.
 | `DATABASE_MAX_CONNECTIONS` | `1` behind a pooler               | Defaults to 10, which is wrong for serverless      |
 | `TRUST_PROXY_HEADERS`      | `true`                            | **Set this on Vercel** — see below                 |
 
+### Live markets: `ALPHA_VANTAGE_API_KEY`
+
+Crypto on Live markets needs nothing. Spot gold and silver, forex, and US and
+Indian (BSE) shares need a market-data key:
+
+1. Get a free key at <https://www.alphavantage.co/support/#api-key>.
+2. Add `ALPHA_VANTAGE_API_KEY` in Project Settings → Environment Variables
+   (Production and Preview), and mark it **Sensitive**.
+3. Redeploy (Deployments → ⋯ → Redeploy). Env changes only reach new builds.
+
+The free key allows **25 requests a day and 5 a minute**. The app counts every
+request in the database and never goes past `ALPHA_VANTAGE_DAILY_LIMIT` (25) or
+`ALPHA_VANTAGE_PER_MINUTE` (5); unset, it spreads the day's requests so a full
+list of six refreshes about every six hours, and keeps the last real price on
+screen, marked with its time, when the day is spent. On a paid plan set
+`ALPHA_VANTAGE_DAILY_LIMIT=0` (no daily cap), `ALPHA_VANTAGE_PER_MINUTE` to the
+plan's rate, and `MARKET_POLL_SECONDS=60`.
+
 ### `APP_URL` is not cosmetic
 
 Two things switch on it. The session cookie only takes the `__Host-` prefix

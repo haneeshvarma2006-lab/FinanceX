@@ -100,17 +100,26 @@ const schema = z
 
     /**
      * Live markets. Crypto streams from Binance's public feed and needs
-     * nothing. Spot gold, forex and shares need a Twelve Data key; without
-     * one those tiles say so instead of showing a price. A credential: the
-     * browser never sees it.
+     * nothing. Spot gold, forex and shares need a market-data key: Alpha
+     * Vantage is used when its key is set, otherwise Twelve Data. Without
+     * either, those tiles say so instead of showing a price. Credentials:
+     * the browser never sees them.
      */
+    ALPHA_VANTAGE_API_KEY: z.string().min(8).optional(),
+    /**
+     * Alpha Vantage's allowance. The free key allows 25 requests a day and
+     * 5 a minute; a paid plan has no daily cap (set 0) and more per minute.
+     * The app never spends past these, across every server instance.
+     */
+    ALPHA_VANTAGE_DAILY_LIMIT: z.coerce.number().int().min(0).max(1_000_000).default(25),
+    ALPHA_VANTAGE_PER_MINUTE: z.coerce.number().int().min(1).max(10_000).default(5),
     TWELVE_DATA_API_KEY: z.string().min(8).optional(),
     /**
-     * How often a keyed quote is refreshed, shared by every viewer. Free
-     * plans allow about 8 requests a minute, so the default keeps a full
-     * list of six inside that.
+     * How often each keyed price is refreshed, shared by every viewer. Left
+     * unset, it follows the provider's allowance: on a daily-capped plan the
+     * day's requests are spread across the day rather than spent by noon.
      */
-    MARKET_POLL_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
+    MARKET_POLL_SECONDS: z.coerce.number().int().min(10).max(86_400).optional(),
 
     /**
      * Maximum Postgres connections held by ONE instance of this process.

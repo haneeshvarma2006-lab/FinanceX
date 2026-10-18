@@ -3,26 +3,13 @@
  * silver, forex, US and Indian shares.
  *
  * Server only — the API key stays on the server, and the browser asks this
- * app, never Twelve Data. Quotes are cached for the poll interval and shared
- * by everyone who asks within it, so the provider sees one request per
- * symbol per interval however many people are watching. Which symbols a key
+ * app, never Twelve Data. Caching and request budgets live in the markets
+ * service, shared with the other provider. Which symbols a key
  * may read depends on its plan; a symbol the plan does not cover comes back
  * as an error for that symbol alone, and says so on screen.
  */
 
-export type KeyedQuote =
-  | {
-      ok: true;
-      price: number;
-      changePercent: number | null;
-      high: number | null;
-      low: number | null;
-      marketOpen: boolean | null;
-      currency: string | null;
-      /** Milliseconds. */
-      at: number;
-    }
-  | { ok: false; error: string };
+import type { ProviderQuote } from './provider';
 
 const API = 'https://api.twelvedata.com/quote';
 
@@ -34,12 +21,13 @@ function num(value: unknown): number | null {
 }
 
 /** Twelve Data's JSON → a quote, or the provider's own reason it has none. */
-export function parseQuote(body: unknown, now: number): KeyedQuote {
+export function parseQuote(body: unknown, now: number): ProviderQuote {
   if (typeof body !== 'object' || body === null) return { ok: false, error: 'No data' };
   const b = body as Record<string, unknown>;
   if (b.status === 'error' || typeof b.code === 'number') {
     const message = typeof b.message === 'string' ? b.message : 'Not available';
-    return { ok: false, error: friendlyError(message, b.code) };
+    const error = friendlyError(message, b.code);
+    return error === LIMITED ? { ok: false, error, limited: true } : { ok: false, error };
   }
   const price = num(b.close);
   if (price === null) return { ok: false, error: 'No price yet' };
@@ -56,9 +44,11 @@ export function parseQuote(body: unknown, now: number): KeyedQuote {
   };
 }
 
+const LIMITED = 'Data plan limit reached';
+
 /** The provider's words, cut down to what a person can act on. */
 function friendlyError(message: string, code: unknown): string {
-  if (code === 429 || /credits|limit/i.test(message)) return 'Data plan limit reached';
+  if (code === 429 || /credits|limit/i.test(message)) return LIMITED;
   if (code === 401 || /api ?key/i.test(message)) return 'Data key not accepted';
   if (code === 403 || /plan|upgrade|available starting/i.test(message)) {
     return 'Not on your data plan';
@@ -73,44 +63,23 @@ export function requestFor(id: string): { symbol: string; exchange?: string } {
   return exchange ? { symbol, exchange } : { symbol };
 }
 
-type Cached = { at: number; quote: KeyedQuote; pending?: Promise<KeyedQuote> };
-const cache = new Map<string, Cached>();
-
-/** For tests: forget everything cached. */
-export function clearQuoteCache(): void {
-  cache.clear();
-}
-
-export async function keyedQuote(
+export async function fetchTwelveData(
   id: string,
   apiKey: string,
-  ttlMs: number,
   now: number,
   fetcher: typeof fetch = fetch,
-): Promise<KeyedQuote> {
-  const hit = cache.get(id);
-  if (hit && now - hit.at < ttlMs) return hit.pending ?? hit.quote;
-
+): Promise<ProviderQuote> {
   const { symbol, exchange } = requestFor(id);
   const url = new URL(API);
   url.searchParams.set('symbol', symbol);
   if (exchange) url.searchParams.set('exchange', exchange);
   url.searchParams.set('apikey', apiKey);
-
-  const pending = (async (): Promise<KeyedQuote> => {
-    try {
-      const response = await fetcher(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
-      const body: unknown = await response.json().catch(() => null);
-      if (!response.ok && body === null) return { ok: false, error: 'Provider unavailable' };
-      return parseQuote(body, now);
-    } catch {
-      return { ok: false, error: 'Provider unavailable' };
-    }
-  })();
-
-  // Concurrent askers share the one request in flight.
-  cache.set(id, { at: now, quote: hit?.quote ?? { ok: false, error: 'Loading' }, pending });
-  const quote = await pending;
-  cache.set(id, { at: now, quote });
-  return quote;
+  try {
+    const response = await fetcher(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    const body: unknown = await response.json().catch(() => null);
+    if (body === null) return { ok: false, error: 'Provider unavailable' };
+    return parseQuote(body, now);
+  } catch {
+    return { ok: false, error: 'Provider unavailable' };
+  }
 }

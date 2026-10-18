@@ -81,6 +81,11 @@ type Quote = {
   tick: number;
   history: number[];
   marketOpen?: boolean | null;
+  /** When the provider says this price is from (keyed quotes). */
+  at?: number;
+  /** A keyed price kept from an earlier refresh, and why. */
+  stale?: boolean;
+  note?: string;
 };
 
 type KeyedResult =
@@ -91,6 +96,9 @@ type KeyedResult =
       high: number | null;
       low: number | null;
       marketOpen: boolean | null;
+      at: number;
+      stale: boolean;
+      note?: string;
     }
   | { ok: false; error: string };
 
@@ -184,7 +192,13 @@ function useKeyed(ids: string[], enabled: boolean, intervalSeconds: number) {
               setQuotes((all) => {
                 const next = { ...all };
                 for (const [id, q] of results) {
-                  if (q.ok) next[id] = nextQuote(all[id], q);
+                  if (!q.ok) continue;
+                  const prev = all[id];
+                  // The same cached price again is not a new tick.
+                  next[id] =
+                    prev && prev.price === q.price && prev.at === q.at
+                      ? { ...prev, stale: q.stale, note: q.note }
+                      : nextQuote(prev, q);
                 }
                 return next;
               });
@@ -197,7 +211,9 @@ function useKeyed(ids: string[], enabled: boolean, intervalSeconds: number) {
           // Offline for a moment: the last prices stay, marked by their age.
         }
       }
-      if (!stopped) timer = setTimeout(load, intervalSeconds * 1000);
+      // Asks this app's cache, not the provider, so it may look more often
+      // than prices refresh and still show a new one soon after it lands.
+      if (!stopped) timer = setTimeout(load, Math.min(intervalSeconds, 120) * 1000);
     };
     void load();
 
@@ -212,15 +228,23 @@ function useKeyed(ids: string[], enabled: boolean, intervalSeconds: number) {
 
 /* ---------------------------------------------------------------- screen --- */
 
+function every(seconds: number): string {
+  if (seconds < 120) return `${seconds}s`;
+  if (seconds < 7200) return `${Math.round(seconds / 60)} min`;
+  return `${Math.round(seconds / 3600)} h`;
+}
+
 export function LiveMarkets({
-  keyedEnabled,
+  provider,
   intervalSeconds,
   locale,
 }: {
-  keyedEnabled: boolean;
+  /** The keyed provider's name, or null when none is configured. */
+  provider: string | null;
   intervalSeconds: number;
   locale: string;
 }) {
+  const keyedEnabled = provider !== null;
   const [watchlist, setWatchlist] = useWatchlist();
   const instruments = watchlist.map(resolveInstrument).filter((i): i is Instrument => !!i);
   const crypto = instruments.filter((i) => i.feed === 'binance');
@@ -240,7 +264,11 @@ export function LiveMarkets({
         <Sheet
           label="Add markets"
           variant="secondary"
-          description="Tap to add or remove. Crypto updates live; the rest every minute."
+          description={
+            keyedEnabled
+              ? `Tap to add or remove. Crypto updates live; the rest every ${every(intervalSeconds)}.`
+              : 'Tap to add or remove. Crypto updates live.'
+          }
           icon={<Plus />}
         >
           <Picker watchlist={watchlist} onChange={setWatchlist} />
@@ -272,7 +300,7 @@ export function LiveMarkets({
             Gold, forex &amp; stocks{' '}
             <span className="font-normal text-text-muted">
               {keyedEnabled
-                ? `· every ${intervalSeconds < 120 ? `${intervalSeconds}s` : `${Math.round(intervalSeconds / 60)} min`}`
+                ? `· from ${provider}, every ${every(intervalSeconds)}`
                 : '· not connected yet'}
             </span>
           </h2>
@@ -292,11 +320,16 @@ export function LiveMarkets({
                 status={
                   !keyedEnabled
                     ? 'unconnected'
-                    : others.errors[i.id]
+                    : others.errors[i.id] && !others.quotes[i.id]
                       ? { error: others.errors[i.id]! }
                       : others.quotes[i.id]?.marketOpen === false
                         ? 'closed'
-                        : 'polled'
+                        : others.quotes[i.id]
+                          ? {
+                              asOf: others.quotes[i.id]!.at ?? 0,
+                              stale: others.quotes[i.id]!.stale ?? false,
+                            }
+                          : 'polled'
                 }
                 locale={locale}
               />
@@ -312,8 +345,8 @@ export function LiveMarkets({
       )}
 
       <p className="text-xs text-pretty text-text-muted">
-        Prices come from Binance (crypto) and Twelve Data (the rest), straight to you. They can lag
-        the market and are for watching, not for placing orders. Not financial advice.
+        Prices come from Binance (crypto){keyedEnabled ? ` and ${provider} (the rest)` : ''}. They
+        can lag the market and are for watching, not for placing orders. Not financial advice.
       </p>
     </div>
   );
@@ -341,7 +374,14 @@ function StreamBadge({ state }: { state: StreamState | null }) {
   );
 }
 
-type TileStatus = 'live' | 'waiting' | 'polled' | 'closed' | 'unconnected' | { error: string };
+type TileStatus =
+  | 'live'
+  | 'waiting'
+  | 'polled'
+  | 'closed'
+  | 'unconnected'
+  | { error: string }
+  | { asOf: number; stale: boolean };
 
 function Tile({
   instrument,
@@ -361,7 +401,9 @@ function Tile({
     <li
       className={cn(
         'relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-(--shadow-edge)',
-        typeof status === 'object' || status === 'unconnected' ? 'opacity-70' : '',
+        (typeof status === 'object' && 'error' in status) || status === 'unconnected'
+          ? 'opacity-70'
+          : '',
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -369,7 +411,7 @@ function Tile({
           <p className="truncate text-sm font-semibold text-text-primary">{instrument.label}</p>
           <p className="truncate text-xs text-text-muted">{instrument.ticker}</p>
         </div>
-        <TileChip status={status} hasQuote={!!quote} />
+        <TileChip status={status} hasQuote={!!quote} locale={locale} />
       </div>
 
       <p className="numeric text-2xl leading-tight font-semibold tracking-tight text-text-primary sm:text-3xl">
@@ -421,15 +463,35 @@ function Tile({
 
       {status !== 'unconnected' && <MiniChart values={quote?.history ?? []} up={up} />}
 
+      {quote?.stale && quote.note && (
+        <p className="text-xs text-pretty text-warning">{quote.note}. Showing the last price.</p>
+      )}
       {instrument.note && <p className="text-xs text-pretty text-text-muted">{instrument.note}</p>}
     </li>
   );
 }
 
-function TileChip({ status, hasQuote }: { status: TileStatus; hasQuote: boolean }) {
+function TileChip({
+  status,
+  hasQuote,
+  locale,
+}: {
+  status: TileStatus;
+  hasQuote: boolean;
+  locale: string;
+}) {
+  const clock = (ms: number) =>
+    new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(ms);
   const [text, tone] =
     typeof status === 'object'
-      ? [status.error, 'warn']
+      ? 'error' in status
+        ? [status.error, 'warn']
+        : status.asOf > 0
+          ? [
+              `${status.stale ? 'As of' : 'Updated'} ${clock(status.asOf)}`,
+              status.stale ? 'warn' : 'muted',
+            ]
+          : ['Updated', 'muted']
       : status === 'live'
         ? hasQuote
           ? ['Live', 'live']

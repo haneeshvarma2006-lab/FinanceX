@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Activity } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { getEnv } from '@/lib/env';
+import { marketProvider } from '@/modules/markets/service';
 import { PageHeader } from '@/components/ui/money';
 import { TradingTabs } from '../tabs';
 import { LiveMarkets } from './live-markets';
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Live markets' };
 
 export default async function MarketsPage() {
   const user = await requireUser();
-  const env = getEnv();
+  const provider = marketProvider();
 
   return (
     <div className="flex flex-col gap-6">
@@ -23,8 +23,8 @@ export default async function MarketsPage() {
       />
       <TradingTabs />
       <LiveMarkets
-        keyedEnabled={Boolean(env.TWELVE_DATA_API_KEY)}
-        intervalSeconds={env.MARKET_POLL_SECONDS}
+        provider={provider?.label ?? null}
+        intervalSeconds={provider?.refreshSeconds ?? 60}
         locale={user.locale || 'en-IN'}
       />
     </div>
