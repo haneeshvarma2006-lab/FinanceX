@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Privacy notice</h1>
-      <p className="numeric text-xs text-text-muted">Version 2026-10-12 · Draft</p>
+      <p className="numeric text-xs text-text-muted">Version 2026-10-18 · Draft</p>
 
       <p>
         <strong>This is a draft, not reviewed by a lawyer.</strong> It accurately describes what the
@@ -63,6 +63,16 @@ export default function PrivacyPage() {
         Vercel, the company that hosts {brand.name}, in Singapore. It has no public link: it opens
         only through {brand.name}, only for your signed-in account. You can delete any photo, and
         deleting your account deletes them all.
+      </p>
+
+      <h2>Live markets</h2>
+      <p>
+        Crypto prices on Live markets come from Binance&apos;s public market-data service, which
+        your browser connects to directly, so Binance sees your IP address, as any website you visit
+        would. Nothing about you or your account is sent: only which coins to stream. Prices for
+        gold, forex and shares are fetched by {brand.name}&apos;s server from Twelve Data, which
+        receives only the symbols asked for, never who asked. Which markets you watch is kept in
+        your browser, not on our servers.
       </p>
 
       <h2>Email</h2>

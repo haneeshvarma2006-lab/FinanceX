@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { FileUp, Wallet } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
+import { Sheet } from '@/components/ui/sheet';
+import { AddAccountForm } from '../forms';
 import { EmptyState } from '@/components/ui/states';
 import * as repo from '@/modules/finance/repository';
 import { ImportWizard } from './wizard';
@@ -28,15 +29,15 @@ export default async function ImportPage() {
         <Card accent="finance">
           <EmptyState
             icon={<Wallet aria-hidden className="size-5" />}
-            title="Add the account first"
-            description="A statement is imported into one of your accounts, in its currency."
+            title="First, which account is this statement for?"
+            description="Add it here: the bank account or card the statement comes from."
             action={
-              <Link
-                href="/finance"
-                className="text-sm font-medium text-text-primary underline-offset-4 hover:underline"
+              <Sheet
+                label="New account"
+                description="The bank account or card this statement is from."
               >
-                Go to Finance
-              </Link>
+                <AddAccountForm defaultCurrency={user.baseCurrency} />
+              </Sheet>
             }
           />
         </Card>

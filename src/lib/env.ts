@@ -99,6 +99,20 @@ const schema = z
     BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
 
     /**
+     * Live markets. Crypto streams from Binance's public feed and needs
+     * nothing. Spot gold, forex and shares need a Twelve Data key; without
+     * one those tiles say so instead of showing a price. A credential: the
+     * browser never sees it.
+     */
+    TWELVE_DATA_API_KEY: z.string().min(8).optional(),
+    /**
+     * How often a keyed quote is refreshed, shared by every viewer. Free
+     * plans allow about 8 requests a minute, so the default keeps a full
+     * list of six inside that.
+     */
+    MARKET_POLL_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
+
+    /**
      * Maximum Postgres connections held by ONE instance of this process.
      *
      * This matters far more on a serverless host than on a server. A long-lived

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { BINANCE_STREAM_ORIGIN } from '@/modules/markets/binance';
 
 /**
  * Security headers, applied to every response.
@@ -23,7 +24,9 @@ export default function proxy(request: NextRequest): NextResponse {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' blob: data:`,
     `font-src 'self'`,
-    `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
+    // Live markets: crypto prices stream from Binance's public market-data
+    // host, straight to the browser. That one host and nothing else.
+    `connect-src 'self' ${BINANCE_STREAM_ORIGIN}${isDev ? ' ws: wss:' : ''}`,
     // The on-phone bill reader runs in a worker served from /ocr, which has
     // its own, narrower policy (next.config.ts). Pages may only start workers
     // from this origin.
@@ -47,7 +50,7 @@ export default function proxy(request: NextRequest): NextResponse {
   response.headers.set('X-DNS-Prefetch-Control', 'off');
   response.headers.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+    'camera=(self), microphone=(), geolocation=(), interest-cohort=()',
   );
 
   // HSTS is meaningless over plain HTTP and would be wrong to send in local dev.

@@ -1269,3 +1269,42 @@ html:has(.nf-sheet[open]) {
   align-self: stretch;
   height: 2.75rem;
 }
+
+/**
+ * Live markets: a price flashes green or red for a moment when it moves,
+ * and the live dot breathes. Reduced motion keeps the colour of the change
+ * in the arrow beside it and drops the flash.
+ */
+.nf-tick-up {
+  animation: nf-tick-up 0.9s ease-out;
+}
+.nf-tick-down {
+  animation: nf-tick-down 0.9s ease-out;
+}
+@keyframes nf-tick-up {
+  from {
+    color: var(--positive);
+    background: color-mix(in oklch, var(--positive) 18%, transparent);
+  }
+}
+@keyframes nf-tick-down {
+  from {
+    color: var(--negative);
+    background: color-mix(in oklch, var(--negative) 18%, transparent);
+  }
+}
+.nf-live-dot {
+  animation: nf-live 1.6s ease-in-out infinite;
+}
+@keyframes nf-live {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-tick-up,
+  .nf-tick-down,
+  .nf-live-dot {
+    animation: none;
+  }
+}

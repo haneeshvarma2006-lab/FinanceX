@@ -50,7 +50,9 @@ export async function createAccount(_prev: FormState, formData: FormData): Promi
     return { fieldErrors: { name: 'You already have an account with that name' } };
   }
 
-  revalidatePath('/finance');
+  // The whole Finance section: an account added from Scan or Import has to
+  // unlock those pages too, not only the overview.
+  revalidatePath('/finance', 'layout');
   return { message: 'Account added', tone: 'success' };
 }
 

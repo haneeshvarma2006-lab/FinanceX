@@ -6,7 +6,7 @@
  * without the version the system silently pretends it is.
  */
 export const CURRENT_DOCUMENT_VERSIONS = {
-  terms_and_privacy: '2026-10-12',
+  terms_and_privacy: '2026-10-18',
   marketing_email: '2026-09-20',
 } as const;
 

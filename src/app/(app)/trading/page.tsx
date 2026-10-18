@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, Stat, StatGrid } from '@/components/ui/card
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader } from '@/components/ui/money';
 import { Sheet } from '@/components/ui/sheet';
+import { TradingTabs } from './tabs';
 import type { Currency } from '@nestedflow/domain/money';
 import { formatDecimal, parseDecimal, plannedRewardRisk } from '@nestedflow/domain/trading';
 import { COSTLY_EMOTIONS, EMOTION_LABELS } from '@/modules/trading/validators';
@@ -91,6 +92,8 @@ export default async function TradingPage({
           </div>
         }
       />
+
+      <TradingTabs />
 
       {/* Required disclosure, not a footnote: a slim banner rather than a
           wall of text, every clause still there. */}
