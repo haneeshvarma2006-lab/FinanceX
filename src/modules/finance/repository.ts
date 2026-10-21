@@ -404,6 +404,32 @@ export async function insertBudget(
   return row;
 }
 
+/** A category's budget, whatever month it started in: one per category. */
+export async function findBudgetForCategory(
+  userId: string,
+  categoryId: string,
+): Promise<Budget | undefined> {
+  const [row] = await db
+    .select()
+    .from(budgets)
+    .where(and(eq(budgets.userId, userId), eq(budgets.categoryId, categoryId)))
+    .limit(1);
+  return row;
+}
+
+export async function updateBudgetAmount(
+  userId: string,
+  id: string,
+  amountMinor: bigint,
+): Promise<Budget | undefined> {
+  const [row] = await db
+    .update(budgets)
+    .set({ amountMinor, updatedAt: new Date() })
+    .where(and(eq(budgets.id, id), eq(budgets.userId, userId)))
+    .returning();
+  return row;
+}
+
 export async function deleteBudget(userId: string, id: string): Promise<boolean> {
   const rows = await db
     .delete(budgets)
@@ -447,6 +473,42 @@ export async function insertSubscription(
 
   if (!row) throw new Error('Subscription insert returned no row');
   return row;
+}
+
+export async function findSubscription(
+  userId: string,
+  id: string,
+): Promise<Subscription | undefined> {
+  const [row] = await db
+    .select()
+    .from(subscriptions)
+    .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
+    .limit(1);
+  return row;
+}
+
+/**
+ * Move a bill on to its next due date — only if it is still on the date the
+ * caller saw, so a double tap on "Paid" cannot skip a month.
+ */
+export async function advanceSubscription(
+  userId: string,
+  id: string,
+  from: { nextDueOn: string },
+  to: { nextDueOn: string; lastChargedOn: string },
+): Promise<boolean> {
+  const rows = await db
+    .update(subscriptions)
+    .set({ ...to, updatedAt: new Date() })
+    .where(
+      and(
+        eq(subscriptions.id, id),
+        eq(subscriptions.userId, userId),
+        eq(subscriptions.nextDueOn, from.nextDueOn),
+      ),
+    )
+    .returning({ id: subscriptions.id });
+  return rows.length > 0;
 }
 
 export async function deleteSubscription(userId: string, id: string): Promise<boolean> {

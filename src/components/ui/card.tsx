@@ -54,10 +54,13 @@ export function Card({
   as: Tag = 'section',
   tone,
   accent,
+  labelledBy,
 }: {
   children: ReactNode;
   className?: string;
   as?: 'section' | 'div' | 'article';
+  /** The id of the card's heading, so the card is a named region. */
+  labelledBy?: string;
   /** Tints the border only. The card surface never changes colour. */
   tone?: 'warning' | 'negative' | 'accent';
   /** Lights the top edge in a domain colour. */
@@ -78,6 +81,7 @@ export function Card({
 
   return (
     <Tag
+      aria-labelledby={labelledBy}
       className={cn(
         'group/card relative isolate rounded-2xl',
         'shadow-[var(--shadow-raised),var(--shadow-edge)]',

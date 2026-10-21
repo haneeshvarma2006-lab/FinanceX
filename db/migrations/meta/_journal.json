@@ -113,6 +113,13 @@
       "when": 1792332600341,
       "tag": "0015_market_quotes",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792581669164,
+      "tag": "0016_alerts_and_holdings",
+      "breakpoints": true
     }
   ]
 }

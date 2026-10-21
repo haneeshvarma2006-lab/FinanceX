@@ -43,6 +43,7 @@ export function Sheet({
   icon,
   variant = 'primary',
   defaultOpen = false,
+  iconOnly = false,
   className,
   children,
 }: {
@@ -55,6 +56,8 @@ export function Sheet({
   variant?: keyof typeof TRIGGER;
   /** Opens on arrival — for a link that says "add one" from another page. */
   defaultOpen?: boolean;
+  /** A round icon button; the label becomes its accessible name. */
+  iconOnly?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -90,8 +93,11 @@ export function Sheet({
         type="button"
         onClick={show}
         aria-haspopup="dialog"
+        aria-label={iconOnly ? label : undefined}
+        title={iconOnly ? label : undefined}
         className={cn(
           'inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm whitespace-nowrap',
+          iconOnly && 'size-8 px-0',
           'transition-[background-color,border-color,scale] duration-[var(--duration-fast)] ease-(--ease-out-soft) active:scale-97',
           TRIGGER[variant],
           className,
@@ -100,7 +106,7 @@ export function Sheet({
         <span aria-hidden className="[&>svg]:size-4">
           {icon ?? <Plus />}
         </span>
-        {label}
+        {!iconOnly && label}
       </button>
 
       <dialog
@@ -147,15 +153,15 @@ export function Sheet({
 }
 
 /** A confirmation that floats above everything for a moment, then leaves. */
-function Toast({ message }: { message: string }) {
+export function Toast({ message, icon }: { message: string; icon?: ReactNode }) {
   return createPortal(
     <div
       role="status"
       className="nf-toast fixed inset-x-0 bottom-28 z-[60] flex justify-center px-4 sm:bottom-8"
     >
       <p className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay py-2 pr-4 pl-2 text-sm text-text-primary shadow-(--shadow-sheet)">
-        <span className="inline-flex size-6 items-center justify-center rounded-full bg-positive text-surface-sunken">
-          <Check aria-hidden className="size-3.5" />
+        <span className="inline-flex size-6 items-center justify-center rounded-full bg-positive text-surface-sunken [&>svg]:size-3.5">
+          {icon ?? <Check aria-hidden />}
         </span>
         {message}
       </p>

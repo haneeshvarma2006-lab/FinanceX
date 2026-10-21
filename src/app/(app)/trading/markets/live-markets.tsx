@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { ArrowDownRight, ArrowUpRight, Check, Plus } from 'lucide-react';
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { ArrowDownRight, ArrowUpRight, Bell, BellRing, Check, Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Sheet } from '@/components/ui/sheet';
 import {
@@ -16,7 +16,8 @@ import {
   type Instrument,
   type MarketKind,
 } from '@/modules/markets/catalog';
-import { parseTickerMessage, streamUrl } from '@/modules/markets/binance';
+import { useBinance, useKeyed, type Quote, type StreamState } from './feeds';
+import { AlertForm, RearmAlertButton, RemoveAlertButton } from './alert-form';
 
 /* ------------------------------------------------------------ watchlist --- */
 
@@ -68,164 +69,6 @@ function useWatchlist(): [string[], (next: string[]) => void] {
   return [list, save];
 }
 
-/* --------------------------------------------------------------- quotes --- */
-
-type Quote = {
-  price: number;
-  changePercent: number | null;
-  high: number | null;
-  low: number | null;
-  /** Up or down against the previous update. */
-  direction: 'up' | 'down' | 'flat';
-  /** Increments on every update, so the flash replays. */
-  tick: number;
-  history: number[];
-  marketOpen?: boolean | null;
-  /** When the provider says this price is from (keyed quotes). */
-  at?: number;
-  /** A keyed price kept from an earlier refresh, and why. */
-  stale?: boolean;
-  note?: string;
-};
-
-type KeyedResult =
-  | {
-      ok: true;
-      price: number;
-      changePercent: number | null;
-      high: number | null;
-      low: number | null;
-      marketOpen: boolean | null;
-      at: number;
-      stale: boolean;
-      note?: string;
-    }
-  | { ok: false; error: string };
-
-const HISTORY = 60;
-
-function nextQuote(prev: Quote | undefined, update: Omit<Quote, 'direction' | 'tick' | 'history'>) {
-  const direction: Quote['direction'] =
-    !prev || update.price === prev.price ? 'flat' : update.price > prev.price ? 'up' : 'down';
-  const history = [...(prev?.history ?? []), update.price].slice(-HISTORY);
-  return { ...update, direction, tick: (prev?.tick ?? 0) + 1, history };
-}
-
-type StreamState = 'connecting' | 'live' | 'reconnecting';
-
-/** One combined socket for every crypto symbol, reconnecting with backoff. */
-function useBinance(symbols: string[]) {
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
-  const [state, setState] = useState<StreamState>('connecting');
-  const key = symbols.join(',');
-
-  useEffect(() => {
-    if (!key) return;
-    const list = key.split(',');
-    let socket: WebSocket | null = null;
-    let stopped = false;
-    let attempt = 0;
-    let retry: ReturnType<typeof setTimeout> | undefined;
-
-    const open = () => {
-      socket = new WebSocket(streamUrl(list));
-      socket.onopen = () => {
-        attempt = 0;
-        setState('live');
-      };
-      socket.onmessage = (event) => {
-        const tick = typeof event.data === 'string' ? parseTickerMessage(event.data) : null;
-        if (!tick) return;
-        setQuotes((all) => ({
-          ...all,
-          [tick.symbol]: nextQuote(all[tick.symbol], {
-            price: tick.price,
-            changePercent: tick.changePercent,
-            high: tick.high,
-            low: tick.low,
-          }),
-        }));
-      };
-      socket.onclose = () => {
-        if (stopped) return;
-        setState('reconnecting');
-        retry = setTimeout(open, Math.min(30_000, 1000 * 2 ** attempt++));
-      };
-      socket.onerror = () => socket?.close();
-    };
-    open();
-
-    return () => {
-      stopped = true;
-      clearTimeout(retry);
-      socket?.close();
-    };
-  }, [key]);
-
-  return { quotes, state };
-}
-
-/** Keyed quotes from this app's server, refreshed on the shared interval. */
-function useKeyed(ids: string[], enabled: boolean, intervalSeconds: number) {
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const key = ids.join(',');
-
-  useEffect(() => {
-    if (!enabled || !key) return;
-    let stopped = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const load = async () => {
-      // A hidden tab spends nobody's quota.
-      if (document.visibilityState === 'visible') {
-        try {
-          const response = await fetch(`/api/markets/quotes?ids=${encodeURIComponent(key)}`, {
-            cache: 'no-store',
-          });
-          if (response.ok) {
-            const body = (await response.json()) as {
-              quotes?: Record<string, KeyedResult>;
-            };
-            const results = Object.entries(body.quotes ?? {});
-            if (!stopped) {
-              setQuotes((all) => {
-                const next = { ...all };
-                for (const [id, q] of results) {
-                  if (!q.ok) continue;
-                  const prev = all[id];
-                  // The same cached price again is not a new tick.
-                  next[id] =
-                    prev && prev.price === q.price && prev.at === q.at
-                      ? { ...prev, stale: q.stale, note: q.note }
-                      : nextQuote(prev, q);
-                }
-                return next;
-              });
-              setErrors(
-                Object.fromEntries(results.flatMap(([id, q]) => (q.ok ? [] : [[id, q.error]]))),
-              );
-            }
-          }
-        } catch {
-          // Offline for a moment: the last prices stay, marked by their age.
-        }
-      }
-      // Asks this app's cache, not the provider, so it may look more often
-      // than prices refresh and still show a new one soon after it lands.
-      if (!stopped) timer = setTimeout(load, Math.min(intervalSeconds, 120) * 1000);
-    };
-    void load();
-
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-    };
-  }, [key, enabled, intervalSeconds]);
-
-  return { quotes, errors };
-}
-
 /* ---------------------------------------------------------------- screen --- */
 
 function every(seconds: number): string {
@@ -234,15 +77,27 @@ function every(seconds: number): string {
   return `${Math.round(seconds / 3600)} h`;
 }
 
+export type AlertView = {
+  id: string;
+  instrumentId: string;
+  direction: 'above' | 'below';
+  target: string;
+  active: boolean;
+  firedAt: string | null;
+  firedPrice: string | null;
+};
+
 export function LiveMarkets({
   provider,
   intervalSeconds,
   locale,
+  alerts = [],
 }: {
   /** The keyed provider's name, or null when none is configured. */
   provider: string | null;
   intervalSeconds: number;
   locale: string;
+  alerts?: AlertView[];
 }) {
   const keyedEnabled = provider !== null;
   const [watchlist, setWatchlist] = useWatchlist();
@@ -288,6 +143,8 @@ export function LiveMarkets({
                 quote={binance.quotes[i.id.slice(3)]}
                 status={binance.state === 'live' ? 'live' : 'waiting'}
                 locale={locale}
+                alerts={alerts.filter((a) => a.active && a.instrumentId === i.id)}
+                canAlert
               />
             ))}
           </ul>
@@ -332,11 +189,15 @@ export function LiveMarkets({
                           : 'polled'
                 }
                 locale={locale}
+                alerts={alerts.filter((a) => a.active && a.instrumentId === i.id)}
+                canAlert={keyedEnabled}
               />
             ))}
           </ul>
         </section>
       )}
+
+      {alerts.length > 0 && <AlertList alerts={alerts} locale={locale} />}
 
       {instruments.length === 0 && (
         <p className="py-10 text-center text-sm text-text-secondary">
@@ -388,11 +249,15 @@ function Tile({
   quote,
   status,
   locale,
+  alerts,
+  canAlert,
 }: {
   instrument: Instrument;
   quote: Quote | undefined;
   status: TileStatus;
   locale: string;
+  alerts: AlertView[];
+  canAlert: boolean;
 }) {
   const change = quote?.changePercent ?? null;
   const up = change !== null && change >= 0;
@@ -411,7 +276,24 @@ function Tile({
           <p className="truncate text-sm font-semibold text-text-primary">{instrument.label}</p>
           <p className="truncate text-xs text-text-muted">{instrument.ticker}</p>
         </div>
-        <TileChip status={status} hasQuote={!!quote} locale={locale} />
+        <div className="flex shrink-0 items-center gap-1">
+          <TileChip status={status} hasQuote={!!quote} locale={locale} />
+          {canAlert && (
+            <Sheet
+              label={`Alert for ${instrument.label}`}
+              iconOnly
+              variant="ghost"
+              icon={alerts.length > 0 ? <BellRing /> : <Bell />}
+              className={alerts.length > 0 ? 'text-warning' : undefined}
+            >
+              <AlertForm
+                instrumentId={instrument.id}
+                label={instrument.label}
+                price={quote?.price ?? null}
+              />
+            </Sheet>
+          )}
+        </div>
       </div>
 
       <p className="numeric text-2xl leading-tight font-semibold tracking-tight text-text-primary sm:text-3xl">
@@ -462,6 +344,20 @@ function Tile({
       </div>
 
       {status !== 'unconnected' && <MiniChart values={quote?.history ?? []} up={up} />}
+
+      {alerts.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {alerts.map((a) => (
+            <li
+              key={a.id}
+              className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning-soft px-2 py-0.5 text-2xs font-medium text-warning"
+            >
+              <BellRing aria-hidden className="size-3" />
+              {a.direction === 'above' ? 'Above' : 'Below'} {formatPrice(Number(a.target), locale)}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {quote?.stale && quote.note && (
         <p className="text-xs text-pretty text-warning">{quote.note}. Showing the last price.</p>
@@ -660,5 +556,59 @@ function Picker({
         </p>
       )}
     </div>
+  );
+}
+
+/* --------------------------------------------------------------- alerts --- */
+
+function AlertList({ alerts, locale }: { alerts: AlertView[]; locale: string }) {
+  const when = (iso: string) =>
+    new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(new Date(iso));
+
+  return (
+    <section aria-labelledby="markets-alerts" className="flex flex-col gap-3">
+      <h2 id="markets-alerts" className="text-sm font-semibold text-text-primary">
+        Your alerts{' '}
+        <span className="font-normal text-text-muted">
+          · {alerts.filter((a) => a.active).length} waiting
+        </span>
+      </h2>
+      <ul className="divide-y divide-border-subtle overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised">
+        {alerts.map((a) => {
+          const instrument = resolveInstrument(a.instrumentId);
+          const name = instrument?.label ?? a.instrumentId.slice(3);
+          const label = `${name} ${a.direction} ${formatPrice(Number(a.target), locale)}`;
+          return (
+            <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm text-text-primary">
+                  {name}{' '}
+                  <span className="text-text-secondary">
+                    {a.direction === 'above' ? 'above' : 'below'}{' '}
+                    {formatPrice(Number(a.target), locale)}
+                  </span>
+                </p>
+                <p className="text-xs text-text-muted">
+                  {a.active
+                    ? 'Waiting'
+                    : a.firedAt
+                      ? `Went off ${when(a.firedAt)}${a.firedPrice ? ` at ${formatPrice(Number(a.firedPrice), locale)}` : ''}`
+                      : 'Off'}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {!a.active && <RearmAlertButton id={a.id} label={label} />}
+                <RemoveAlertButton id={a.id} label={label} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

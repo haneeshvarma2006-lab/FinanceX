@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   AlertTriangle,
+  CalendarClock,
   CheckSquare,
   ChevronRight,
   Flame,
@@ -25,6 +26,10 @@ import {
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
 import { buildTodaySnapshot, runAutomationRules } from '@/modules/dashboard/service';
 import * as decisionsRepo from '@/modules/decisions/repository';
+import * as financeRepo from '@/modules/finance/repository';
+import { remindDueBills } from '@/modules/finance/service';
+import { daysUntil, dueLabel } from '@/modules/finance/recurring';
+import { formatMoney, type Currency } from '@nestedflow/domain/money';
 import { buildWealth } from '@/modules/dashboard/wealth';
 import { WealthPanel } from './wealth-panel';
 import { brand } from '@/lib/brand';
@@ -51,10 +56,16 @@ export default async function TodayPage() {
   // The user's own rules, evaluated against the same read the page renders,
   // so what they are told always matches what they can see.
   await runAutomationRules(user.id, snapshot);
-  const [dueDecisions, wealth] = await Promise.all([
+  await remindDueBills(user.id, snapshot.today);
+  const [dueDecisions, wealth, recurring] = await Promise.all([
     decisionsRepo.listDueDecisions(user.id, snapshot.today),
     buildWealth(user, snapshot.today),
+    financeRepo.listSubscriptions(user.id),
   ]);
+  // Bills due within three days, or already late.
+  const dueBills = recurring.filter(
+    (b) => b.status === 'active' && daysUntil(b.nextDueOn, snapshot.today) <= 3,
+  );
 
   const nothingYet =
     !snapshot.tasks.hasData &&
@@ -81,7 +92,8 @@ export default async function TodayPage() {
         snapshot.goals.offTrack.length > 0 ||
         snapshot.finance.overBudget.length > 0 ||
         snapshot.trading.consecutiveLosses >= 3 ||
-        dueDecisions.length > 0) && (
+        dueDecisions.length > 0 ||
+        dueBills.length > 0) && (
         <Card tone="warning">
           <CardHeader
             title="Worth your attention"
@@ -154,6 +166,17 @@ export default async function TodayPage() {
                   detail="Their review day has come. Was each the right call?"
                 />
               )}
+
+              {dueBills.map((bill) => (
+                <Attention
+                  key={bill.id}
+                  href="/finance"
+                  accent="finance"
+                  icon={<CalendarClock aria-hidden className="size-4" />}
+                  title={`${bill.name}: ${dueLabel(bill.nextDueOn, snapshot.today).toLowerCase()}`}
+                  detail={`${formatMoney(bill.amountMinor, bill.currency as Currency)}. Tap Paid on Finance once it is done.`}
+                />
+              ))}
             </ul>
           </CardBody>
         </Card>

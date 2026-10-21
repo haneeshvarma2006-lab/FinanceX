@@ -1,4 +1,16 @@
-import { jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import {
+  boolean,
+  check,
+  index,
+  jsonb,
+  numeric,
+  pgTable,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
+import { newId } from '@/lib/db/id';
+import { users } from '@/modules/identity/schema';
 
 /** A price as a provider gave it — numbers for display, never for money. */
 export type StoredQuote = {
@@ -34,3 +46,62 @@ export const marketQuotes = pgTable('market_quotes', {
 });
 
 export type MarketQuoteRow = typeof marketQuotes.$inferSelect;
+
+/**
+ * "Tell me when gold goes above 4,100." One-shot: an alert fires once, then
+ * waits to be set again, so a price hovering at the line does not ring all
+ * day. Prices are decimals as text, never floats.
+ */
+export const priceAlerts = pgTable(
+  'price_alerts',
+  {
+    id: varchar({ length: 36 }).primaryKey().$defaultFn(newId),
+    userId: varchar({ length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    instrumentId: varchar({ length: 40 }).notNull(),
+    /** above | below */
+    direction: varchar({ length: 8 }).notNull(),
+    target: numeric({ precision: 30, scale: 10 }).notNull(),
+    active: boolean().notNull().default(true),
+    firedAt: timestamp({ withTimezone: true }),
+    firedPrice: numeric({ precision: 30, scale: 10 }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('price_alerts_user_active_idx').on(t.userId, t.active),
+    check('price_alerts_direction_check', sql`${t.direction} in ('above','below')`),
+    check('price_alerts_target_positive', sql`${t.target} > 0`),
+  ],
+);
+
+/**
+ * What someone holds: 0.05 BTC, 10 g of gold, 20 Reliance shares. Valued at
+ * the live price on screen; nothing here is a price.
+ */
+export const holdings = pgTable(
+  'holdings',
+  {
+    id: varchar({ length: 36 }).primaryKey().$defaultFn(newId),
+    userId: varchar({ length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    instrumentId: varchar({ length: 40 }).notNull(),
+    quantity: numeric({ precision: 30, scale: 10 }).notNull(),
+    /** unit | gram | ounce — grams and troy ounces for gold and silver. */
+    unit: varchar({ length: 8 }).notNull().default('unit'),
+    /** What was paid per unit (or per gram), in the market's currency. */
+    averagePrice: numeric({ precision: 30, scale: 10 }),
+    note: varchar({ length: 120 }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('holdings_user_idx').on(t.userId),
+    check('holdings_quantity_positive', sql`${t.quantity} > 0`),
+    check('holdings_unit_check', sql`${t.unit} in ('unit','gram','ounce')`),
+  ],
+);
+
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+export type Holding = typeof holdings.$inferSelect;

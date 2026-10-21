@@ -153,3 +153,8 @@ export function formatPrice(price: number, locale = 'en-IN'): string {
     maximumFractionDigits: digits,
   }).format(price);
 }
+
+/** A quantity held: "10", "0.5", "0.00012345" — no padding zeros. */
+export function formatQuantity(quantity: number, locale = 'en-IN'): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 8 }).format(quantity);
+}

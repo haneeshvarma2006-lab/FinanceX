@@ -29,6 +29,14 @@ export const NOTIFICATION_KINDS = {
     label: 'Budget exceeded',
     description: 'When spending in a category passes the budget you set.',
   },
+  bill_due: {
+    label: 'Bills due',
+    description: 'Three days before a recurring bill is due, and when one is overdue.',
+  },
+  price_alert: {
+    label: 'Price alerts',
+    description: 'When a market you set an alert on crosses your price.',
+  },
   trading_review_due: {
     label: 'Trading review due',
     description: 'After a run of losing trades, as a prompt to review rather than continue.',

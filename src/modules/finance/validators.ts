@@ -72,6 +72,7 @@ export const subscriptionSchema = z.object({
 });
 
 export type AccountInput = z.infer<typeof accountSchema>;
+export type SubscriptionInput = z.infer<typeof subscriptionSchema>;
 export type TransactionInput = z.infer<typeof transactionSchema>;
 export type TransferInput = z.infer<typeof transferSchema>;
 

@@ -91,8 +91,10 @@ test('the keyed quotes endpoint needs a session and reports no provider honestly
   expect(await res.json()).toEqual({ configured: false });
 });
 
-test('the page may stream from Binance and nowhere else', async ({ page }) => {
+test("the page may reach Binance's market data and nowhere else", async ({ page }) => {
   const response = await page.goto('/sign-in');
   const csp = response?.headers()['content-security-policy'] ?? '';
-  expect(csp).toMatch(/connect-src 'self' wss:\/\/data-stream\.binance\.vision(;|$)/);
+  expect(csp).toMatch(
+    /connect-src 'self' wss:\/\/data-stream\.binance\.vision https:\/\/data-api\.binance\.vision(;|$)/,
+  );
 });

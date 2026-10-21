@@ -1,16 +1,40 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeftRight, FileUp, Receipt, ScanLine, Wallet } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  FileUp,
+  PieChart,
+  Receipt,
+  ScanLine,
+  Wallet,
+} from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
-import { ratioToPercent, type Currency } from '@nestedflow/domain/money';
+import { formatMoney, isCurrency, ratioToPercent, type Currency } from '@nestedflow/domain/money';
 import * as repo from '@/modules/finance/repository';
 import * as finance from '@/modules/finance/service';
-import { AddAccountForm, AddTransactionForm, AddTransferForm } from './forms';
-import { DeleteTransactionButton } from './forms';
+import {
+  AddAccountForm,
+  AddBudgetForm,
+  AddRecurringForm,
+  AddTransactionForm,
+  AddTransferForm,
+  DeleteBudgetButton,
+  DeleteTransactionButton,
+  RecurringActions,
+} from './forms';
+import {
+  CADENCE_LABEL,
+  daysUntil,
+  dueLabel,
+  monthlyEquivalent,
+  SUGGESTED_CATEGORIES,
+  type Cadence,
+} from '@/modules/finance/recurring';
 import { Sheet } from '@/components/ui/sheet';
 import { shortDay } from '@/lib/dates';
 import { todayFor } from '@/modules/dashboard/service';
@@ -47,6 +71,7 @@ export default async function FinancePage({
       repo.listTransactions(user.id, { from: start, to: end, limit: 500 }),
       repo.spendByCategory(user.id, start, end),
     ]);
+  const recurring = (await repo.listSubscriptions(user.id)).filter((b) => b.status === 'active');
 
   const billFor = await repo.billIdsForTransactions(
     user.id,
@@ -55,6 +80,20 @@ export default async function FinancePage({
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
   const totalBalance = [...balances.values()].reduce((a, b) => a + b, 0n);
+
+  const expenseCategories = categories.filter((c) => c.kind === 'expense');
+  const budgetSuggestions = [
+    ...new Set([...expenseCategories.map((c) => c.name), ...SUGGESTED_CATEGORIES]),
+  ];
+  // What recurring bills cost a month, per currency (usually just one).
+  const perMonth = new Map<string, bigint>();
+  for (const bill of recurring) {
+    perMonth.set(
+      bill.currency,
+      (perMonth.get(bill.currency) ?? 0n) +
+        monthlyEquivalent(bill.amountMinor, bill.cadence as Cadence),
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -233,37 +272,156 @@ export default async function FinancePage({
         </CardBody>
       </Card>
 
-      {budgets.length > 0 && (
-        <Card accent="finance">
-          <CardHeader title="Budgets this month" />
-          <CardBody className="flex flex-col gap-4">
-            {budgets.map((budget) => (
-              <div key={budget.budgetId} className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-text-primary">
-                    {categoryName.get(budget.categoryId) ?? 'Uncategorised'}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Money minor={budget.spentMinor} currency={currency} />
-                    <span className="text-text-muted">
-                      / <Money minor={budget.limitMinor} currency={currency} />
-                    </span>
-                    {budget.overBudget && <Badge tone="negative">Over</Badge>}
-                  </span>
+      {/* --------------------------------------------------------- budgets */}
+      <Card accent="finance" labelledBy="finance-budgets">
+        <CardHeader
+          id="finance-budgets"
+          title="Budgets"
+          icon={<PieChart className="size-4" />}
+          accent="finance"
+          description={
+            budgets.length === 0
+              ? 'A monthly limit per category'
+              : `This month · ${budgets.filter((b) => b.overBudget).length} over`
+          }
+          action={
+            <Sheet
+              label="New budget"
+              variant={budgets.length === 0 ? 'primary' : 'secondary'}
+              description="A limit for one category, every month."
+              className="h-8 px-3 text-xs"
+            >
+              <AddBudgetForm suggestions={budgetSuggestions} currency={currency} />
+            </Sheet>
+          }
+        />
+        <CardBody className={budgets.length === 0 ? 'p-0' : 'flex flex-col gap-5'}>
+          {budgets.length === 0 ? (
+            <EmptyState
+              icon={<PieChart aria-hidden className="size-5" />}
+              title="No budgets yet"
+              description="Set a monthly limit for food, fuel or shopping and watch how close you are. You hear about it before you go over."
+            />
+          ) : (
+            budgets.map((budget) => {
+              const name = categoryName.get(budget.categoryId) ?? 'Category';
+              const pct = ratioToPercent(budget.spentMinor, budget.limitMinor);
+              const tone = budget.overBudget ? 'negative' : pct >= 80 ? 'warning' : 'positive';
+              return (
+                <div key={budget.budgetId} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                        {name}
+                        {budget.overBudget ? (
+                          <Badge tone="negative">Over</Badge>
+                        ) : pct >= 80 ? (
+                          <Badge tone="warning">{pct}% used</Badge>
+                        ) : null}
+                      </p>
+                      <p className="numeric text-xs text-text-muted">
+                        <Money minor={budget.spentMinor} currency={currency} /> of{' '}
+                        <Money minor={budget.limitMinor} currency={currency} />
+                        {' · '}
+                        {budget.overBudget ? (
+                          <span className="text-negative">
+                            <Money minor={-budget.remainingMinor} currency={currency} /> over
+                          </span>
+                        ) : (
+                          <>
+                            <Money minor={budget.remainingMinor} currency={currency} /> left
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <DeleteBudgetButton id={budget.budgetId} name={name} />
+                  </div>
+                  <Progress value={pct} label={`${name} budget used`} tone={tone} />
                 </div>
-                <Progress
-                  value={ratioToPercent(budget.spentMinor, budget.limitMinor)}
-                  label={`${categoryName.get(budget.categoryId) ?? 'Category'} budget used`}
-                  tone={budget.overBudget ? 'negative' : 'accent'}
-                />
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-      )}
+              );
+            })
+          )}
+        </CardBody>
+      </Card>
 
-      <Card accent="finance">
-        <CardHeader title="Recent transactions" />
+      {/* ------------------------------------------------- recurring bills */}
+      <Card accent="finance" labelledBy="finance-recurring">
+        <CardHeader
+          id="finance-recurring"
+          title="Recurring bills"
+          icon={<CalendarClock className="size-4" />}
+          accent="finance"
+          description={
+            recurring.length === 0
+              ? 'Subscriptions, rent, EMIs'
+              : [...perMonth]
+                  .map(([cur, minor]) => `About ${formatMinor(minor, cur)} a month`)
+                  .join(' · ')
+          }
+          action={
+            <Sheet
+              label="New bill"
+              variant={recurring.length === 0 ? 'primary' : 'secondary'}
+              description="Anything that repeats: Netflix, rent, EMI, phone, gym."
+              className="h-8 px-3 text-xs"
+            >
+              <AddRecurringForm
+                accounts={accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
+                categories={categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))}
+                today={today}
+              />
+            </Sheet>
+          }
+        />
+        <CardBody className="p-0">
+          {recurring.length === 0 ? (
+            <EmptyState
+              icon={<CalendarClock aria-hidden className="size-5" />}
+              title="Nothing recurring yet"
+              description="Add the bills that repeat. You get a reminder three days before each, and Paid records it in one tap."
+            />
+          ) : (
+            <ul className="divide-y divide-border-subtle">
+              {recurring.map((bill) => {
+                const days = daysUntil(bill.nextDueOn, today);
+                return (
+                  <li
+                    key={bill.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-text-primary">{bill.name}</p>
+                      <p className="text-xs text-text-muted">
+                        <span
+                          className={
+                            days < 0
+                              ? 'font-medium text-negative'
+                              : days <= 3
+                                ? 'font-medium text-warning'
+                                : undefined
+                          }
+                        >
+                          {dueLabel(bill.nextDueOn, today)}
+                        </span>
+                        {' · '}
+                        {CADENCE_LABEL[bill.cadence as Cadence]}
+                        {bill.accountId ? ` · ${accountName.get(bill.accountId) ?? 'Account'}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Money minor={bill.amountMinor} currency={bill.currency as Currency} />
+                      <RecurringActions id={bill.id} name={bill.name} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card accent="finance" labelledBy="finance-recent">
+        <CardHeader id="finance-recent" title="Recent transactions" />
         <CardBody className="p-0">
           {transactions.length === 0 ? (
             <EmptyState
@@ -437,4 +595,8 @@ function TransactionHistory({
       ))}
     </ul>
   );
+}
+
+function formatMinor(minor: bigint, currency: string): string {
+  return isCurrency(currency) ? formatMoney(minor, currency) : `${minor} ${currency}`;
 }

@@ -1,10 +1,17 @@
 import { createHash } from 'node:crypto';
-import { invalid, notFound, ok, type Result } from '@/lib/result';
-import { parseAmount, type Currency } from '@nestedflow/domain/money';
-import type { Transaction } from './schema';
+import { conflict, invalid, notFound, ok, type Result } from '@/lib/result';
+import { formatMoney, parseAmount, toDecimalString, type Currency } from '@nestedflow/domain/money';
+import { notify } from '@/modules/productivity/notifications';
+import { daysUntil, dueLabel, monthStart, nextDue, type Cadence } from './recurring';
+import type { Budget, Category, Subscription, Transaction } from './schema';
 import * as repo from './repository';
 import { importKeys, type ImportRowStatus } from './statement';
-import type { StatementImportInput, TransactionInput, TransferInput } from './validators';
+import type {
+  StatementImportInput,
+  SubscriptionInput,
+  TransactionInput,
+  TransferInput,
+} from './validators';
 
 /**
  * Finance business rules.
@@ -353,4 +360,174 @@ export async function importStatement(
   );
 
   return ok({ inserted, skipped: chosen.length - inserted });
+}
+
+/* ------------------------------------------------------------- budgets --- */
+
+/**
+ * An expense category by name, made if it does not exist yet. Matching
+ * ignores case, so "food" and "Food" are one category, not two.
+ */
+export async function ensureExpenseCategory(userId: string, name: string): Promise<Category> {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const existing = (await repo.listCategories(userId)).find(
+    (c) => c.kind === 'expense' && c.name.toLowerCase() === clean.toLowerCase(),
+  );
+  if (existing) return existing;
+  try {
+    return await repo.insertCategory(userId, { name: clean, kind: 'expense' });
+  } catch {
+    // Made by a parallel request a moment ago.
+    const again = (await repo.listCategories(userId)).find(
+      (c) => c.kind === 'expense' && c.name.toLowerCase() === clean.toLowerCase(),
+    );
+    if (again) return again;
+    throw new Error('Category could not be created');
+  }
+}
+
+/**
+ * A monthly limit for one category. Setting it again changes the limit
+ * rather than adding a second budget for the same thing.
+ */
+export async function setMonthlyBudget(
+  userId: string,
+  input: { category: string; amount: string },
+  today: string,
+  currency: Currency,
+): Promise<Result<Budget>> {
+  const name = input.category.trim();
+  if (!name) return invalid('category', 'Pick or type a category');
+  if (name.length > 80) return invalid('category', 'That name is too long');
+
+  let amountMinor: bigint;
+  try {
+    amountMinor = parseAmount(input.amount, currency);
+  } catch (error) {
+    return invalid('amount', error instanceof Error ? error.message : 'Invalid amount');
+  }
+  if (amountMinor <= 0n) return invalid('amount', 'Enter a limit above zero');
+
+  const category = await ensureExpenseCategory(userId, name);
+  const existing = await repo.findBudgetForCategory(userId, category.id);
+  if (existing) {
+    const updated = await repo.updateBudgetAmount(userId, existing.id, amountMinor);
+    return updated ? ok(updated) : notFound();
+  }
+  return ok(
+    await repo.insertBudget(userId, {
+      categoryId: category.id,
+      period: 'monthly',
+      amountMinor,
+      currency,
+      startsOn: monthStart(today),
+    }),
+  );
+}
+
+/* ------------------------------------------------------ recurring bills --- */
+
+export async function addRecurring(
+  userId: string,
+  input: SubscriptionInput,
+  baseCurrency: Currency,
+): Promise<Result<Subscription>> {
+  const accountId = input.accountId || null;
+  const account = accountId ? await repo.findAccount(userId, accountId) : undefined;
+  if (accountId && !account) return notFound();
+
+  let categoryId: string | null = null;
+  if (input.categoryId) {
+    const category = await repo.findCategory(userId, input.categoryId);
+    if (!category) return notFound();
+    categoryId = category.id;
+  }
+
+  const currency = (account?.currency ?? baseCurrency) as Currency;
+  let amountMinor: bigint;
+  try {
+    amountMinor = parseAmount(input.amount, currency);
+  } catch (error) {
+    return invalid('amount', error instanceof Error ? error.message : 'Invalid amount');
+  }
+  if (amountMinor <= 0n) return invalid('amount', 'Enter an amount above zero');
+
+  return ok(
+    await repo.insertSubscription(userId, {
+      name: input.name,
+      amountMinor,
+      currency,
+      cadence: input.cadence,
+      nextDueOn: input.nextDueOn,
+      accountId,
+      categoryId,
+    }),
+  );
+}
+
+/**
+ * "Paid": record the expense from the bill's account (when it has one) and
+ * move the bill on to its next due date.
+ */
+export async function payRecurring(
+  userId: string,
+  id: string,
+  today: string,
+): Promise<Result<{ recorded: boolean; nextDueOn: string }>> {
+  const bill = await repo.findSubscription(userId, id);
+  if (!bill) return notFound();
+
+  const following = nextDue(bill.nextDueOn, bill.cadence as Cadence);
+  const moved = await repo.advanceSubscription(
+    userId,
+    id,
+    { nextDueOn: bill.nextDueOn },
+    { nextDueOn: following, lastChargedOn: today },
+  );
+  if (!moved) return conflict('That bill was already marked paid.');
+
+  if (!bill.accountId) return ok({ recorded: false, nextDueOn: following });
+
+  const result = await createTransaction(userId, {
+    accountId: bill.accountId,
+    categoryId: bill.categoryId ?? undefined,
+    occurredOn: today,
+    amount: toDecimalString(bill.amountMinor, bill.currency as Currency),
+    kind: 'expense',
+    description: bill.name,
+  });
+  if (!result.ok) {
+    // Put the bill back: paid means paid, and this was not recorded.
+    await repo.advanceSubscription(
+      userId,
+      id,
+      { nextDueOn: following },
+      { nextDueOn: bill.nextDueOn, lastChargedOn: bill.lastChargedOn ?? today },
+    );
+    return result;
+  }
+  return ok({ recorded: true, nextDueOn: following });
+}
+
+/**
+ * A reminder for every bill due within three days or already overdue, once
+ * per due date — however often Today is opened.
+ */
+export async function remindDueBills(userId: string, today: string): Promise<number> {
+  const bills = await repo.listSubscriptions(userId);
+  let raised = 0;
+  for (const bill of bills) {
+    if (bill.status !== 'active' || daysUntil(bill.nextDueOn, today) > 3) continue;
+    const sent = await notify(userId, {
+      kind: 'bill_due',
+      title: `${bill.name}: ${dueLabel(bill.nextDueOn, today).toLowerCase()}`,
+      body: formatMoney(bill.amountMinor, bill.currency as Currency),
+      href: '/finance',
+      entityType: 'subscription',
+      entityId: bill.id,
+      dedupeKey: `bill:${bill.id}:${bill.nextDueOn}`,
+    });
+    if (sent) raised += 1;
+  }
+  return raised;
 }

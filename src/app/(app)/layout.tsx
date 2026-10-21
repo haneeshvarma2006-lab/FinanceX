@@ -13,6 +13,8 @@ import {
 import { cn } from '@/lib/cn';
 import { requireUser } from '@/lib/auth/current-user';
 import { countUnreadNotifications } from '@/modules/productivity/repository';
+import { listActiveAlerts } from '@/modules/markets/repository';
+import { AlertWatcher } from './alert-watcher';
 import { NotificationBell } from '@/components/ui/notification-bell';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MainNav, type NavItem } from '@/components/ui/nav';
@@ -64,7 +66,10 @@ const NAV: readonly NavItem[] = [
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const unread = await countUnreadNotifications(user.id);
+  const [unread, alerts] = await Promise.all([
+    countUnreadNotifications(user.id),
+    listActiveAlerts(user.id),
+  ]);
 
   return (
     <div className="relative isolate flex min-h-dvh flex-col">
@@ -144,6 +149,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
+
+      <AlertWatcher
+        alerts={alerts.map((a) => ({
+          id: a.id,
+          instrumentId: a.instrumentId,
+          direction: a.direction,
+          target: a.target,
+        }))}
+      />
 
       <main
         id="main"

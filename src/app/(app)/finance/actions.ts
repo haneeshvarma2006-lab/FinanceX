@@ -10,9 +10,11 @@ import * as finance from '@/modules/finance/service';
 import {
   accountSchema,
   categorySchema,
+  subscriptionSchema,
   transactionSchema,
   transferSchema,
 } from '@/modules/finance/validators';
+import { todayFor } from '@/modules/dashboard/service';
 import { parseAmount, type Currency } from '@nestedflow/domain/money';
 
 export async function createAccount(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -127,4 +129,82 @@ export async function deleteTransaction(_prev: FormState, formData: FormData): P
 
   revalidatePath('/finance');
   return { message: 'Deleted', tone: 'success' };
+}
+
+/* ------------------------------------------------------------- budgets --- */
+
+export async function setBudget(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const result = await finance.setMonthlyBudget(
+    user.id,
+    {
+      category: String(formData.get('category') ?? ''),
+      amount: String(formData.get('amount') ?? ''),
+    },
+    todayFor(user.timezone),
+    user.baseCurrency as Currency,
+  );
+  if (!result.ok) return toFormState(result.error);
+
+  revalidatePath('/finance', 'layout');
+  revalidatePath('/today');
+  return { message: 'Budget saved', tone: 'success' };
+}
+
+export async function deleteBudget(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const removed = await repo.deleteBudget(user.id, String(formData.get('id') ?? ''));
+  if (!removed) return { message: 'That budget no longer exists', tone: 'error' };
+
+  revalidatePath('/finance');
+  return { message: 'Budget removed', tone: 'success' };
+}
+
+/* ------------------------------------------------------ recurring bills --- */
+
+export async function addRecurring(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const parsed = subscriptionSchema.safeParse({
+    name: formData.get('name'),
+    amount: formData.get('amount'),
+    cadence: formData.get('cadence'),
+    nextDueOn: formData.get('nextDueOn'),
+    accountId: formData.get('accountId') ?? '',
+    categoryId: formData.get('categoryId') ?? '',
+  });
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error.issues) };
+
+  const result = await finance.addRecurring(user.id, parsed.data, user.baseCurrency as Currency);
+  if (!result.ok) return toFormState(result.error);
+
+  revalidatePath('/finance');
+  revalidatePath('/today');
+  return { message: 'Recurring bill added', tone: 'success' };
+}
+
+export async function payRecurring(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const result = await finance.payRecurring(
+    user.id,
+    String(formData.get('id') ?? ''),
+    todayFor(user.timezone),
+  );
+  if (!result.ok) return toFormState(result.error);
+
+  revalidatePath('/finance');
+  revalidatePath('/today');
+  return {
+    message: result.value.recorded ? 'Paid and recorded' : 'Marked paid',
+    tone: 'success',
+  };
+}
+
+export async function deleteRecurring(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const removed = await repo.deleteSubscription(user.id, String(formData.get('id') ?? ''));
+  if (!removed) return { message: 'That bill no longer exists', tone: 'error' };
+
+  revalidatePath('/finance');
+  revalidatePath('/today');
+  return { message: 'Recurring bill removed', tone: 'success' };
 }

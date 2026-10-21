@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { BINANCE_STREAM_ORIGIN } from '@/modules/markets/binance';
+import { BINANCE_REST_ORIGIN, BINANCE_STREAM_ORIGIN } from '@/modules/markets/binance';
 
 /**
  * Security headers, applied to every response.
@@ -24,9 +24,9 @@ export default function proxy(request: NextRequest): NextResponse {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' blob: data:`,
     `font-src 'self'`,
-    // Live markets: crypto prices stream from Binance's public market-data
-    // host, straight to the browser. That one host and nothing else.
-    `connect-src 'self' ${BINANCE_STREAM_ORIGIN}${isDev ? ' ws: wss:' : ''}`,
+    // Live markets and price alerts: crypto prices from Binance's public
+    // market-data hosts, straight to the browser. Those two and nothing else.
+    `connect-src 'self' ${BINANCE_STREAM_ORIGIN} ${BINANCE_REST_ORIGIN}${isDev ? ' ws: wss:' : ''}`,
     // The on-phone bill reader runs in a worker served from /ocr, which has
     // its own, narrower policy (next.config.ts). Pages may only start workers
     // from this origin.

@@ -53,6 +53,8 @@ export const RULES = {
   billUploadsPerDay: { limit: 300, windowSeconds: 86_400 },
   /** Live markets polls about once a minute; this caps a runaway tab. */
   marketQuotesPerHour: { limit: 600, windowSeconds: 3600 },
+  /** The alert watcher checks about once a minute from each open tab. */
+  alertChecksPerHour: { limit: 300, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 const NETWORK_RULES = {

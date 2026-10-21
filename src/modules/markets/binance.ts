@@ -5,6 +5,28 @@
  */
 
 export const BINANCE_STREAM_ORIGIN = 'wss://data-stream.binance.vision';
+/** The same public market data over HTTPS, for a one-off price check. */
+export const BINANCE_REST_ORIGIN = 'https://data-api.binance.vision';
+
+/** Latest prices for several symbols in one request. */
+export function pricesUrl(symbols: readonly string[]): string {
+  return `${BINANCE_REST_ORIGIN}/api/v3/ticker/price?symbols=${encodeURIComponent(
+    JSON.stringify(symbols),
+  )}`;
+}
+
+/** `[{ symbol, price }]` (or one such object) → symbol → price. */
+export function parsePrices(body: unknown): Map<string, number> {
+  const out = new Map<string, number>();
+  const rows = Array.isArray(body) ? body : body && typeof body === 'object' ? [body] : [];
+  for (const row of rows) {
+    if (typeof row !== 'object' || row === null) continue;
+    const { symbol, price } = row as { symbol?: unknown; price?: unknown };
+    const n = typeof price === 'string' || typeof price === 'number' ? Number(price) : NaN;
+    if (typeof symbol === 'string' && Number.isFinite(n) && n > 0) out.set(symbol, n);
+  }
+  return out;
+}
 
 export type Tick = {
   /** Binance symbol, upper case: `BTCUSDT`. */
