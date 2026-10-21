@@ -59,7 +59,7 @@ test('importing a statement opens the file picker from a tap', async ({ page }) 
   await page.getByLabel('Name').fill('HDFC Savings');
   await page.getByRole('button', { name: /add account/i }).tap();
 
-  const input = page.getByLabel('Statement file (.csv)');
+  const input = page.getByLabel('Statement file (PDF or CSV)');
   await expect(input).toBeVisible();
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), input.tap()]);
   expect(await chooser.element().getAttribute('accept')).toContain('.csv');

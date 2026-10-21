@@ -13,7 +13,10 @@ export const metadata: Metadata = { title: 'Import a statement' };
 
 export default async function ImportPage() {
   const user = await requireUser();
-  const accounts = await repo.listAccounts(user.id);
+  const [accounts, categories] = await Promise.all([
+    repo.listAccounts(user.id),
+    repo.listCategories(user.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,7 +25,7 @@ export default async function ImportPage() {
         accent="finance"
         icon={<FileUp />}
         title="Import a statement"
-        description="Add the CSV statement from your bank's website. It's read in your browser, with no bank login, ever."
+        description="Upload the PDF statement your bank sends each month, or a CSV. It's read on this device, with no bank login, ever."
       />
 
       {accounts.length === 0 ? (
@@ -47,11 +50,12 @@ export default async function ImportPage() {
             title="Statement"
             accent="finance"
             icon={<FileUp className="size-4" />}
-            description="CSV only. Excel users: File → Save As → CSV."
+            description="PDF e-statements, password-locked ones too, or CSV. Scanned paper statements can't be read."
           />
           <CardBody>
             <ImportWizard
               accounts={accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
+              categories={categories.filter((c) => c.kind === 'expense').map((c) => c.name)}
               locale={user.locale || 'en-IN'}
             />
           </CardBody>

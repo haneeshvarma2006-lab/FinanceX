@@ -16,6 +16,7 @@ const config = [
       'db/migrations/**',
       // Third-party, minified: copied in by scripts/copy-ocr-assets.mjs.
       'public/ocr/**',
+      'public/pdf/**',
     ],
   },
 

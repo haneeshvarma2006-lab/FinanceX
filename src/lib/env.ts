@@ -99,6 +99,12 @@ const schema = z
     BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
 
     /**
+     * The shared secret Vercel Cron sends as "Authorization: Bearer …" to
+     * the daily reminders job. Unset, the job refuses every call. A
+     * credential: never logged.
+     */
+    CRON_SECRET: z.string().min(16).optional(),
+    /**
      * Live markets. Crypto streams from Binance's public feed and needs
      * nothing. Spot gold, forex and shares need a market-data key: Alpha
      * Vantage is used when its key is set, otherwise Twelve Data. Without

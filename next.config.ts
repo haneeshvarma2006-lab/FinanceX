@@ -30,6 +30,19 @@ const config: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=604800' },
         ],
       },
+      {
+        // The statement PDF reader's worker and character maps: it may fetch
+        // the maps from this origin and nothing else.
+        source: '/pdf/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'none'; script-src 'self'; connect-src 'self'",
+          },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Cache-Control', value: 'public, max-age=604800' },
+        ],
+      },
     ];
   },
   async redirects() {

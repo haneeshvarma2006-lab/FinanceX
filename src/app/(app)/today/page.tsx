@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { after } from 'next/server';
 import {
   AlertTriangle,
   CalendarClock,
+  Check,
   CheckSquare,
   ChevronRight,
+  FileUp,
+  PieChart,
+  Repeat,
   Flame,
   LineChart,
   Scale,
@@ -33,6 +39,7 @@ import { formatMoney, type Currency } from '@nestedflow/domain/money';
 import { buildWealth } from '@/modules/dashboard/wealth';
 import { WealthPanel } from './wealth-panel';
 import { brand } from '@/lib/brand';
+import { hideSetupGuide } from './actions';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -56,12 +63,24 @@ export default async function TodayPage() {
   // The user's own rules, evaluated against the same read the page renders,
   // so what they are told always matches what they can see.
   await runAutomationRules(user.id, snapshot);
-  await remindDueBills(user.id, snapshot.today);
-  const [dueDecisions, wealth, recurring] = await Promise.all([
+  // The notification is raised now; the email goes after the page is sent.
+  await remindDueBills(user.id, snapshot.today, after);
+  const [dueDecisions, wealth, recurring, accounts, budgets, jar] = await Promise.all([
     decisionsRepo.listDueDecisions(user.id, snapshot.today),
     buildWealth(user, snapshot.today),
     financeRepo.listSubscriptions(user.id),
+    financeRepo.listAccounts(user.id),
+    financeRepo.listBudgets(user.id),
+    cookies(),
   ]);
+  const setup = {
+    account: accounts.length > 0,
+    budget: budgets.length > 0,
+    bill: recurring.length > 0,
+  };
+  const showGuide =
+    !(setup.account && setup.budget && setup.bill) &&
+    !jar.has(`nf-setup-hidden-${user.id.slice(0, 8)}`);
   // Bills due within three days, or already late.
   const dueBills = recurring.filter(
     (b) => b.status === 'active' && daysUntil(b.nextDueOn, snapshot.today) <= 3,
@@ -85,7 +104,8 @@ export default async function TodayPage() {
         }
       />
 
-      {nothingYet ? <FirstRun /> : <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
+      {showGuide ? <SetupGuide done={setup} fresh={nothingYet} /> : nothingYet && <FirstRun />}
+      {!nothingYet && <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
 
       {(snapshot.tasks.overdue > 0 ||
         snapshot.habits.atRisk.length > 0 ||
@@ -573,6 +593,192 @@ function Blank({
         />
       </Link>
     </div>
+  );
+}
+
+const SETUP_STEPS = [
+  {
+    key: 'account',
+    href: '/finance?new=account',
+    icon: Wallet,
+    title: 'Add your bank account',
+    body: 'The account or card your money moves through. Just a name and a balance, no bank login.',
+    cta: 'Add account',
+  },
+  {
+    key: 'budget',
+    href: '/finance?new=budget',
+    icon: PieChart,
+    title: 'Set a monthly budget',
+    body: 'A limit for one category, like Food or Fuel. It fills up as you spend and warns you at 80%.',
+    cta: 'Set a budget',
+  },
+  {
+    key: 'bill',
+    href: '/finance?new=bill',
+    icon: Repeat,
+    title: 'Add a bill that repeats',
+    body: 'Rent, Netflix, an EMI or your phone. You get a reminder three days before it is due.',
+    cta: 'Add a bill',
+  },
+] as const;
+
+/**
+ * The setup guide: three steps that make Finance useful from day one, each a
+ * tap away and ticked off as it is done. It stays until all three are done
+ * or the person hides it.
+ */
+function SetupGuide({
+  done,
+  fresh,
+}: {
+  done: Record<(typeof SETUP_STEPS)[number]['key'], boolean>;
+  fresh: boolean;
+}) {
+  const count = SETUP_STEPS.filter((s) => done[s.key]).length;
+  const next = SETUP_STEPS.find((s) => !done[s.key])?.key;
+  return (
+    <Card className="overflow-hidden" labelledBy="setup-guide">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-finance/15 blur-3xl"
+      />
+      <div className="relative flex flex-col gap-5 p-5 sm:p-7">
+        <div className="flex flex-col gap-3">
+          {fresh && (
+            <p className="inline-flex w-fit items-center gap-2 rounded-full border border-border-subtle bg-surface-overlay/60 px-3 py-1 text-xs text-text-secondary">
+              <span aria-hidden className="flex gap-1">
+                <span className="size-1.5 rounded-full bg-tasks" />
+                <span className="size-1.5 rounded-full bg-finance" />
+                <span className="size-1.5 rounded-full bg-trading" />
+              </span>
+              Welcome to {brand.name}
+            </p>
+          )}
+          <div>
+            <h2
+              id="setup-guide"
+              className="text-xl font-semibold tracking-tight text-text-primary sm:text-2xl"
+            >
+              Set up your money in 3 steps
+            </h2>
+            <p className="mt-1 text-sm text-pretty text-text-secondary">
+              Each takes under a minute. {count} of 3 done.
+              {fresh &&
+                ` ${brand.name} never invents a balance, streak or win rate: every number here comes from you.`}
+            </p>
+          </div>
+          <Progress
+            value={count}
+            max={3}
+            label={`Setup: ${count} of 3 steps done`}
+            tone="positive"
+          />
+        </div>
+
+        <ol className="flex flex-col gap-2.5">
+          {SETUP_STEPS.map((step, i) => {
+            const finished = done[step.key];
+            const current = step.key === next;
+            const Icon = step.icon;
+            return (
+              <li
+                key={step.key}
+                className={cn(
+                  'flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center',
+                  current
+                    ? 'border-finance/40 bg-surface-overlay shadow-(--shadow-edge)'
+                    : 'border-border-subtle bg-surface-overlay/40',
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                      finished
+                        ? 'bg-positive text-surface-sunken'
+                        : current
+                          ? 'bg-finance/15 text-finance ring-1 ring-finance/30 ring-inset'
+                          : 'bg-surface-sunken text-text-muted',
+                    )}
+                  >
+                    {finished ? <Check className="size-4" /> : <Icon className="size-4" />}
+                  </span>
+                  <div className="min-w-0">
+                    <p
+                      className={cn(
+                        'text-sm font-semibold',
+                        finished ? 'text-text-muted line-through' : 'text-text-primary',
+                      )}
+                    >
+                      <span className="sr-only">Step {i + 1}: </span>
+                      {step.title}
+                      {finished && <span className="sr-only"> (done)</span>}
+                    </p>
+                    {!finished && (
+                      <p className="mt-0.5 text-xs text-pretty text-text-secondary">{step.body}</p>
+                    )}
+                    {step.key === 'account' && !finished && (
+                      <Link
+                        href="/finance/import"
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-finance hover:underline"
+                      >
+                        <FileUp aria-hidden className="size-3.5" />
+                        Have a bank statement PDF? Import it instead
+                      </Link>
+                    )}
+                  </div>
+                </div>
+                {!finished && (
+                  <Link
+                    href={step.href}
+                    className={cn(
+                      'inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium',
+                      current
+                        ? 'bg-text-primary text-surface-sunken'
+                        : 'border border-border-subtle bg-surface-overlay text-text-primary hover:border-border-strong',
+                    )}
+                  >
+                    {step.cta}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-text-muted">
+          {fresh ? (
+            <p>
+              Or start somewhere else:{' '}
+              <Link href="/goals?new=goal" className="text-text-secondary underline">
+                a goal
+              </Link>
+              ,{' '}
+              <Link href="/tasks" className="text-text-secondary underline">
+                today&apos;s tasks
+              </Link>{' '}
+              or{' '}
+              <Link href="/trading?new=account" className="text-text-secondary underline">
+                a trading journal
+              </Link>
+              .
+            </p>
+          ) : (
+            <span />
+          )}
+          <form action={hideSetupGuide}>
+            <button
+              type="submit"
+              className="rounded-full px-3 py-1.5 text-text-secondary hover:bg-surface-overlay hover:text-text-primary"
+            >
+              Hide this guide
+            </button>
+          </form>
+        </div>
+      </div>
+    </Card>
   );
 }
 

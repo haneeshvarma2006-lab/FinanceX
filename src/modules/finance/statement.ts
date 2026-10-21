@@ -159,14 +159,15 @@ export function guessDateFormat(values: readonly string[]): DateFormat {
  * A statement amount as signed minor units, or null for a blank cell.
  * Throws when the cell holds something that is not an amount.
  *
- * Handles "1,23,456.78", "₹ 500", "-500", "(500.00)", "500 Dr", "500 CR".
+ * Handles "1,23,456.78", "₹ 500", "-500", "(500.00)", "500 Dr", "500 CR",
+ * "500.00(Dr)".
  */
 export function parseStatementAmount(raw: string, currency: Currency): bigint | null {
   let value = raw.trim();
   if (value === '' || value === '-' || value === '—') return null;
 
   let negative = false;
-  const suffix = /\s*(dr|cr)\.?$/i.exec(value);
+  const suffix = /\s*\(?(dr|cr)\)?\.?$/i.exec(value);
   if (suffix) {
     negative = suffix[1]!.toLowerCase() === 'dr';
     value = value.slice(0, suffix.index).trim();
@@ -203,7 +204,7 @@ export type ColumnMapping = {
 };
 
 const HEADER = {
-  date: /^(txn |tran(saction)? |posting |value )?date\b|^date$/i,
+  date: /^((txn|tran|trans|transaction|post|posting|value)\.?\s+)?date\b/i,
   valueDate: /value\s*date/i,
   description: /narration|description|particulars|details|remarks|memo|payee|merchant/i,
   amount: /^(transaction )?amount\b|^amt\b/i,
@@ -211,18 +212,50 @@ const HEADER = {
   credit: /credit|deposit|money in|paid in|\bcr\b/i,
 };
 
+/** Whether a row of cells reads like a statement's header: a date column and money. */
+export function looksLikeHeader(cells: readonly string[]): boolean {
+  const hasDate = cells.some((c) => HEADER.date.test(c) || HEADER.valueDate.test(c));
+  const hasMoney = cells.some(
+    (c) => HEADER.amount.test(c) || HEADER.debit.test(c) || HEADER.credit.test(c),
+  );
+  return hasDate && hasMoney;
+}
+
 /** The first row near the top that looks like a header: a date column and money. */
 export function findHeaderRow(rows: readonly string[][]): number {
   const limit = Math.min(rows.length, 40);
   for (let i = 0; i < limit; i += 1) {
-    const cells = rows[i]!;
-    const hasDate = cells.some((c) => HEADER.date.test(c) || HEADER.valueDate.test(c));
-    const hasMoney = cells.some(
-      (c) => HEADER.amount.test(c) || HEADER.debit.test(c) || HEADER.credit.test(c),
-    );
-    if (hasDate && hasMoney) return i;
+    if (looksLikeHeader(rows[i]!)) return i;
   }
   return 0;
+}
+
+/**
+ * Some statements put "Dr" or "Cr" in a column of its own, next to an
+ * unsigned amount. Folded into the amount ("500.00 Dr"), the amount parser
+ * reads the sign, and the column guesser no longer mistakes it for money.
+ */
+export function foldDrCrColumn(
+  header: readonly string[],
+  body: readonly string[][],
+): { header: string[]; body: string[][] } {
+  const marker = header.findIndex(
+    (_, i) =>
+      i > 0 &&
+      body.some((r) => (r[i] ?? '').trim() !== '') &&
+      body.every((r) => /^((dr|cr)\.?)?$/i.test((r[i] ?? '').trim())),
+  );
+  if (marker < 0) return { header: [...header], body: body.map((r) => [...r]) };
+  // The amount is the money column beside it: on the left, as banks print it.
+  const target = marker - 1;
+  return {
+    header: header.filter((_, i) => i !== marker),
+    body: body.map((r) =>
+      r
+        .map((cell, i) => (i === target && r[marker] ? `${cell} ${r[marker]!.trim()}` : cell))
+        .filter((_, i) => i !== marker),
+    ),
+  };
 }
 
 export function guessMapping(header: readonly string[], body: readonly string[][]): ColumnMapping {

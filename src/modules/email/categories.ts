@@ -24,6 +24,12 @@ export const EMAIL_CATEGORIES = {
     transactional: true,
     optional: true,
   },
+  reminders: {
+    label: 'Bill reminders',
+    description: 'An email when a recurring bill you added is due within three days.',
+    transactional: true,
+    optional: true,
+  },
   product_updates: {
     label: 'Product updates',
     description: 'Occasional notes about new features and meaningful changes.',

@@ -7,17 +7,31 @@
   "headers": [
     {
       "source": "/_next/static/(.*)",
-      "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }]
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
     },
     {
       "source": "/(.*).svg",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'none'; style-src 'unsafe-inline'; sandbox"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "30 2 * * *"
     }
   ]
 }

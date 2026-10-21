@@ -260,7 +260,7 @@ test('imports a bank statement CSV once, previewing every row first', async ({ p
   ].join('\n');
   const file = { name: 'oct.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) };
 
-  await page.getByLabel('Statement file (.csv)').setInputFiles(file);
+  await page.getByLabel('Statement file (PDF or CSV)').setInputFiles(file);
   await expect(page.getByText('oct.csv · 3 rows')).toBeVisible();
   await expect(page.getByLabel('Money out column')).toHaveValue('4');
   await expect(page.getByLabel('Money in column')).toHaveValue('5');
@@ -274,14 +274,15 @@ test('imports a bank statement CSV once, previewing every row first', async ({ p
 
   // The same file again: every row is recognised and nothing can be re-added.
   await page.getByRole('button', { name: 'Import another' }).click();
-  await page.getByLabel('Statement file (.csv)').setInputFiles(file);
+  await page.getByLabel('Statement file (PDF or CSV)').setInputFiles(file);
   await page.getByRole('button', { name: 'Preview 3 transactions' }).click();
   await expect(page.getByText('0 of 3 ticked')).toBeVisible();
   await expect(page.getByText('Imported before')).toHaveCount(3);
   await expect(page.getByRole('button', { name: 'Import 0 transactions' })).toBeDisabled();
 
+  // Saved under the tidied name, in the category guessed for it.
   await page.goto('/finance');
-  await expect(page.getByText('UPI-SWIGGY').first()).toBeVisible();
+  await expect(page.getByText('Swiggy', { exact: true }).first()).toBeVisible();
 });
 
 test('scans a bill photo on the device and adds it as an expense once', async ({

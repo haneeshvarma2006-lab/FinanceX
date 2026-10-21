@@ -104,13 +104,13 @@ export default async function FinancePage({
         title="Finance"
         description="Accounts, spending and bills. Entered by you, never linked to a bank."
         action={
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+          <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center">
             {accounts.length > 0 && (
               <Sheet
                 label="Add transaction"
                 description="Money in or out of one of your accounts."
                 defaultOpen={opening === 'transaction'}
-                className="col-span-3 h-12 text-base sm:order-last sm:h-10 sm:text-sm"
+                className="col-span-4 h-12 text-base sm:order-last sm:h-10 sm:text-sm"
               >
                 <AddTransactionForm accounts={accounts} categories={categories} />
               </Sheet>
@@ -136,6 +136,13 @@ export default async function FinancePage({
             >
               <Receipt aria-hidden className="size-4" />
               Bills
+            </Link>
+            <Link
+              href="/finance/insights"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-overlay py-3 text-xs font-medium text-text-primary shadow-(--shadow-edge) hover:border-border-strong sm:h-10 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-0 sm:text-sm"
+            >
+              <PieChart aria-hidden className="size-4" />
+              Insights
             </Link>
           </div>
         }
@@ -289,6 +296,7 @@ export default async function FinancePage({
               label="New budget"
               variant={budgets.length === 0 ? 'primary' : 'secondary'}
               description="A limit for one category, every month."
+              defaultOpen={opening === 'budget'}
               className="h-8 px-3 text-xs"
             >
               <AddBudgetForm suggestions={budgetSuggestions} currency={currency} />
@@ -363,6 +371,7 @@ export default async function FinancePage({
               label="New bill"
               variant={recurring.length === 0 ? 'primary' : 'secondary'}
               description="Anything that repeats: Netflix, rent, EMI, phone, gym."
+              defaultOpen={opening === 'bill'}
               className="h-8 px-3 text-xs"
             >
               <AddRecurringForm

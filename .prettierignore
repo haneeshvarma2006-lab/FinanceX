@@ -15,3 +15,4 @@ next-env.d.ts
 
 # Third-party bill reader, copied in by scripts/copy-ocr-assets.mjs.
 public/ocr
+public/pdf

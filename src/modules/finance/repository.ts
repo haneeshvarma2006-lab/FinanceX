@@ -379,6 +379,111 @@ export async function spendByCategory(
   return rows.map((r) => ({ categoryId: r.categoryId, spentMinor: BigInt(r.spent) }));
 }
 
+/* ------------------------------------------------------------ insights --- */
+
+function spendingIn(userId: string, from: string, to: string, currency: string) {
+  return and(
+    eq(transactions.userId, userId),
+    eq(transactions.kind, 'expense'),
+    eq(transactions.currency, currency),
+    gte(transactions.occurredOn, from),
+    lte(transactions.occurredOn, to),
+  );
+}
+
+/**
+ * Money in and money out in one currency over a period. Accounts in other
+ * currencies are left out rather than added up as if a dollar were a rupee.
+ */
+export async function totalsIn(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+): Promise<{ incomeMinor: bigint; expenseMinor: bigint }> {
+  const [row] = await db
+    .select({
+      income: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.kind} = 'income'), 0)::text`,
+      expense: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.kind} = 'expense'), 0)::text`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.currency, currency),
+        gte(transactions.occurredOn, from),
+        lte(transactions.occurredOn, to),
+        ne(transactions.kind, 'transfer'),
+      ),
+    );
+  return {
+    incomeMinor: BigInt(row?.income ?? '0'),
+    expenseMinor: -BigInt(row?.expense ?? '0'),
+  };
+}
+
+/** Spending per category, and how many payments made it up. */
+export async function spendingByCategoryIn(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+): Promise<{ categoryId: string | null; spentMinor: bigint; count: number }[]> {
+  const rows = await db
+    .select({
+      categoryId: transactions.categoryId,
+      spent: sql<string>`(-sum(${transactions.amountMinor}))::text`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(transactions)
+    .where(spendingIn(userId, from, to, currency))
+    .groupBy(transactions.categoryId);
+  return rows.map((r) => ({
+    categoryId: r.categoryId,
+    spentMinor: BigInt(r.spent),
+    count: r.count,
+  }));
+}
+
+/** Who was paid the most: payments grouped by the name they were recorded under. */
+export async function topPayees(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+  limit = 8,
+): Promise<{ name: string; spentMinor: bigint; count: number }[]> {
+  const name = sql<string>`coalesce(${transactions.merchant}, ${transactions.description})`;
+  const rows = await db
+    .select({
+      name,
+      spent: sql<string>`(-sum(${transactions.amountMinor}))::text`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(transactions)
+    .where(spendingIn(userId, from, to, currency))
+    .groupBy(name)
+    .orderBy(sql`sum(${transactions.amountMinor}) asc`)
+    .limit(Math.min(limit, 20));
+  return rows.map((r) => ({ name: r.name, spentMinor: BigInt(r.spent), count: r.count }));
+}
+
+/** The largest single payments of a period. */
+export async function largestExpenses(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+  limit = 5,
+): Promise<Transaction[]> {
+  return db
+    .select()
+    .from(transactions)
+    .where(spendingIn(userId, from, to, currency))
+    .orderBy(asc(transactions.amountMinor), desc(transactions.occurredOn))
+    .limit(Math.min(limit, 20));
+}
+
 /* ------------------------------------------------------------- budgets --- */
 
 export async function listBudgets(userId: string): Promise<Budget[]> {
@@ -509,6 +614,16 @@ export async function advanceSubscription(
     )
     .returning({ id: subscriptions.id });
   return rows.length > 0;
+}
+
+/** Accounts with an active bill due on or before a day, for the daily reminders job. */
+export async function usersWithBillsDueBy(day: string, limit: number): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ userId: subscriptions.userId })
+    .from(subscriptions)
+    .where(and(eq(subscriptions.status, 'active'), lte(subscriptions.nextDueOn, day)))
+    .limit(Math.min(limit, 5000));
+  return rows.map((r) => r.userId);
 }
 
 export async function deleteSubscription(userId: string, id: string): Promise<boolean> {

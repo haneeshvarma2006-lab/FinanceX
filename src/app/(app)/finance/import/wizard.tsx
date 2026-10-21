@@ -2,10 +2,10 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Check, FileSpreadsheet } from 'lucide-react';
+import { Check, FileSpreadsheet, LockKeyhole } from 'lucide-react';
 import { formatMoney, isCurrency, type Currency } from '@nestedflow/domain/money';
 import { Button } from '@/components/ui/button';
-import { CheckboxField, FormAlert, SelectField } from '@/components/ui/form';
+import { CheckboxField, Field, FormAlert, SelectField } from '@/components/ui/form';
 import { Badge } from '@/components/ui/money';
 import { cn } from '@/lib/cn';
 import {
@@ -14,6 +14,7 @@ import {
   MAX_STATEMENT_BYTES,
   MAX_STATEMENT_ROWS,
   findHeaderRow,
+  foldDrCrColumn,
   guessMapping,
   parseCsv,
   readRows,
@@ -21,10 +22,31 @@ import {
   type DateFormat,
   type ImportRowStatus,
 } from '@/modules/finance/statement';
+import { AUTO_CATEGORIES, cleanNarration, suggestCategory } from '@/modules/finance/categorize';
+import { SUGGESTED_CATEGORIES } from '@/modules/finance/recurring';
 import { importStatementAction, previewImportAction } from './actions';
+import { MAX_PDF_BYTES, type PdfRead } from './read-pdf';
 
 type Account = { id: string; name: string; currency: string };
-type Sheet = { fileName: string; header: string[]; body: string[][] };
+type Sheet = { fileName: string; kind: 'csv' | 'pdf'; header: string[]; body: string[][] };
+
+const PDF_PROBLEM: Record<Exclude<PdfRead, { ok: true }>['reason'], string> = {
+  password: '',
+  'wrong-password':
+    'That password did not open it. Banks often use part of your name and date of birth, or your customer ID — the statement email says which.',
+  'no-text':
+    'This PDF is a scanned picture, with no text to read. Download the e-statement from net banking or the bank app instead.',
+  'no-table':
+    'No transactions table found in this PDF. If it is a bank statement, try the CSV or Excel download from net banking.',
+  unreadable: 'That PDF could not be opened. Is it a complete download?',
+};
+
+/** Where the month of a statement is, for the insights link: its most common month. */
+function busiestMonth(days: readonly string[]): string | null {
+  const counts = new Map<string, number>();
+  for (const day of days) counts.set(day.slice(0, 7), (counts.get(day.slice(0, 7)) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
 
 const STATUS: Record<ImportRowStatus, { label: string; tone: 'neutral' | 'warning' | 'positive' }> =
   {
@@ -38,7 +60,16 @@ const STATUS: Record<ImportRowStatus, { label: string; tone: 'neutral' | 'warnin
  * file, whether the columns were understood, then every row with what will
  * happen to it — and only then a single button that writes anything.
  */
-export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale: string }) {
+export function ImportWizard({
+  accounts,
+  categories,
+  locale,
+}: {
+  accounts: Account[];
+  /** The person's own expense categories, offered alongside the usual ones. */
+  categories: string[];
+  locale: string;
+}) {
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
@@ -46,7 +77,16 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
   const [statuses, setStatuses] = useState<ImportRowStatus[] | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
-  const [done, setDone] = useState<{ inserted: number; skipped: number } | null>(null);
+  const [done, setDone] = useState<{
+    inserted: number;
+    skipped: number;
+    month: string | null;
+  } | null>(null);
+  const [locked, setLocked] = useState<File | null>(null);
+  const [password, setPassword] = useState('');
+  const [reading, setReading] = useState(false);
+  /** Categories the person changed on the preview, by row line. */
+  const [chosen, setChosen] = useState<Map<number, string | null>>(new Map());
   const [pending, startTransition] = useTransition();
 
   const account = accounts.find((a) => a.id === accountId);
@@ -56,8 +96,21 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
     () => (sheet && mapping ? readRows(sheet.body, mapping, currency) : []),
     [sheet, mapping, currency],
   );
-  const valid = rows.filter((r) => r.error === null);
+  const valid = rows
+    .filter((r) => r.error === null)
+    .map((r) => {
+      const name = cleanNarration(r.description) || r.description;
+      const guess = suggestCategory(r.description, r.amountMinor!);
+      return {
+        ...r,
+        name,
+        category: r.amountMinor! < 0n ? (chosen.has(r.line) ? chosen.get(r.line)! : guess) : null,
+      };
+    });
   const invalid = rows.filter((r) => r.error !== null);
+  const categoryOptions = [
+    ...new Set([...categories, ...SUGGESTED_CATEGORIES, ...AUTO_CATEGORIES]),
+  ].sort((a, b) => a.localeCompare(b));
 
   /** Anything that changes what the rows are invalidates the duplicate check. */
   function resetCheck() {
@@ -67,23 +120,18 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
     setDone(null);
   }
 
-  async function onFile(file: File | undefined) {
-    resetCheck();
-    setSheet(null);
-    setMapping(null);
-    setFileError(null);
-    if (!file) return;
-    if (file.size > MAX_STATEMENT_BYTES) {
-      setFileError('That file is over 2 MB. Export one month at a time.');
-      return;
-    }
-    const text = await file.text();
-    const table = parseCsv(text);
-    const at = findHeaderRow(table);
-    const header = table[at] ?? [];
-    const body = table.slice(at + 1).filter((r) => r.length >= 2);
+  function acceptTable(
+    fileName: string,
+    kind: Sheet['kind'],
+    raw: { header: string[]; body: string[][] },
+  ) {
+    const { header, body } = foldDrCrColumn(raw.header, raw.body);
     if (header.length < 2 || body.length === 0) {
-      setFileError('No rows found. Is this the CSV export of a statement?');
+      setFileError(
+        kind === 'pdf'
+          ? PDF_PROBLEM['no-table']
+          : 'No rows found. Is this the CSV export of a statement?',
+      );
       return;
     }
     if (body.length > MAX_STATEMENT_ROWS) {
@@ -92,8 +140,69 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
       );
       return;
     }
-    setSheet({ fileName: file.name, header, body });
-    setMapping(guessMapping(header, body));
+    const guess = guessMapping(header, body);
+    // A card statement in one column lists spending as plain positive
+    // numbers and marks refunds and payments "Cr": spending is money out.
+    if (kind === 'pdf' && guess.amount !== null) {
+      const cells = body.map((r) => (r[guess.amount!] ?? '').trim()).filter(Boolean);
+      const unsigned = cells.every((c) => !/^[-(]|\bdr\b|\(dr\)/i.test(c));
+      const noCr = cells.every((c) => !/\bcr\b|\(cr\)/i.test(c));
+      if (unsigned && noCr) guess.invert = true;
+    }
+    setSheet({ fileName, kind, header, body });
+    setMapping(guess);
+  }
+
+  async function openPdf(file: File, pass?: string) {
+    setReading(true);
+    setFileError(null);
+    try {
+      const { readStatementPdf } = await import('./read-pdf');
+      const read = await readStatementPdf(file, pass);
+      if (read.ok) {
+        setLocked(null);
+        setPassword('');
+        acceptTable(file.name, 'pdf', read.table);
+      } else if (read.reason === 'password' || read.reason === 'wrong-password') {
+        setLocked(file);
+        if (read.reason === 'wrong-password') setFileError(PDF_PROBLEM['wrong-password']);
+      } else {
+        setFileError(PDF_PROBLEM[read.reason]);
+      }
+    } finally {
+      setReading(false);
+    }
+  }
+
+  async function onFile(file: File | undefined) {
+    resetCheck();
+    setSheet(null);
+    setMapping(null);
+    setFileError(null);
+    setLocked(null);
+    setPassword('');
+    setChosen(new Map());
+    if (!file) return;
+
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      if (file.size > MAX_PDF_BYTES) {
+        setFileError('That PDF is over 10 MB. Download one month or one quarter at a time.');
+        return;
+      }
+      await openPdf(file);
+      return;
+    }
+    if (file.size > MAX_STATEMENT_BYTES) {
+      setFileError('That file is over 2 MB. Export one month at a time.');
+      return;
+    }
+    const table = parseCsv(await file.text());
+    const at = findHeaderRow(table);
+    acceptTable(file.name, 'csv', {
+      header: table[at] ?? [],
+      body: table.slice(at + 1).filter((r) => r.length >= 2),
+    });
   }
 
   function update(change: Partial<ColumnMapping>) {
@@ -106,7 +215,9 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
     valid.map((r, i) => ({
       occurredOn: r.occurredOn!,
       amountMinor: r.amountMinor!.toString(),
-      description: r.description,
+      description: r.name.slice(0, 240),
+      narration: r.description,
+      ...(r.category ? { category: r.category } : {}),
       selected: pick(i),
     }));
 
@@ -137,15 +248,31 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
         setMessage({ tone: 'error', text: result.message });
         return;
       }
-      setDone({ inserted: result.inserted, skipped: result.skipped });
+      setDone({
+        inserted: result.inserted,
+        skipped: result.skipped,
+        month: busiestMonth(valid.filter((_, i) => selected.has(i)).map((r) => r.occurredOn!)),
+      });
     });
   }
 
   const money = (minor: bigint) => formatMoney(minor, currency, { locale, signDisplay: 'always' });
   const columns = sheet?.header.map((name, i) => ({ i, name: name || `Column ${i + 1}` })) ?? [];
-  const selectedTotal = valid
-    .filter((_, i) => selected.has(i))
-    .reduce((sum, r) => sum + r.amountMinor!, 0n);
+  const ticked = valid.filter((_, i) => selected.has(i));
+  const selectedTotal = ticked.reduce((sum, r) => sum + r.amountMinor!, 0n);
+  const spentTotal = ticked.reduce(
+    (sum, r) => (r.amountMinor! < 0n ? sum - r.amountMinor! : sum),
+    0n,
+  );
+  const byCategory = [
+    ...ticked
+      .filter((r) => r.amountMinor! < 0n)
+      .reduce((map, r) => {
+        const key = r.category ?? 'Not sorted';
+        return map.set(key, (map.get(key) ?? 0n) - r.amountMinor!);
+      }, new Map<string, bigint>()),
+  ].sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
+  const plain = (minor: bigint) => formatMoney(minor, currency, { locale });
 
   if (done) {
     return (
@@ -159,15 +286,20 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
           {done.skipped > 0 ? ` · ${done.skipped} were already there` : ''}
         </p>
         <p className="text-sm text-text-secondary">
-          They are uncategorised. Add categories on Finance so budgets and the weekly review can use
-          them.
+          Spending went into the categories you checked, so budgets and insights already count it.
         </p>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/finance"
+            href={done.month ? `/finance/insights?month=${done.month}` : '/finance/insights'}
             className="inline-flex h-9.5 items-center rounded-[var(--radius-control)] bg-text-primary px-4 text-sm font-medium text-surface-sunken"
           >
-            See them on Finance
+            See where it went
+          </Link>
+          <Link
+            href="/finance"
+            className="inline-flex h-9.5 items-center rounded-[var(--radius-control)] px-4 text-sm text-text-secondary hover:text-text-primary"
+          >
+            Back to Finance
           </Link>
           <Button
             type="button"
@@ -206,12 +338,12 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="statement-file" className="text-xs font-medium text-text-secondary">
-            Statement file (.csv)
+            Statement file (PDF or CSV)
           </label>
           <input
             id="statement-file"
             type="file"
-            accept=".csv,text/csv"
+            accept=".pdf,application/pdf,.csv,text/csv"
             onChange={(e) => void onFile(e.target.files?.[0])}
             className={cn(
               'block w-full text-sm text-text-secondary',
@@ -221,6 +353,39 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
           />
         </div>
       </div>
+
+      {reading && (
+        <p role="status" className="text-sm text-text-secondary">
+          Reading the statement on this device…
+        </p>
+      )}
+
+      {locked && (
+        <form
+          className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-surface-overlay p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void openPdf(locked, password);
+          }}
+        >
+          <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+            <LockKeyhole aria-hidden className="size-4 text-text-muted" />
+            This statement is locked with a password
+          </p>
+          <Field
+            label="Statement password"
+            name="statement-password"
+            type="password"
+            autoComplete="off"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            hint="Only used to open the file here. It is not saved or sent anywhere."
+          />
+          <Button type="submit" loading={reading} disabled={password === ''} className="self-start">
+            Open statement
+          </Button>
+        </form>
+      )}
 
       {fileError && <FormAlert>{fileError}</FormAlert>}
 
@@ -232,7 +397,8 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
             className="flex items-center gap-2 text-sm font-semibold text-text-primary"
           >
             <FileSpreadsheet aria-hidden className="size-4 text-text-muted" />
-            {sheet.fileName} · {sheet.body.length} rows — check the columns
+            {sheet.fileName} · {sheet.body.length} rows —{' '}
+            {sheet.kind === 'pdf' ? 'check how it was read' : 'check the columns'}
           </h3>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -373,6 +539,36 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
       {/* 3 · every row and what will happen to it */}
       {statuses && (
         <section aria-labelledby="import-preview" className="flex flex-col gap-4">
+          {byCategory.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl border border-border-subtle bg-surface-overlay p-4">
+              <p className="text-sm font-semibold text-text-primary">
+                Where the money went ·{' '}
+                <span className="numeric font-normal text-text-secondary">{plain(spentTotal)}</span>
+              </p>
+              <ul className="flex flex-col gap-2">
+                {byCategory.slice(0, 6).map(([name, minor]) => {
+                  const pct = spentTotal > 0n ? Number((minor * 1000n) / spentTotal) / 10 : 0;
+                  return (
+                    <li key={name} className="flex flex-col gap-1">
+                      <div className="flex items-baseline justify-between gap-2 text-xs">
+                        <span className="text-text-primary">{name}</span>
+                        <span className="numeric text-text-secondary">
+                          {plain(minor)} · {pct.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                        <div
+                          className="h-full rounded-full bg-finance"
+                          style={{ width: `${Math.max(2, pct)}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 id="import-preview" className="text-sm font-semibold text-text-primary">
               {selected.size} of {valid.length} ticked ·{' '}
@@ -386,14 +582,14 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
           <ul className="max-h-120 divide-y divide-border-subtle overflow-y-auto rounded-xl border border-border-subtle">
             {valid.map((row, i) => {
               const status = statuses[i] ?? 'new';
-              const locked = status === 'already-imported';
+              const imported = status === 'already-imported';
               return (
                 <li key={row.line} className="flex items-center gap-3 px-3 py-2.5">
                   <input
                     type="checkbox"
                     aria-label={`Import ${row.description} on ${row.occurredOn}`}
                     checked={selected.has(i)}
-                    disabled={locked}
+                    disabled={imported}
                     onChange={(e) => {
                       const next = new Set(selected);
                       if (e.target.checked) next.add(i);
@@ -406,14 +602,34 @@ export function ImportWizard({ accounts, locale }: { accounts: Account[]; locale
                     <p
                       className={cn(
                         'truncate text-sm',
-                        locked ? 'text-text-muted' : 'text-text-primary',
+                        imported ? 'text-text-muted' : 'text-text-primary',
                       )}
+                      title={row.description}
                     >
-                      {row.description}
+                      {row.name}
                     </p>
-                    <p className="mt-0.5 flex items-center gap-2 text-xs text-text-muted">
+                    <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-muted">
                       <span className="numeric">{row.occurredOn}</span>
                       <Badge tone={STATUS[status].tone}>{STATUS[status].label}</Badge>
+                      {row.amountMinor! < 0n && !imported && (
+                        <select
+                          aria-label={`Category for ${row.name}`}
+                          value={row.category ?? ''}
+                          onChange={(e) => {
+                            const next = new Map(chosen);
+                            next.set(row.line, e.target.value || null);
+                            setChosen(next);
+                          }}
+                          className="h-6 max-w-36 rounded-full border border-border-subtle bg-surface-overlay px-2 text-xs text-text-secondary"
+                        >
+                          <option value="">Not sorted</option>
+                          {categoryOptions.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </p>
                   </div>
                   <span

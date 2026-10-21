@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import { conflict, invalid, notFound, ok, type Result } from '@/lib/result';
 import { formatMoney, parseAmount, toDecimalString, type Currency } from '@nestedflow/domain/money';
+import { brand } from '@/lib/brand';
+import { getEnv } from '@/lib/env';
+import { consume } from '@/lib/security/rate-limit';
+import * as email from '@/modules/email/service';
+import * as identityRepo from '@/modules/identity/repository';
 import { notify } from '@/modules/productivity/notifications';
 import { daysUntil, dueLabel, monthStart, nextDue, type Cadence } from './recurring';
 import type { Budget, Category, Subscription, Transaction } from './schema';
@@ -325,7 +330,8 @@ export async function previewImport(
 
 /**
  * Save the ticked rows of a statement to one account, in its currency.
- * Money in becomes income and money out an expense, uncategorised; rows
+ * Money in becomes income and money out an expense, in the category chosen
+ * on the preview (made when the person has none by that name); rows
  * already imported before are skipped, so importing a statement twice adds
  * nothing the second time.
  */
@@ -342,18 +348,34 @@ export async function importStatement(
     .map((row, i) => ({ row, externalId: ids[i]! }))
     .filter(({ row }) => row.selected);
 
+  // Categories are only for money out, and one statement names a handful.
+  const names = [
+    ...new Set(
+      chosen
+        .filter(({ row }) => row.category && BigInt(row.amountMinor) < 0n)
+        .map(({ row }) => row.category!.replace(/\s+/g, ' ')),
+    ),
+  ];
+  if (names.length > 40) return invalid('rows', 'Use at most 40 categories in one import');
+  const categoryIds = new Map<string, string>();
+  for (const name of names) {
+    categoryIds.set(name.toLowerCase(), (await ensureExpenseCategory(userId, name)).id);
+  }
+
   const inserted = await repo.insertImportedTransactions(
     userId,
     chosen.map(({ row, externalId }) => {
       const amountMinor = BigInt(row.amountMinor);
+      const category = row.category?.replace(/\s+/g, ' ').toLowerCase();
       return {
         accountId: account.id,
-        categoryId: null,
+        categoryId: amountMinor < 0n && category ? (categoryIds.get(category) ?? null) : null,
         occurredOn: row.occurredOn,
         amountMinor,
         currency: account.currency,
         kind: amountMinor > 0n ? 'income' : 'expense',
         description: row.description,
+        notes: row.narration && row.narration !== row.description ? row.narration : null,
         externalId,
       };
     }),
@@ -511,13 +533,20 @@ export async function payRecurring(
 
 /**
  * A reminder for every bill due within three days or already overdue, once
- * per due date — however often Today is opened.
+ * per due date — however often Today is opened or the daily job runs: an
+ * in-app notification, and an email when email is set up and the person has
+ * not switched bill reminders off.
  */
-export async function remindDueBills(userId: string, today: string): Promise<number> {
+export async function remindDueBills(
+  userId: string,
+  today: string,
+  /** Where the emails are sent from: after the response on a page, inline in a job. */
+  defer: (work: () => Promise<void>) => unknown = (work) => work(),
+): Promise<number> {
   const bills = await repo.listSubscriptions(userId);
+  const due = bills.filter((b) => b.status === 'active' && daysUntil(b.nextDueOn, today) <= 3);
   let raised = 0;
-  for (const bill of bills) {
-    if (bill.status !== 'active' || daysUntil(bill.nextDueOn, today) > 3) continue;
+  for (const bill of due) {
     const sent = await notify(userId, {
       kind: 'bill_due',
       title: `${bill.name}: ${dueLabel(bill.nextDueOn, today).toLowerCase()}`,
@@ -529,5 +558,61 @@ export async function remindDueBills(userId: string, today: string): Promise<num
     });
     if (sent) raised += 1;
   }
+  if (due.length > 0) await defer(() => emailDueBills(userId, due, today));
   return raised;
+}
+
+/** One reminder email per bill per due date, however often this runs. */
+const BILL_EMAIL_ONCE = { limit: 1, windowSeconds: 60 * 60 * 24 * 45 };
+
+async function emailDueBills(
+  userId: string,
+  bills: readonly Subscription[],
+  today: string,
+): Promise<void> {
+  try {
+    if (!email.canDeliverToUsers()) return;
+    const user = await identityRepo.findUserById(userId);
+    if (!user) return;
+    for (const bill of bills) {
+      // Taken before sending, so two runs at once cannot both send.
+      const once = await consume(`once:bill-email:${bill.id}:${bill.nextDueOn}`, BILL_EMAIL_ONCE);
+      if (!once.allowed) continue;
+      const when = dueLabel(bill.nextDueOn, today).toLowerCase();
+      const amount = formatMoney(bill.amountMinor, bill.currency as Currency);
+      const day = new Intl.DateTimeFormat('en-IN', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'UTC',
+      }).format(new Date(`${bill.nextDueOn}T00:00:00Z`));
+      await email.send(
+        { userId: user.id, email: user.email, emailVerifiedAt: user.emailVerifiedAt },
+        {
+          category: 'reminders',
+          subject: `${bill.name} (${amount}) is ${when}`,
+          text: [
+            `Hi ${user.displayName.trim().split(/\s+/)[0] || 'there'},`,
+            '',
+            when.endsWith('overdue')
+              ? `${bill.name}, ${amount}, was due on ${day} and is not marked paid yet.`
+              : `${bill.name}, ${amount}, is ${when}: on ${day}.`,
+            '',
+            'Paid it already? Tap Paid next to it on Finance, and it moves on to the next due date:',
+            new URL('/finance', getEnv().APP_URL).toString(),
+            '',
+            `${brand.name}`,
+          ].join('\n'),
+        },
+      );
+    }
+  } catch (error) {
+    // Deferred work has no caller to report to; say what failed, not to whom.
+    console.error('bill reminder email failed', error instanceof Error ? error.name : 'unknown');
+  }
+}
+
+/** Every account with an active bill due by this day: who the daily job reminds. */
+export async function usersWithBillsDueBy(day: string, limit = 1000): Promise<string[]> {
+  return repo.usersWithBillsDueBy(day, limit);
 }

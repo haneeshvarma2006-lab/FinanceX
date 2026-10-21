@@ -30,7 +30,7 @@ test('dashboard shows honest empty states, not invented data', async ({ page }) 
   await register(page, 'empty');
 
   // A brand-new account must not display a balance, a streak or a win rate.
-  await expect(page.getByText(/set up your system/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Set up your money in 3 steps' })).toBeVisible();
   await expect(page.getByText(/never invents a balance/i)).toBeVisible();
 
   await expect(page.getByText('No tasks yet')).toBeVisible();

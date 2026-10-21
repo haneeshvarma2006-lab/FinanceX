@@ -92,6 +92,10 @@ export const statementImportSchema = z.object({
           // A pattern, not BigInt(): refinements still run after a failed regex.
           .refine((v) => !/^-?0+$/.test(v), 'No amount'),
         description: z.string().trim().min(1).max(240),
+        /** The bank's own line, kept with the transaction when it was tidied. */
+        narration: z.string().trim().max(500).optional(),
+        /** A category name for money out, made if the person has none by that name. */
+        category: z.string().trim().min(1).max(60).optional(),
         /** Unticked rows still count towards the import ids of the rows after them. */
         selected: z.boolean().default(true),
       }),
