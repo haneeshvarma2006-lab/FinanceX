@@ -10,7 +10,7 @@ import { checkpointSchema, goalSchema } from '@/modules/productivity/validators'
 export type { FormState };
 
 function revalidateAll() {
-  revalidatePath('/goals');
+  revalidatePath('/tasks/goals');
   revalidatePath('/today');
   revalidatePath('/tasks');
 }

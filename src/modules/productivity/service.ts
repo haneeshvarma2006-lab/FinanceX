@@ -480,7 +480,7 @@ async function applyProgress(
       kind: 'goal_achieved',
       title: `Goal reached: ${goal.title}`,
       body: 'You hit your target. Worth a moment.',
-      href: '/goals',
+      href: '/tasks/goals',
       entityType: 'goal',
       entityId: goal.id,
       // One notification per goal, ever.

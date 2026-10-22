@@ -10,6 +10,7 @@ import * as financeRepo from '@/modules/finance/repository';
 import * as tradingRepo from '@/modules/trading/repository';
 import * as productivity from '@/modules/productivity/service';
 import { AddGoalForm, GoalCard, type GoalTasks } from './views';
+import { TasksTabs } from '../tabs';
 
 export const metadata: Metadata = { title: 'Goals' };
 
@@ -63,7 +64,7 @@ export default async function GoalsPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Start here"
+        eyebrow="Work"
         accent="goals"
         icon={<Target />}
         title="Goals"
@@ -87,6 +88,8 @@ export default async function GoalsPage({
           </Sheet>
         }
       />
+
+      <TasksTabs />
 
       <Card accent="goals">
         <CardHeader title="Active" description={`${active.length} in progress`} />

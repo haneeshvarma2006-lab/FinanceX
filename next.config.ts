@@ -10,7 +10,6 @@ const config: NextConfig = {
    * and is traced into the deployment as a real file.
    */
   serverExternalPackages: ['@node-rs/argon2'],
-  /** Habits became Lifestyle; old links and bookmarks keep working. */
   /**
    * The bill reader's engine (Tesseract, compiled to WebAssembly) runs in a
    * worker loaded from /ocr. That worker gets its own policy: it may load its
@@ -46,7 +45,14 @@ const config: NextConfig = {
     ];
   },
   async redirects() {
-    return [{ source: '/habits', destination: '/lifestyle', permanent: true }];
+    return [
+      // Lifestyle was removed; Goals became a tab of Tasks. Old links and
+      // bookmarks still land somewhere that exists.
+      { source: '/habits', destination: '/today', permanent: false },
+      { source: '/lifestyle/:path*', destination: '/today', permanent: false },
+      { source: '/lifestyle', destination: '/today', permanent: false },
+      { source: '/goals', destination: '/tasks/goals', permanent: true },
+    ];
   },
   experimental: {
     // Server Actions already enforce an Origin check; this narrows it explicitly.

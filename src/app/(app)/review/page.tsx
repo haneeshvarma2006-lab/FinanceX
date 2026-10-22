@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CalendarRange,
   CheckSquare,
-  Flame,
   LineChart,
   NotebookPen,
   ShieldCheck,
@@ -15,7 +14,7 @@ import {
 } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader, Stat, StatGrid, type Accent } from '@/components/ui/card';
-import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
+import { Badge, Money, PageHeader } from '@/components/ui/money';
 import { TaskCategoryTag } from '@/components/ui/task-category';
 import { todayFor } from '@/modules/dashboard/service';
 import { shiftWeek, weekContaining, type Finding } from '@/modules/review/analysis';
@@ -29,7 +28,6 @@ const AREA: Record<Finding['area'], { accent: Accent; icon: LucideIcon; label: s
   trading: { accent: 'trading', icon: LineChart, label: 'Trading' },
   money: { accent: 'finance', icon: Wallet, label: 'Money' },
   tasks: { accent: 'tasks', icon: CheckSquare, label: 'Tasks' },
-  lifestyle: { accent: 'habits', icon: Flame, label: 'Lifestyle' },
 };
 
 function rangeLabel(start: string, end: string, locale: string): string {
@@ -66,7 +64,7 @@ export default async function ReviewPage({
 
   const { facts, review, elapsed } = await reviewWeek(user, week, today);
   const locale = user.locale || 'en-IN';
-  const { tasks, habits, money, trading } = facts;
+  const { tasks, money, trading } = facts;
   const mistake = review.mistake;
   const MistakeIcon = mistake ? AREA[mistake.area].icon : ShieldCheck;
 
@@ -132,8 +130,7 @@ export default async function ReviewPage({
           <CardBody>
             <p className="max-w-prose text-sm text-pretty text-text-secondary">
               Checked for losing streaks, feelings that cost money, spending above income or well up
-              on last week, plans left undone, overdue work and dropped habits. None of them showed
-              up.
+              on last week, plans left undone and overdue work. None of them showed up.
             </p>
           </CardBody>
         )}
@@ -215,36 +212,6 @@ export default async function ReviewPage({
                   </span>
                 ))}
               </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* ----------------------------------------------------- lifestyle */}
-        <Card accent="habits">
-          <CardHeader title="Lifestyle" accent="habits" icon={<Flame className="size-4" />} />
-          <CardBody className="flex flex-col gap-3">
-            {habits.length === 0 ? (
-              <p className="text-sm text-text-secondary">No habits to count yet.</p>
-            ) : (
-              habits.map((h) => {
-                const percent =
-                  h.target > 0 ? Math.min(100, Math.round((h.done / h.target) * 100)) : 0;
-                return (
-                  <div key={h.name} className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="min-w-0 truncate text-text-primary">{h.name}</span>
-                      <span className="numeric shrink-0 text-xs text-text-muted">
-                        {h.done} of {h.target}
-                      </span>
-                    </div>
-                    <Progress
-                      value={percent}
-                      label={`${h.name}: ${h.done} of ${h.target}`}
-                      tone={h.target > 0 && h.done * 2 < h.target ? 'warning' : 'positive'}
-                    />
-                  </div>
-                );
-              })
             )}
           </CardBody>
         </Card>

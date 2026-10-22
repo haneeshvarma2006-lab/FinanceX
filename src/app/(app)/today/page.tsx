@@ -11,7 +11,6 @@ import {
   FileUp,
   PieChart,
   Repeat,
-  Flame,
   LineChart,
   Scale,
   Target,
@@ -88,7 +87,6 @@ export default async function TodayPage() {
 
   const nothingYet =
     !snapshot.tasks.hasData &&
-    !snapshot.habits.hasData &&
     !snapshot.goals.hasData &&
     !snapshot.finance.hasData &&
     !snapshot.trading.hasData;
@@ -108,7 +106,6 @@ export default async function TodayPage() {
       {!nothingYet && <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
 
       {(snapshot.tasks.overdue > 0 ||
-        snapshot.habits.atRisk.length > 0 ||
         snapshot.goals.offTrack.length > 0 ||
         snapshot.finance.overBudget.length > 0 ||
         snapshot.trading.consecutiveLosses >= 3 ||
@@ -131,21 +128,10 @@ export default async function TodayPage() {
                 />
               )}
 
-              {snapshot.habits.atRisk.map((habit) => (
-                <Attention
-                  key={habit.id}
-                  href="/lifestyle"
-                  accent="habits"
-                  icon={<Flame aria-hidden className="size-4" />}
-                  title={`${habit.name}: ${habit.streak.current}-day streak`}
-                  detail="Not logged yet today."
-                />
-              ))}
-
               {snapshot.goals.offTrack.map((goal) => (
                 <Attention
                   key={goal.id}
-                  href="/goals"
+                  href="/tasks/goals"
                   icon={<Target aria-hidden className="size-4" />}
                   accent="goals"
                   title={`${goal.title} is behind pace`}
@@ -216,7 +202,7 @@ export default async function TodayPage() {
                 ? `${snapshot.goals.active} active${snapshot.goals.offTrack.length ? ` · ${snapshot.goals.offTrack.length} behind pace` : ''}`
                 : 'What everything else here is for.'
             }
-            action={<CardAction href="/goals">All goals</CardAction>}
+            action={<CardAction href="/tasks/goals">All goals</CardAction>}
           />
           <CardBody className={snapshot.goals.hasData ? 'flex flex-col gap-4' : 'p-0'}>
             {!snapshot.goals.hasData ? (
@@ -224,7 +210,7 @@ export default async function TodayPage() {
                 icon={<Target aria-hidden className="size-5" />}
                 title="Start with a goal"
                 body="An emergency fund, a prop challenge, a business. Tasks, money and trades can all point at it."
-                href="/goals?new=goal"
+                href="/tasks/goals?new=goal"
                 accent="goals"
                 cta="Set your first goal"
               />
@@ -313,51 +299,6 @@ export default async function TodayPage() {
                     </li>
                   );
                 })}
-              </ul>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* --------------------------------------------------------- habits */}
-        <Card accent="habits">
-          <CardHeader
-            title="Lifestyle"
-            accent="habits"
-            icon={<Flame aria-hidden className="size-4" />}
-            description={
-              snapshot.habits.hasData
-                ? `${snapshot.habits.doneToday} of ${snapshot.habits.items.length} done today`
-                : undefined
-            }
-            action={<CardAction href="/lifestyle">Lifestyle</CardAction>}
-          />
-          <CardBody className="p-0">
-            {!snapshot.habits.hasData ? (
-              <Blank
-                icon={<Flame aria-hidden className="size-5" />}
-                title="No habits yet"
-                body="Pick one you could do on your worst day."
-                href="/lifestyle?new=habit"
-                accent="habits"
-                cta="Add your first habit"
-              />
-            ) : (
-              <ul className="divide-y divide-border-subtle">
-                {snapshot.habits.items.slice(0, 5).map((habit) => (
-                  <li key={habit.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                    <span className="min-w-0 truncate text-sm text-text-primary">{habit.name}</span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      {habit.streak.current > 0 && (
-                        <span className="numeric text-xs text-text-muted">
-                          {habit.streak.current}d
-                        </span>
-                      )}
-                      <Badge tone={habit.streak.completedToday ? 'positive' : 'neutral'}>
-                        {habit.streak.completedToday ? 'Done' : 'Not yet'}
-                      </Badge>
-                    </span>
-                  </li>
-                ))}
               </ul>
             )}
           </CardBody>
@@ -472,7 +413,7 @@ function Attention({
   title,
   detail,
 }: {
-  href: '/tasks' | '/lifestyle' | '/goals' | '/finance' | '/trading' | '/notes/decisions';
+  href: '/tasks' | '/tasks/goals' | '/finance' | '/trading' | '/notes/decisions';
   icon: React.ReactNode;
   /** The domain the item came from, so the row matches its section. */
   accent: Accent;
@@ -551,12 +492,7 @@ function Blank({
   icon: React.ReactNode;
   title: string;
   body: string;
-  href:
-    | '/tasks'
-    | '/lifestyle?new=habit'
-    | '/goals?new=goal'
-    | '/finance?new=account'
-    | '/trading?new=account';
+  href: '/tasks' | '/tasks/goals?new=goal' | '/finance?new=account' | '/trading?new=account';
   cta: string;
   accent: Accent;
 }) {
@@ -752,7 +688,7 @@ function SetupGuide({
           {fresh ? (
             <p>
               Or start somewhere else:{' '}
-              <Link href="/goals?new=goal" className="text-text-secondary underline">
+              <Link href="/tasks/goals?new=goal" className="text-text-secondary underline">
                 a goal
               </Link>
               ,{' '}
@@ -784,7 +720,7 @@ function SetupGuide({
 
 const QUICK_STARTS = [
   {
-    href: '/goals?new=goal',
+    href: '/tasks/goals?new=goal',
     accent: 'goals',
     icon: Target,
     title: 'Set a goal',

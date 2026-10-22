@@ -145,16 +145,24 @@ describe('analyseWeek', () => {
     expect(saver.wins).toEqual([{ area: 'money', text: 'You kept 40% of what you earned' }]);
   });
 
-  it('flags a plan mostly left undone and a habit mostly missed, in that order', () => {
+  it('flags a plan mostly left undone, and no longer reviews habits', () => {
     const facts: WeekFacts = {
       ...quiet,
       tasks: { ...quiet.tasks, planned: 6, plannedDone: 2 },
       habits: [{ name: 'Walk', done: 1, target: 7 }],
     };
     expect(analyseWeek(facts).mistake?.key).toBe('low-completion');
-    expect(analyseWeek({ ...facts, tasks: quiet.tasks }).mistake?.title).toBe(
-      'Walk: 1 of 7 this week',
-    );
+    // Lifestyle was removed: a habit left from before is neither a mistake nor a win.
+    const habitsOnly = analyseWeek({
+      ...facts,
+      tasks: quiet.tasks,
+      habits: [
+        { name: 'Walk', done: 1, target: 7 },
+        { name: 'Read', done: 7, target: 7 },
+      ],
+    });
+    expect(habitsOnly.mistake).toBeNull();
+    expect(habitsOnly.wins).toEqual([]);
   });
 
   it('flags spending up by half or more on the week before', () => {

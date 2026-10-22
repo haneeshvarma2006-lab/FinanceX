@@ -341,7 +341,7 @@ export function FeatureBento() {
                     tone: 'finance',
                     icon: Target,
                     title: 'Goal System',
-                    benefits: ['Savings, numeric and habit goals', 'Told when you fall off pace'],
+                    benefits: ['Savings, numeric and trading goals', 'Told when you fall off pace'],
                     visual: (
                       <SmallVisual>
                         <div className="mb-1.5 flex justify-between text-3xs text-brand-ink-subtle">

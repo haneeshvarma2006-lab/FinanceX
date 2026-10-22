@@ -10,6 +10,7 @@ import { TASK_SORT_COLUMNS } from '@/modules/productivity/repository';
 import { currentInstant } from '@/lib/clock';
 import { AddTaskForm, TaskFilters, TaskList } from './views';
 import { Pagination } from '@/components/ui/pagination';
+import { TasksTabs } from './tabs';
 
 export const metadata: Metadata = { title: 'Tasks' };
 
@@ -69,6 +70,8 @@ export default async function TasksPage({
         title="Tasks"
         description="What you've decided to do, and when."
       />
+
+      <TasksTabs />
 
       <Card accent="tasks">
         <CardHeader title="Add a task" />

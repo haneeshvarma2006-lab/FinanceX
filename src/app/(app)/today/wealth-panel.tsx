@@ -112,7 +112,7 @@ export function WealthPanel({ wealth, locale }: { wealth: Wealth; locale: string
             {goals ? (
               <span className={VALUE}>{goals.averagePercent}%</span>
             ) : (
-              <Link href="/goals" className={cn(EMPTY, 'underline-offset-4 hover:underline')}>
+              <Link href="/tasks/goals" className={cn(EMPTY, 'underline-offset-4 hover:underline')}>
                 Set a goal
               </Link>
             )}

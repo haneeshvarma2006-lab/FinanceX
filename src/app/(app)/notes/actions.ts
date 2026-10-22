@@ -11,10 +11,9 @@ export type { FormState };
 
 const GONE: FormState = { message: 'That note no longer exists.', tone: 'error' };
 
-/** Notes are written here and on Lifestyle, as the day's diary. */
+/** Notes, the day's diary among them. */
 function revalidateAll() {
   revalidatePath('/notes');
-  revalidatePath('/lifestyle');
 }
 
 function fields(formData: FormData) {

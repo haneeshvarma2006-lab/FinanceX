@@ -129,11 +129,11 @@ export type Suggestion =
   | { kind: 'rule'; template: RuleTemplateKey; label: string }
   /** An equivalent rule is already switched on. */
   | { kind: 'covered'; label: string }
-  | { kind: 'link'; href: '/trading' | '/finance' | '/tasks' | '/lifestyle'; label: string };
+  | { kind: 'link'; href: '/trading' | '/finance' | '/tasks'; label: string };
 
 export type Finding = {
   key: string;
-  area: 'trading' | 'money' | 'tasks' | 'lifestyle';
+  area: 'trading' | 'money' | 'tasks';
   title: string;
   detail: string;
   suggestion: Suggestion;
@@ -284,23 +284,6 @@ export function analyseWeek(facts: WeekFacts): Review {
     });
   }
 
-  // -------------------------------------------------------------- lifestyle
-  const missed = facts.habits
-    .filter((h) => h.target > 0 && h.done * 2 < h.target)
-    .sort((a, b) => a.done / a.target - b.done / b.target)[0];
-  if (missed) {
-    candidates.push({
-      severity: 50,
-      finding: {
-        key: 'habit-missed',
-        area: 'lifestyle',
-        title: `${missed.name}: ${missed.done} of ${missed.target} this week`,
-        detail: 'Shrink it until it fits your worst day, and get warned before a streak breaks.',
-        suggestion: ruleSuggestion(facts, 'protect-streaks', 'Add rule: protect my streaks'),
-      },
-    });
-  }
-
   candidates.sort((a, b) => b.severity - a.severity);
 
   // ------------------------------------------------------------------- wins
@@ -316,10 +299,6 @@ export function analyseWeek(facts: WeekFacts): Review {
     if (kept >= 20) wins.push({ area: 'money', text: `You kept ${kept}% of what you earned` });
   }
   if (k.completed >= 5) wins.push({ area: 'tasks', text: `${k.completed} tasks done` });
-  const best = facts.habits
-    .filter((h) => h.target > 0 && h.done >= h.target)
-    .sort((a, b) => b.done - a.done)[0];
-  if (best) wins.push({ area: 'lifestyle', text: `${best.name}: ${best.done} of ${best.target}` });
 
   return { mistake: candidates[0]?.finding ?? null, wins: wins.slice(0, 3) };
 }

@@ -162,7 +162,8 @@ export function AddGoalForm({
           value={kind}
           onChange={(event) => setKind(event.target.value)}
         >
-          {GOAL_KINDS.map((k) => (
+          {/* Habits left with Lifestyle; goals already following one still show. */}
+          {GOAL_KINDS.filter((k) => k !== 'habit').map((k) => (
             <option key={k} value={k}>
               {KIND_LABELS[k]}
             </option>

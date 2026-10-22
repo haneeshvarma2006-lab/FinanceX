@@ -156,7 +156,7 @@ const WASH = {
 /**
  * The top of every screen, and the clearest signal of where you are.
  *
- * Each area owns a colour — Tasks blue, Goals amber, Lifestyle teal, Finance
+ * Each area owns a colour — Tasks blue, Goals amber, Finance
  * green, Trading violet — and its header says so three ways at once: a soft
  * wash of that colour behind the title, a lit icon tile, and the eyebrow set
  * in it. The label always says the same thing, so colour is never the only

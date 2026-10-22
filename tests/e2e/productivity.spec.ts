@@ -34,13 +34,13 @@ test('dashboard shows honest empty states, not invented data', async ({ page }) 
   await expect(page.getByText(/never invents a balance/i)).toBeVisible();
 
   await expect(page.getByText('No tasks yet')).toBeVisible();
-  await expect(page.getByText('No habits yet')).toBeVisible();
   await expect(page.getByText('No accounts yet')).toBeVisible();
   await expect(page.getByText('No trading account yet')).toBeVisible();
 
   // Each blank offers the action that would fill it.
   await expect(page.getByRole('link', { name: /add your first task/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /add your first habit/i })).toBeVisible();
+  // Lifestyle is gone from the app.
+  await expect(page.getByText('No habits yet')).toHaveCount(0);
 
   const body = await page.textContent('body');
   expect(body).not.toMatch(/₹\s?[1-9]/); // no fabricated money anywhere
@@ -130,33 +130,9 @@ test('search and filtering narrow the list and reset paging', async ({ page }) =
   await expect(page.getByText('Nothing matches')).toBeVisible();
 });
 
-test('logs a habit, builds a streak, and the toggle is idempotent', async ({ page }) => {
-  await register(page, 'habit');
-  await page.goto('/lifestyle');
-
-  await page.getByLabel('Habit', { exact: true }).fill('Morning walk');
-  await page.getByRole('button', { name: /add habit/i }).click();
-  await expect(page.getByText('Habit added')).toBeVisible();
-
-  const logButton = page.getByRole('button', { name: /log morning walk for today/i });
-  await expect(logButton).toBeVisible();
-  await logButton.click();
-
-  const doneButton = page.getByRole('button', { name: /remove today's entry/i });
-  await expect(doneButton).toBeVisible();
-  await expect(page.getByText('1 day')).toBeVisible();
-
-  // Toggling off removes it; the state is a real toggle, not an append.
-  await doneButton.click();
-  await expect(page.getByRole('button', { name: /log morning walk for today/i })).toBeVisible();
-
-  await page.goto('/today');
-  await expect(page.getByText('Morning walk')).toBeVisible();
-});
-
 test('tracks a goal to completion with exact progress', async ({ page }) => {
   await register(page, 'goal');
-  await page.goto('/goals');
+  await page.goto('/tasks/goals');
 
   await page.getByRole('button', { name: 'New goal' }).click();
 
@@ -186,7 +162,7 @@ test('tracks a goal to completion with exact progress', async ({ page }) => {
 
 test('a money goal keeps exact precision', async ({ page }) => {
   await register(page, 'moneygoal');
-  await page.goto('/goals');
+  await page.goto('/tasks/goals');
 
   await page.getByRole('button', { name: 'New goal' }).click();
 
@@ -283,9 +259,7 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
 
   for (const [link, heading] of [
     ['Tasks', /tasks/i],
-    ['Lifestyle', /lifestyle/i],
     ['Notes', /notes/i],
-    ['Goals', /goals/i],
     ['Finance', /finance/i],
     ['Trading', /trading journal/i],
   ] as const) {
@@ -299,65 +273,28 @@ test('every nav destination is reachable and has a heading', async ({ page }) =>
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/settings/i);
 });
 
-test('the old habits address lands on Lifestyle', async ({ page }) => {
-  await register(page, 'lifestyle');
-  await page.goto('/habits');
-  await expect(page).toHaveURL(/\/lifestyle$/);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Lifestyle');
-});
+test('Goals is a tab of Tasks, and the old addresses still land somewhere', async ({ page }) => {
+  await register(page, 'moved');
+  const nav = page.getByRole('navigation', { name: 'Main' });
+  await expect(nav.getByRole('link', { name: 'Goals', exact: true })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'Lifestyle', exact: true })).toHaveCount(0);
 
-test('adding several in a row creates all of them', async ({ page }) => {
-  /**
-   * No settling wait between entries. React 19 auto-resets an uncontrolled
-   * form once its action resolves, which used to wipe whatever had been typed
-   * in the gap — the third entry submitted empty and showed a validation error
-   * the user never caused. The primary field is now controlled, so React never
-   * auto-resets it, and the deliberate clear only fires when the field still
-   * holds exactly what was submitted.
-   */
-  await register(page, 'rapid');
-  await page.goto('/lifestyle');
+  await page.goto('/tasks');
+  const tabs = page.getByRole('navigation', { name: 'Tasks sections' });
+  await tabs.getByRole('link', { name: 'Goals' }).click();
+  await expect(page).toHaveURL(/\/tasks\/goals$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Goals');
+  await tabs.getByRole('link', { name: 'Tasks' }).click();
+  await expect(page).toHaveURL(/\/tasks$/);
 
-  const field = page.getByLabel('Habit', { exact: true });
+  await page.goto('/goals?new=goal');
+  await expect(page).toHaveURL(/\/tasks\/goals\?new=goal$/);
+  await expect(page.getByRole('dialog', { name: 'New goal' })).toBeVisible();
 
-  for (const name of ['Morning walk', 'Read before bed', 'No phone after 10pm']) {
-    await field.fill(name);
-    await page.getByRole('button', { name: /add habit/i }).click();
-    // Wait on a per-iteration signal. The "Habit added" alert persists from the
-    // first submit, so asserting it would let the loop run ahead of the work.
-    await expect(
-      page.getByRole('button', { name: new RegExp(`log ${name} for today`, 'i') }),
-    ).toBeVisible();
+  for (const old of ['/lifestyle', '/habits']) {
+    await page.goto(old);
+    await expect(page).toHaveURL(/\/today$/);
   }
-
-  // All three created, none errored.
-  await expect(page.getByText('Name the habit')).toHaveCount(0);
-  for (const name of ['Morning walk', 'Read before bed', 'No phone after 10pm']) {
-    await expect(page.getByText(name)).toBeVisible();
-  }
-  await expect(field).toHaveValue('');
-});
-
-test('text typed during a submit is not discarded', async ({ page }) => {
-  /**
-   * The precise case the controlled field exists for: start typing the next
-   * entry while the previous submit is still in flight. The old behaviour
-   * wiped it; the new clear is conditional on the field being unchanged.
-   */
-  await register(page, 'typing');
-  await page.goto('/lifestyle');
-
-  const field = page.getByLabel('Habit', { exact: true });
-
-  await field.fill('First habit');
-  // Do not await the click's settlement — type immediately afterwards.
-  await page.getByRole('button', { name: /add habit/i }).click({ noWaitAfter: true });
-  await field.fill('Second habit');
-
-  await expect(page.getByText('Habit added')).toBeVisible();
-
-  // What was typed during the round trip survived.
-  await expect(field).toHaveValue('Second habit');
 });
 
 test('notes work like a diary: write, edit, pin, search and delete', async ({ page }) => {
@@ -468,22 +405,6 @@ test('the decision journal logs, reviews and reopens a decision', async ({ page 
 
   await page.getByRole('button', { name: 'Reopen Stop trading the first 15 minutes' }).click();
   await expect(page.getByRole('region', { name: 'Ready to review' })).toBeVisible();
-});
-
-test('Lifestyle keeps a diary for the day without touching habits', async ({ page }) => {
-  await register(page, 'diary');
-  await page.goto('/lifestyle');
-  await expect(page.getByRole('button', { name: 'Add habit' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Write about today' }).click();
-  await page.getByLabel('Entry').fill('Slept 8 hours. Walked 6 km.');
-  await page.getByRole('button', { name: 'Save entry' }).click();
-  await expect(page.locator('article').getByText('Slept 8 hours. Walked 6 km.')).toBeVisible();
-
-  await page.getByRole('link', { name: 'All notes' }).click();
-  await expect(
-    page.getByRole('region', { name: 'Today' }).getByText('Slept 8 hours.'),
-  ).toBeVisible();
 });
 
 test('the weekly review names one thing to fix and adopts its rule in one tap', async ({

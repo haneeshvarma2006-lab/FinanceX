@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import {
   CheckSquare,
-  Flame,
   LayoutGrid,
   LineChart,
   LogOut,
   NotebookPen,
-  Target,
   Wallet,
   Workflow,
 } from 'lucide-react';
@@ -33,7 +31,6 @@ const NAV: readonly NavItem[] = [
     icon: <LayoutGrid className={ICON} />,
     primary: true,
   },
-  { href: '/goals', label: 'Goals', accent: 'goals', icon: <Target className={ICON} /> },
   {
     href: '/tasks',
     label: 'Tasks',
@@ -41,7 +38,6 @@ const NAV: readonly NavItem[] = [
     icon: <CheckSquare className={ICON} />,
     primary: true,
   },
-  { href: '/lifestyle', label: 'Lifestyle', accent: 'habits', icon: <Flame className={ICON} /> },
   { href: '/notes', label: 'Notes', accent: 'accent', icon: <NotebookPen className={ICON} /> },
   {
     href: '/finance',
