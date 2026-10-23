@@ -126,3 +126,68 @@ test('a scanned or unrelated PDF is turned away with a reason', async ({ page })
   });
   await expect(page.getByText('That PDF could not be opened.', { exact: false })).toBeVisible();
 });
+
+test('a place is sorted once for the whole statement, remembered next time, and leftovers sorted from insights', async ({
+  page,
+}) => {
+  await register(page, 'places');
+  await page.goto('/finance?new=account');
+  await page.getByLabel('Name').fill('Savings');
+  await page.getByRole('button', { name: /add account/i }).click();
+  await expect(page.getByText('Account added')).toBeVisible();
+
+  const csv = (lines: string[]) => ({
+    name: 'statement.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(['Date,Narration,Withdrawal Amt.,Deposit Amt.', ...lines].join('\n')),
+  });
+
+  // September: three payments to one person, the bank shortening the name once.
+  await page.goto('/finance/import');
+  await page
+    .getByLabel('Statement file (PDF or CSV)')
+    .setInputFiles(
+      csv([
+        '01/09/26,UPI/RAMESH BABU/41230001/UPI,"8,000.00",',
+        '05/09/26,UPI/RAMESH BAB/41230002/UPI,"8,000.00",',
+        '09/09/26,UPI/RAMESH BABU/41230003/UPI,500.00,',
+        '10/09/26,UPI/ASHA KUMARI/41230004/UPI,"1,000.00",',
+      ]),
+    );
+  await page.getByRole('button', { name: 'Preview 4 transactions' }).click();
+
+  const places = page.getByRole('region', { name: 'Sort by place' });
+  await expect(places).toContainText('0 of 4 payments have a category');
+  await places.getByLabel('Category for every payment to Ramesh Babu').selectOption('Rent');
+  // One choice, all three payments.
+  const rows = page.getByLabel(/^Category for Ramesh Bab/);
+  await expect(rows).toHaveCount(3);
+  for (let i = 0; i < 3; i += 1) await expect(rows.nth(i)).toHaveValue('Rent');
+  await expect(places).toContainText('3 of 4 payments have a category');
+
+  await page.getByRole('button', { name: 'Import 4 transactions' }).click();
+  await expect(page.getByText('Imported 4 transactions into Savings')).toBeVisible();
+
+  // October: the same person again, already filed from last time.
+  await page.getByRole('button', { name: 'Import another' }).click();
+  await page
+    .getByLabel('Statement file (PDF or CSV)')
+    .setInputFiles(csv(['10/10/26,UPI/RAMESH BABU/41230009/UPI,"8,000.00",']));
+  await page.getByRole('button', { name: 'Preview 1 transaction' }).click();
+  await expect(page.getByLabel('Category for Ramesh Babu')).toHaveValue('Rent');
+  await expect(page.getByRole('region', { name: 'Sort by place' })).toContainText('remembered');
+  await page.getByRole('button', { name: 'Import 1 transaction' }).click();
+  await expect(page.getByText('Imported 1 transaction into Savings')).toBeVisible();
+
+  // What was left unsorted in September is sorted from its insights.
+  await page.goto('/finance/insights?month=2026-09');
+  const sort = page.getByRole('region', { name: 'Sort your payments' });
+  await expect(sort).toContainText('Asha Kumari');
+  await sort.getByLabel('Category for Asha Kumari').selectOption('Shopping');
+  await sort.getByRole('button', { name: 'File Asha Kumari under Shopping' }).click();
+  await expect(page.getByText('1 payment filed under Shopping')).toBeVisible();
+  await expect(sort).toContainText('Every payment this month has a category.');
+  const categories = page.getByRole('region', { name: 'By category' });
+  await expect(categories.getByText('Shopping', { exact: true })).toBeVisible();
+  await expect(categories.getByText('Not sorted', { exact: true })).toHaveCount(0);
+});

@@ -291,3 +291,100 @@ describe('the daily reminders job', () => {
     expect(sent[0]).toMatch(/^Rent \(₹25,000\.00\) is due /);
   });
 });
+
+describe('remembering and sorting by place', () => {
+  beforeEach(reset);
+
+  const rows = (accountId: string, entries: [string, string, string, string?][]) =>
+    statementImportSchema.parse({
+      accountId,
+      rows: entries.map(([occurredOn, amountMinor, description, category]) => ({
+        occurredOn,
+        amountMinor,
+        description,
+        ...(category ? { category } : {}),
+      })),
+    });
+
+  it('remembers how each place was filed, across shortened spellings', async () => {
+    const user = await makeUser('remember@example.com');
+    const savings = await account(user.id);
+    await finance.importStatement(
+      user.id,
+      rows(savings.id, [
+        ['2026-09-01', '-12000', 'Sunrise Beverage', 'Food'],
+        ['2026-09-02', '-8000', 'Sunrise Beverag', 'Food'],
+        ['2026-09-03', '-5000', 'Sunrise Beverage', 'Groceries'],
+        ['2026-09-04', '-30000', 'City Medicals', 'Health'],
+        ['2026-09-05', '-9000', 'Asha K'],
+      ]),
+    );
+    const known = await finance.knownCategories(user.id);
+    // Two of three were Food, so Food is what is remembered.
+    expect(known.sunrisebever).toBe('Food');
+    expect(known.citymedicals).toBe('Health');
+    // Nothing is remembered for what was never filed.
+    expect(known.ashak).toBeUndefined();
+
+    // Another account's choices are not this one's.
+    const other = await makeUser('stranger@example.com');
+    expect(await finance.knownCategories(other.id)).toEqual({});
+  });
+
+  it('files every unsorted payment to a place at once, in every month, and only those', async () => {
+    const user = await makeUser('sorter@example.com');
+    const savings = await account(user.id);
+    await finance.importStatement(
+      user.id,
+      rows(savings.id, [
+        ['2026-08-10', '-4000', 'Ravi Mart'],
+        ['2026-09-11', '-6000', 'Ravi Mart'],
+        ['2026-09-12', '-2000', 'Ravi Mart', 'Snacks'],
+        ['2026-09-13', '-7000', 'Asha K'],
+        ['2026-09-14', '-1500', 'Lakshmi Medicals Pvt'],
+        ['2026-09-15', '-2500', 'Lakshmi Medic'],
+      ]),
+    );
+
+    // A name the bank shortened is the same place.
+    expect(await finance.categorisePayee(user.id, 'lakshmimedic', 'Health')).toMatchObject({
+      ok: true,
+      value: { changed: 2 },
+    });
+
+    const sorted = await finance.categorisePayee(user.id, 'ravimart', 'Groceries');
+    expect(sorted).toMatchObject({ ok: true, value: { changed: 2, category: 'Groceries' } });
+
+    const names = new Map((await financeRepo.listCategories(user.id)).map((c) => [c.id, c.name]));
+    const byDescription = (await financeRepo.listTransactions(user.id)).map((t) => [
+      t.description,
+      t.occurredOn,
+      t.categoryId ? names.get(t.categoryId) : null,
+    ]);
+    expect(byDescription).toEqual(
+      expect.arrayContaining([
+        ['Ravi Mart', '2026-08-10', 'Groceries'],
+        ['Ravi Mart', '2026-09-11', 'Groceries'],
+        // One already filed is left where it was.
+        ['Ravi Mart', '2026-09-12', 'Snacks'],
+        ['Asha K', '2026-09-13', null],
+        ['Lakshmi Medic', '2026-09-15', 'Health'],
+      ]),
+    );
+
+    // Nothing left to sort for that place; and nobody else can sort yours.
+    expect((await finance.categorisePayee(user.id, 'ravimart', 'Food')).ok).toBe(false);
+    const other = await makeUser('meddler@example.com');
+    expect((await finance.categorisePayee(other.id, 'ashak', 'Gifts')).ok).toBe(false);
+    expect(await financeRepo.listCategories(other.id)).toHaveLength(0);
+
+    // The month's list of unsorted places shrinks accordingly.
+    const left = await financeRepo.uncategorisedPayeesIn(
+      user.id,
+      '2026-09-01',
+      '2026-09-30',
+      'INR',
+    );
+    expect(left).toEqual([{ name: 'Asha K', spentMinor: 7000n, count: 1 }]);
+  });
+});

@@ -22,7 +22,13 @@ import {
   type DateFormat,
   type ImportRowStatus,
 } from '@/modules/finance/statement';
-import { AUTO_CATEGORIES, cleanNarration, suggestCategory } from '@/modules/finance/categorize';
+import {
+  AUTO_CATEGORIES,
+  canonicalKeys,
+  cleanNarration,
+  merchantKey,
+  suggestCategory,
+} from '@/modules/finance/categorize';
 import { SUGGESTED_CATEGORIES } from '@/modules/finance/recurring';
 import { importStatementAction, previewImportAction } from './actions';
 import { MAX_PDF_BYTES, type PdfRead } from './read-pdf';
@@ -85,8 +91,16 @@ export function ImportWizard({
   const [locked, setLocked] = useState<File | null>(null);
   const [password, setPassword] = useState('');
   const [reading, setReading] = useState(false);
-  /** Categories the person changed on the preview, by row line. */
-  const [chosen, setChosen] = useState<Map<number, string | null>>(new Map());
+  /**
+   * Categories the person picked on the preview, by place (merchant key):
+   * one choice files every payment to that place.
+   */
+  const [chosen, setChosen] = useState<Map<string, string | null>>(new Map());
+  /** How each place was filed in earlier imports and entries, by merchant key. */
+  const [known, setKnown] = useState<Record<string, string>>({});
+  const [allPlaces, setAllPlaces] = useState(false);
+  /** The place list's order, fixed when the preview opens so rows never jump as you sort. */
+  const [order, setOrder] = useState<string[] | null>(null);
   const [pending, startTransition] = useTransition();
 
   const account = accounts.find((a) => a.id === accountId);
@@ -96,24 +110,57 @@ export function ImportWizard({
     () => (sheet && mapping ? readRows(sheet.body, mapping, currency) : []),
     [sheet, mapping, currency],
   );
-  const valid = rows
-    .filter((r) => r.error === null)
-    .map((r) => {
-      const name = cleanNarration(r.description) || r.description;
-      const guess = suggestCategory(r.description, r.amountMinor!);
-      return {
-        ...r,
-        name,
-        category: r.amountMinor! < 0n ? (chosen.has(r.line) ? chosen.get(r.line)! : guess) : null,
-      };
-    });
+  const okRows = rows.filter((r) => r.error === null);
+  const names = okRows.map((r) => cleanNarration(r.description) || r.description);
+  // One key per place, across the bank's shortened spellings and the ones
+  // remembered from before.
+  const canonical = canonicalKeys([...names.map(merchantKey), ...Object.keys(known)]);
+  const remembered = new Map<string, string>();
+  for (const [key, category] of Object.entries(known)) {
+    const root = canonical.get(key);
+    if (root && !remembered.has(root)) remembered.set(root, category);
+  }
+  const valid = okRows.map((r, i) => {
+    const name = names[i]!;
+    const key = canonical.get(merchantKey(name)) ?? merchantKey(name);
+    const out = r.amountMinor! < 0n;
+    // Yours first, then what you chose last time, then the guess.
+    const source: 'yours' | 'remembered' | 'guess' | null = !out
+      ? null
+      : chosen.has(key)
+        ? 'yours'
+        : remembered.has(key)
+          ? 'remembered'
+          : 'guess';
+    const category =
+      source === 'yours'
+        ? chosen.get(key)!
+        : source === 'remembered'
+          ? remembered.get(key)!
+          : source === 'guess'
+            ? suggestCategory(r.description, r.amountMinor!)
+            : null;
+    return { ...r, name, key, category, source };
+  });
   const invalid = rows.filter((r) => r.error !== null);
   const categoryOptions = [
-    ...new Set([...categories, ...SUGGESTED_CATEGORIES, ...AUTO_CATEGORIES]),
+    ...new Set([
+      ...categories,
+      ...Object.values(known),
+      ...SUGGESTED_CATEGORIES,
+      ...AUTO_CATEGORIES,
+    ]),
   ].sort((a, b) => a.localeCompare(b));
+
+  function choose(key: string, category: string | null) {
+    const next = new Map(chosen);
+    next.set(key, category);
+    setChosen(next);
+  }
 
   /** Anything that changes what the rows are invalidates the duplicate check. */
   function resetCheck() {
+    setOrder(null);
     setStatuses(null);
     setSelected(new Set());
     setMessage(null);
@@ -182,6 +229,8 @@ export function ImportWizard({
     setLocked(null);
     setPassword('');
     setChosen(new Map());
+    setKnown({});
+    setAllPlaces(false);
     if (!file) return;
 
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
@@ -232,6 +281,7 @@ export function ImportWizard({
         setMessage({ tone: 'error', text: result.message });
         return;
       }
+      setKnown(result.known);
       setStatuses(result.statuses);
       setSelected(new Set(result.statuses.flatMap((status, i) => (status === 'new' ? [i] : []))));
     });
@@ -273,6 +323,47 @@ export function ImportWizard({
       }, new Map<string, bigint>()),
   ].sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
   const plain = (minor: bigint) => formatMoney(minor, currency, { locale });
+
+  // Every place money went to, largest first, unsorted ones before the rest:
+  // the quickest way through a long statement is one choice per place.
+  const places = [
+    ...valid
+      .filter((r, i) => r.amountMinor! < 0n && statuses?.[i] !== 'already-imported')
+      .reduce((map, r) => {
+        const place = map.get(r.key) ?? {
+          key: r.key,
+          name: r.name,
+          count: 0,
+          spentMinor: 0n,
+          category: r.category,
+          source: r.source,
+        };
+        place.count += 1;
+        place.spentMinor -= r.amountMinor!;
+        // The fullest spelling the bank used this time.
+        if (r.name.length > place.name.length) place.name = r.name;
+        return map.set(r.key, place);
+      }, new Map<string, { key: string; name: string; count: number; spentMinor: bigint; category: string | null; source: (typeof valid)[number]['source'] }>())
+      .values(),
+  ].sort(
+    (a, b) =>
+      Number(a.category !== null) - Number(b.category !== null) ||
+      b.count - a.count ||
+      (b.spentMinor > a.spentMinor ? 1 : -1),
+  );
+  // Taken once, during render, the first time the preview has places.
+  if (statuses && order === null && places.length > 0) setOrder(places.map((p) => p.key));
+  const byKey = new Map(places.map((p) => [p.key, p]));
+  const listed = order
+    ? [
+        ...order.flatMap((key) => (byKey.has(key) ? [byKey.get(key)!] : [])),
+        ...places.filter((p) => !order.includes(p.key)),
+      ]
+    : places;
+  const placeCount = new Map(places.map((p) => [p.key, p.count]));
+  const unsortedPlaces = places.filter((p) => p.category === null).length;
+  const spending = valid.filter((r) => r.amountMinor! < 0n);
+  const sortedPayments = spending.filter((r) => r.category !== null).length;
 
   if (done) {
     return (
@@ -569,6 +660,70 @@ export function ImportWizard({
             </div>
           )}
 
+          {places.length > 0 && (
+            <section
+              aria-labelledby="import-places"
+              className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-surface-overlay p-4"
+            >
+              <div>
+                <h3 id="import-places" className="text-sm font-semibold text-text-primary">
+                  Sort by place
+                </h3>
+                <p className="mt-0.5 text-xs text-pretty text-text-secondary">
+                  {sortedPayments} of {spending.length} payments have a category
+                  {unsortedPlaces > 0
+                    ? ` · ${unsortedPlaces} place${unsortedPlaces === 1 ? '' : 's'} to sort`
+                    : ''}
+                  . One choice files every payment to that place, and is remembered for your next
+                  statement.
+                </p>
+              </div>
+              <ul className="flex flex-col divide-y divide-border-subtle/70">
+                {(allPlaces ? listed : listed.slice(0, 8)).map((place) => (
+                  <li key={place.key} className="flex items-center gap-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-text-primary">{place.name}</p>
+                      <p className="numeric text-xs text-text-muted">
+                        {place.count} payment{place.count === 1 ? '' : 's'} ·{' '}
+                        {plain(place.spentMinor)}
+                        {place.source === 'remembered' && ' · remembered'}
+                      </p>
+                    </div>
+                    <select
+                      aria-label={`Category for every payment to ${place.name}`}
+                      value={place.category ?? ''}
+                      onChange={(e) => choose(place.key, e.target.value || null)}
+                      className={cn(
+                        'h-8 max-w-40 shrink-0 rounded-full border px-3 text-xs',
+                        place.category === null
+                          ? 'border-warning/50 bg-warning-soft/30 text-text-primary'
+                          : 'border-border-subtle bg-surface-raised text-text-secondary',
+                      )}
+                    >
+                      <option value="">Not sorted</option>
+                      {categoryOptions.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+              {places.length > 8 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="self-start"
+                  onClick={() => setAllPlaces((v) => !v)}
+                >
+                  {allPlaces ? 'Show fewer' : `Show all ${places.length} places`}
+                </Button>
+              )}
+            </section>
+          )}
+
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 id="import-preview" className="text-sm font-semibold text-text-primary">
               {selected.size} of {valid.length} ticked ·{' '}
@@ -615,11 +770,7 @@ export function ImportWizard({
                         <select
                           aria-label={`Category for ${row.name}`}
                           value={row.category ?? ''}
-                          onChange={(e) => {
-                            const next = new Map(chosen);
-                            next.set(row.line, e.target.value || null);
-                            setChosen(next);
-                          }}
+                          onChange={(e) => choose(row.key, e.target.value || null)}
                           className="h-6 max-w-36 rounded-full border border-border-subtle bg-surface-overlay px-2 text-xs text-text-secondary"
                         >
                           <option value="">Not sorted</option>
@@ -629,6 +780,9 @@ export function ImportWizard({
                             </option>
                           ))}
                         </select>
+                      )}
+                      {row.amountMinor! < 0n && !imported && (placeCount.get(row.key) ?? 0) > 1 && (
+                        <span>with {(placeCount.get(row.key) ?? 0) - 1} more</span>
                       )}
                     </p>
                   </div>

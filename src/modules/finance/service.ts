@@ -10,6 +10,7 @@ import { notify } from '@/modules/productivity/notifications';
 import { daysUntil, dueLabel, monthStart, nextDue, type Cadence } from './recurring';
 import type { Budget, Category, Subscription, Transaction } from './schema';
 import * as repo from './repository';
+import { merchantKey, samePlace } from './categorize';
 import { importKeys, type ImportRowStatus } from './statement';
 import type {
   StatementImportInput,
@@ -382,6 +383,57 @@ export async function importStatement(
   );
 
   return ok({ inserted, skipped: chosen.length - inserted });
+}
+
+/* ------------------------------------------------------------- sorting --- */
+
+/**
+ * The category each place was filed under before, by merchant key: what an
+ * import offers first, so a choice made once carries into every statement
+ * after it. Where one place went to two categories, the more frequent wins.
+ */
+export async function knownCategories(userId: string): Promise<Record<string, string>> {
+  const [history, categories] = await Promise.all([
+    repo.categorisedPayees(userId),
+    repo.listCategories(userId),
+  ]);
+  const name = new Map(categories.filter((c) => !c.archivedAt).map((c) => [c.id, c.name]));
+  const best = new Map<string, { category: string; count: number }>();
+  for (const row of history) {
+    const category = name.get(row.categoryId);
+    const key = merchantKey(row.description);
+    if (!category || !key) continue;
+    // Counts per key and category, across spellings of the same place.
+    const id = `${key}|${category}`;
+    const total = (best.get(id)?.count ?? 0) + row.count;
+    best.set(id, { category, count: total });
+  }
+  const out: Record<string, { category: string; count: number }> = {};
+  for (const [id, value] of best) {
+    const key = id.slice(0, id.indexOf('|'));
+    if (!out[key] || value.count > out[key]!.count) out[key] = value;
+  }
+  return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.category]));
+}
+
+/**
+ * File every uncategorised payment to one place under a category — all of
+ * them, in every month, matched by merchant key so the bank's shortened
+ * spellings count as the same place. Payments already in a category are
+ * left as they are.
+ */
+export async function categorisePayee(
+  userId: string,
+  key: string,
+  categoryName: string,
+): Promise<Result<{ changed: number; category: string }>> {
+  const ids = (await repo.uncategorisedExpenses(userId))
+    .filter((t) => samePlace(merchantKey(t.description), key))
+    .map((t) => t.id);
+  if (ids.length === 0) return notFound();
+  const category = await ensureExpenseCategory(userId, categoryName);
+  const changed = await repo.categoriseTransactions(userId, ids, category.id);
+  return ok({ changed, category: category.name });
 }
 
 /* ------------------------------------------------------------- budgets --- */

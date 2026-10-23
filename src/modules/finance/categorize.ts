@@ -77,6 +77,51 @@ export function cleanNarration(raw: string): string {
   return titleCase(text).slice(0, 240);
 }
 
+/**
+ * One place, however the bank spelled it this time. Statements cut names
+ * short, and not always at the same width ("Sunrise Beverag", "Sunrise
+ * Beverage"), so the key is the name's first twelve letters and digits, and
+ * two keys are the same place when one begins the other (see `samePlace`).
+ * Choices the person makes for one payment are remembered, and applied, by
+ * this key.
+ */
+export function merchantKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 12);
+}
+
+/** A shorter key only stands for a longer one when it is long enough to be a name. */
+const MIN_PREFIX = 8;
+
+/** Whether two merchant keys are one place: equal, or one a long-enough start of the other. */
+export function samePlace(a: string, b: string): boolean {
+  if (a === b) return a !== '';
+  if (Math.min(a.length, b.length) < MIN_PREFIX) return false;
+  return a.startsWith(b) || b.startsWith(a);
+}
+
+/**
+ * Each key mapped to the one that stands for its place: the longest key
+ * it begins. "ravimartsto" and "ravimartstor" both map to "ravimartstor".
+ */
+export function canonicalKeys(keys: Iterable<string>): Map<string, string> {
+  const unique = [...new Set(keys)].filter(Boolean).sort((a, b) => b.length - a.length);
+  const roots: string[] = [];
+  const out = new Map<string, string>();
+  for (const key of unique) {
+    const root = roots.find((r) => samePlace(r, key));
+    if (root) {
+      out.set(key, root);
+    } else {
+      roots.push(key);
+      out.set(key, key);
+    }
+  }
+  return out;
+}
+
 /* ---------------------------------------------------------- category --- */
 
 /**
@@ -92,23 +137,23 @@ const RULES: readonly (readonly [string, RegExp])[] = [
   ],
   [
     'Groceries',
-    /\b(bigbasket|bbnow|blinkit|grofers|zepto|instamart|dmart|avenue supermarts|jiomart|reliance fresh|reliance smart|smart bazaar|more retail|more supermarket|spencer|natures basket|ratnadeep|milkbasket|country delight|supermarket|hypermarket|grocer|kirana|provision)/,
+    /\b(bigbasket|bbnow|blinkit|grofers|zepto|instamart|dmart|avenue supermarts|jiomart|reliance fresh|reliance smart|smart bazaar|more retail|more supermarket|spencer|natures basket|ratnadeep|milkbasket|country delight|supermarket|hypermarket|grocer|kirana|provision|supermar|general store|departmental store|vegetable|fruits|dairy|super bazaar)|(?<!s)ma+rt\b/,
   ],
   [
     'Fuel',
     /\b(petrol|diesel|fuel|hpcl|hindustan petroleum|bpcl|bharat petroleum|iocl|indian oil|indianoil|shell|nayara|jio bp|jiobp|filling station|fuel station|cng)/,
   ],
   [
+    'Travel',
+    /\b(makemytrip|goibibo|cleartrip|yatra|ixigo|easemytrip|indigo|interglobe|air india|airindia|akasa|spicejet|vistara|irctc|redbus|abhibus|oyo|airbnb|booking com|agoda|treebo|fabhotels|zostel)/,
+  ],
+  [
     'Food',
-    /\b(swiggy|zomato|eatsure|dominos|domino s|pizza|mcdonald|kfc|burger|starbucks|cafe|coffee|ccd|chaayos|haldiram|restaurant|dhaba|biryani|bakery|sweets|faasos|behrouz|box8|subway|dunkin|barbeque|bbq|food|kitchen|juice)/,
+    /\b(swiggy|zomato|eatsure|dominos|domino s|pizza|mcdonald|kfc|burger|starbucks|cafe|coffee|ccd|chaayos|haldiram|restaurant|dhaba|biryani|bakery|sweets|faasos|behrouz|box8|subway|dunkin|barbeque|bbq|food|kitchen|juice|rest(au|ur|ra)|hotel|bites|beverag|tiffin|canteen|bakers|tea stall|ice cream|icecream|dosa|idli|caterer|eatery|chicken|mutton)|\b(dine|eats|mess|meals|grill|cafeteria|chai|mandi)\b/,
   ],
   [
     'Transport',
-    /\b(uber|ola|olacabs|rapido|namma yatri|nammayatri|blusmart|metro|fastag|toll|parking|bmtc|best bus|ksrtc|auto rickshaw)\b/,
-  ],
-  [
-    'Travel',
-    /\b(makemytrip|goibibo|cleartrip|yatra|ixigo|easemytrip|indigo|interglobe|air india|airindia|akasa|spicejet|vistara|irctc|redbus|abhibus|oyo|airbnb|booking com|agoda|treebo|fabhotels|zostel)/,
+    /\b(uber|ola|olacabs|rapido|namma yatri|nammayatri|blusmart|metro|fastag|toll|parking|bmtc|best bus|ksrtc|auto rickshaw|apsrtc|tsrtc|msrtc|gsrtc|upsrtc|rsrtc|hrtc|kstdc|srtc|transports?|travels|bus|cabs?|taxi)\b|\btranspor/,
   ],
   [
     'Books',
@@ -124,20 +169,20 @@ const RULES: readonly (readonly [string, RegExp])[] = [
   ],
   [
     'Bank charges',
-    /\b(charges|chrg|chgs|sms alert|annual fee|amc|gst on|penalty|min bal|non maintenance)\b/,
+    /\b(charges|chrg|chgs|chg|charge for|gst charge|program fee|processing fee|late fee|membership fee|card fee|sms alert|annual fee|amc|gst on|penalty|min bal|non maintenance)\b/,
   ],
   ['Rent', /\b(rent|nobroker|nestaway|housing com|maintenance|society)\b/],
   [
     'Health',
-    /\b(apollo|pharma|pharmacy|medical|medicals|chemist|1mg|pharmeasy|netmeds|medplus|practo|hospital|clinic|diagnostic|thyrocare|lal path|dental|cult fit|cultfit|gym|fitness)/,
+    /\b(apollo|pharma|pharmacy|medic|chemist|1mg|pharmeasy|netmeds|medplus|practo|hospita|clinic|diagnostic|thyrocare|lal path|dental|cult fit|cultfit|gym|fitness|medicine|drug|nursing home|optical|ayurved|homeo)|\b(med|meds)\b/,
   ],
   [
     'Entertainment',
-    /\b(bookmyshow|pvr|inox|cinepolis|cinema|paytm insider|steam|playstation|xbox|gaming|concert)/,
+    /\b(bookmyshow|pvr|inox|cinepolis|cinema|cineplex|multiplex|theatre|theater|paytm insider|steam|playstation|xbox|gaming|e sports|esports|bowling|amusement|wonderla|concert)/,
   ],
   [
     'Education',
-    /\b(udemy|coursera|unacademy|byju|vedantu|upgrad|simplilearn|school|college|university|tuition|exam fee|academy)/,
+    /\b(udemy|coursera|unacademy|byju|vedantu|upgrad|simplilearn|school|college|university|tuition|exam fee|academy|instit|coaching|polytechnic)|\bclasses\b/,
   ],
   [
     'Insurance',

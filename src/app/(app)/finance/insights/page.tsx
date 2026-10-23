@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, FileUp, PieChart, Sparkles, Store, Trophy } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileUp,
+  PieChart,
+  Sparkles,
+  Store,
+  Tags,
+  Trophy,
+} from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/money';
@@ -20,6 +29,9 @@ import {
   type CategorySpend,
 } from '@/modules/finance/insights';
 import { todayFor } from '@/modules/dashboard/service';
+import { AUTO_CATEGORIES, canonicalKeys, merchantKey } from '@/modules/finance/categorize';
+import { SUGGESTED_CATEGORIES } from '@/modules/finance/recurring';
+import { SortPayees, type UnsortedPayee } from './sort-payees';
 
 export const metadata: Metadata = { title: 'Spending insights' };
 
@@ -39,7 +51,7 @@ export default async function InsightsPage({
   const currency = user.baseCurrency as Currency;
   const locale = user.locale || 'en-IN';
 
-  const [totals, lastTotals, byCategory, lastByCategory, payees, largest, categories] =
+  const [totals, lastTotals, byCategory, lastByCategory, payees, largest, categories, unsorted] =
     await Promise.all([
       repo.totalsIn(user.id, from, to, currency),
       repo.totalsIn(user.id, before.from, before.to, currency),
@@ -48,6 +60,7 @@ export default async function InsightsPage({
       repo.topPayees(user.id, from, to, currency, 8),
       repo.largestExpenses(user.id, from, to, currency, 5),
       repo.listCategories(user.id),
+      repo.uncategorisedPayeesIn(user.id, from, to, currency),
     ]);
 
   const name = new Map(categories.map((c) => [c.id, c.name]));
@@ -63,6 +76,30 @@ export default async function InsightsPage({
     .sort((a, b) => (b.spentMinor > a.spentMinor ? 1 : b.spentMinor < a.spentMinor ? -1 : 0));
 
   const money = (minor: bigint) => formatMoney(minor, currency, { locale });
+
+  // Unsorted spending, one row per place: spellings the bank shortened
+  // differently count as the same place.
+  const places = new Map<string, { name: string; count: number; spentMinor: bigint }>();
+  const canonical = canonicalKeys(unsorted.map((p) => merchantKey(p.name)));
+  for (const p of unsorted) {
+    const key = canonical.get(merchantKey(p.name));
+    if (!key) continue;
+    const place = places.get(key) ?? { name: p.name, count: 0, spentMinor: 0n };
+    place.count += p.count;
+    place.spentMinor += p.spentMinor;
+    if (p.name.length > place.name.length) place.name = p.name;
+    places.set(key, place);
+  }
+  const toSort: UnsortedPayee[] = [...places]
+    .sort((a, b) => b[1].count - a[1].count || (b[1].spentMinor > a[1].spentMinor ? 1 : -1))
+    .map(([key, p]) => ({ key, name: p.name, count: p.count, spent: money(p.spentMinor) }));
+  const categoryOptions = [
+    ...new Set([
+      ...categories.filter((c) => c.kind === 'expense' && !c.archivedAt).map((c) => c.name),
+      ...SUGGESTED_CATEGORIES,
+      ...AUTO_CATEGORIES,
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
   const label = monthLabel(month, locale);
   const previousLabel = monthLabel(previous, locale).split(' ')[0]!;
   const spent = totals.expenseMinor;
@@ -240,15 +277,20 @@ export default async function InsightsPage({
                   );
                 })}
               </ul>
-              {rows.some((r) => !r.sorted) && (
-                <p className="border-t border-border-subtle/70 px-5 py-3 text-xs text-text-muted">
-                  Give unsorted payments a category on{' '}
-                  <Link href="/finance" className="text-text-secondary underline">
-                    Finance
-                  </Link>
-                  , or pick one on the preview the next time you import.
-                </p>
-              )}
+            </Card>
+          )}
+
+          {/* Stays once everything is sorted, so the last confirmation is not cut off. */}
+          {spent > 0n && (
+            <Card accent="finance" labelledBy="insights-sort">
+              <CardHeader
+                id="insights-sort"
+                title="Sort your payments"
+                accent="finance"
+                icon={<Tags className="size-4" />}
+                description="One choice files every payment to that place, in every month, and is remembered for your next statement."
+              />
+              <SortPayees payees={toSort} categories={categoryOptions} />
             </Card>
           )}
 

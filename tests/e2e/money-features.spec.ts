@@ -22,11 +22,16 @@ async function register(page: Page, label: string) {
   await expect(page).toHaveURL(/\/today$/, { timeout: 15_000 });
 }
 
+/**
+ * A day `days` from today on the account's own calendar. New accounts are on
+ * India time, which is a day ahead of UTC every evening after 18:30 UTC, so
+ * counting from the test machine's clock made "in 2 days" read as "tomorrow".
+ */
 function isoIn(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  const d = new Date(`${today}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 test('a budget fills as you spend and warns near the limit', async ({ page }) => {

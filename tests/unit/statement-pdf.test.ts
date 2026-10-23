@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { cleanNarration, suggestCategory } from '@/modules/finance/categorize';
+import {
+  canonicalKeys,
+  cleanNarration,
+  merchantKey,
+  samePlace,
+  suggestCategory,
+} from '@/modules/finance/categorize';
 import {
   foldDrCrColumn,
   guessMapping,
@@ -196,8 +202,48 @@ describe('reading narrations', () => {
     ['AIRTEL PREPAID RECHARGE', 'Bills'],
     ['UPI/412/PRIYA S/priya@airtel/Airtel Payments Bank', null],
     ['SMS ALERT CHARGES QTR', 'Bank charges'],
+    // Local places, read from the words they use rather than a brand list.
+    ['UPI/RAVI MART/412300000001/UPI', 'Groceries'],
+    ['UPI/SRI SAI ALLMART/412300000002/UPI', 'Groceries'],
+    ['UPI/VIJAYA MAART/412300000003/UPI', 'Groceries'],
+    ['UPI/ANNAPURNA RESTURANT/412300000004/Payment for', 'Food'],
+    ['UPI/HOTEL SAGAR/412300000005/UPI', 'Food'],
+    ['UPI/SUNRISE BEVERAG/412300000006/UPI', 'Food'],
+    ['UPI/QUICK BITES/412300000007/UPI', 'Food'],
+    ['UPI/APSRTC/412300000008/UPI', 'Transport'],
+    ['UPI/GREEN LINE TRANSPOR/412300000009/UPI', 'Transport'],
+    ['UPI/CITY MED/412300000010/UPI', 'Health'],
+    ['UPI/LAKSHMI MEDICA/412300000011/UPI', 'Health'],
+    ['UPI/SV CINEPLEX/412300000012/UPI', 'Entertainment'],
+    ['UPI/ABC INSTITUTE OF TE/412300000013/UPI', 'Education'],
+    ['Chg: Charge for Deposit on 30-08-2026', 'Bank charges'],
+    ['SAVINGS PROGRAM FEE', 'Bank charges'],
+    ['TREEBO HOTELS PVT LTD', 'Travel'],
+    // Words that only look like a clue.
+    ['UPI/SMART POINT/412300000014/UPI', null],
+    ['UPI/CHAITANYA K/412300000015/UPI', null],
+    ['UPI/SRI MANDIR TRUST/412300000016/UPI', null],
+    ['UPI/DINESH KUMAR/412300000017/UPI', null],
   ])('%s → %s', (raw, category) => {
     expect(suggestCategory(raw, -100n)).toBe(category);
+  });
+
+  it('counts a name the bank cut short as the same place', () => {
+    expect(merchantKey('Sunrise Beverag')).toBe(merchantKey('Sunrise Beverage'));
+    expect(merchantKey('R G Mart')).toBe('rgmart');
+    expect(merchantKey('Ravi Mart')).not.toBe(merchantKey('Ravi Medicals'));
+    expect(merchantKey('—')).toBe('');
+    // Cut at different widths, still one place; short names must match exactly.
+    expect(samePlace(merchantKey('Ravi Mart Sto'), merchantKey('Ravi Mart Stores'))).toBe(true);
+    expect(samePlace('ravi', 'ravimart')).toBe(false);
+    expect(samePlace('', '')).toBe(false);
+    expect(canonicalKeys(['ravimartsto', 'ravimartstor', 'ashak'])).toEqual(
+      new Map([
+        ['ravimartstor', 'ravimartstor'],
+        ['ravimartsto', 'ravimartstor'],
+        ['ashak', 'ashak'],
+      ]),
+    );
   });
 
   it('leaves money coming in without a spending category', () => {

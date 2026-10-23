@@ -379,6 +379,122 @@ export async function spendByCategory(
   return rows.map((r) => ({ categoryId: r.categoryId, spentMinor: BigInt(r.spent) }));
 }
 
+/* ------------------------------------------------------------- sorting --- */
+
+/**
+ * How each payee has been filed before: description, category and how many
+ * times, most recent first. What an import uses to remember a choice.
+ */
+export async function categorisedPayees(
+  userId: string,
+  limit = 3000,
+): Promise<{ description: string; categoryId: string; count: number }[]> {
+  const rows = await db
+    .select({
+      description: transactions.description,
+      categoryId: transactions.categoryId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.kind, 'expense'),
+        sql`${transactions.categoryId} is not null`,
+      ),
+    )
+    .groupBy(transactions.description, transactions.categoryId)
+    .orderBy(sql`max(${transactions.occurredOn}) desc`)
+    .limit(Math.min(limit, 5000));
+  return rows.map((r) => ({
+    description: r.description,
+    categoryId: r.categoryId!,
+    count: r.count,
+  }));
+}
+
+/** Spending with no category yet: what is left to sort. */
+export async function uncategorisedExpenses(
+  userId: string,
+  limit = 5000,
+): Promise<{ id: string; description: string }[]> {
+  return db
+    .select({ id: transactions.id, description: transactions.description })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.kind, 'expense'),
+        isNull(transactions.categoryId),
+      ),
+    )
+    .orderBy(desc(transactions.occurredOn))
+    .limit(Math.min(limit, 10_000));
+}
+
+/**
+ * File several of the person's own uncategorised payments under one
+ * category, in one database transaction, each change in the revision log.
+ */
+export async function categoriseTransactions(
+  userId: string,
+  ids: readonly string[],
+  categoryId: string,
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  return db.transaction(async (tx) => {
+    let changed = 0;
+    for (let i = 0; i < ids.length; i += 500) {
+      const written = await tx
+        .update(transactions)
+        .set({ categoryId, updatedAt: new Date() })
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            inArray(transactions.id, ids.slice(i, i + 500)),
+            isNull(transactions.categoryId),
+          ),
+        )
+        .returning({ id: transactions.id });
+      if (written.length > 0) {
+        await tx.insert(recordRevisions).values(
+          written.map((w) => ({
+            userId,
+            entityType: 'transaction',
+            entityId: w.id,
+            action: 'categorised',
+            before: { categoryId: null },
+            after: { categoryId },
+          })),
+        );
+      }
+      changed += written.length;
+    }
+    return changed;
+  });
+}
+
+/** This period's uncategorised spending, by description, for sorting by payee. */
+export async function uncategorisedPayeesIn(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+): Promise<{ name: string; spentMinor: bigint; count: number }[]> {
+  const rows = await db
+    .select({
+      name: transactions.description,
+      spent: sql<string>`(-sum(${transactions.amountMinor}))::text`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(transactions)
+    .where(and(spendingIn(userId, from, to, currency), isNull(transactions.categoryId)))
+    .groupBy(transactions.description)
+    .orderBy(sql`sum(${transactions.amountMinor}) asc`)
+    .limit(300);
+  return rows.map((r) => ({ name: r.name, spentMinor: BigInt(r.spent), count: r.count }));
+}
+
 /* ------------------------------------------------------------ insights --- */
 
 function spendingIn(userId: string, from: string, to: string, currency: string) {
