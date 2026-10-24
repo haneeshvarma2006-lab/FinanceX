@@ -191,3 +191,87 @@ test('a place is sorted once for the whole statement, remembered next time, and 
   await expect(categories.getByText('Shopping', { exact: true })).toBeVisible();
   await expect(categories.getByText('Not sorted', { exact: true })).toHaveCount(0);
 });
+
+test('every transaction can be found, fixed and downloaded; monthly payments become bills', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await register(page, 'ledger');
+  await page.goto('/finance?new=account');
+  await page.getByLabel('Name').fill('Savings');
+  await page.getByRole('button', { name: /add account/i }).click();
+  await expect(page.getByText('Account added')).toBeVisible();
+
+  // Three months of a statement: rent each month, food now and then.
+  await page.goto('/finance/import');
+  await page.getByLabel('Statement file (PDF or CSV)').setInputFiles({
+    name: 'q3.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      [
+        'Date,Narration,Withdrawal Amt.,Deposit Amt.',
+        '05/07/26,UPI/RAMESH BABU/41230001/RENT,"15,000.00",',
+        '05/08/26,UPI/RAMESH BABU/41230002/RENT,"15,000.00",',
+        '05/09/26,UPI/RAMESH BABU/41230003/RENT,"15,000.00",',
+        '12/09/26,UPI/HOTEL SAGAR/41230004/UPI,320.00,',
+        '15/09/26,UPI/ASHA KUMARI/41230005/UPI,"1,000.00",',
+      ].join('\n'),
+    ),
+  });
+  await page.getByRole('button', { name: 'Preview 5 transactions' }).click();
+  await page.getByRole('button', { name: 'Import 5 transactions' }).click();
+  await expect(page.getByText('Imported 5 transactions into Savings')).toBeVisible();
+
+  // All transactions: search, then fix one payment's category in place.
+  await page.goto('/finance');
+  await page.getByRole('link', { name: 'See all' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('All transactions');
+  await page.getByLabel('Search').fill('asha');
+  await page.getByRole('button', { name: 'Show' }).click();
+  const results = page.getByRole('region', { name: 'Matching transactions' });
+  await expect(results).toContainText('1 transaction · ₹1,000.00 out');
+  await results.getByLabel(/^Category for Asha Kumari/).selectOption('Shopping');
+  await page.goto('/finance/transactions?category=none');
+  await expect(page.getByText('Asha Kumari')).toHaveCount(0);
+
+  // Download what is shown, as a spreadsheet.
+  await page.goto('/finance/transactions?q=ramesh');
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: 'Download CSV' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('transactions.csv');
+  const csv = await (await import('node:fs/promises')).readFile(await download.path(), 'utf8');
+  const lines = csv.replace(/^﻿/, '').trim().split('\r\n');
+  expect(lines[0]).toBe('Date,Description,Category,Account,Type,Amount,Currency,Bank line');
+  expect(lines).toHaveLength(4);
+  expect(lines[1]).toBe(
+    '2026-09-05,Ramesh Babu,Rent,Savings,expense,-15000.00,INR,UPI/RAMESH BABU/41230003/RENT',
+  );
+
+  // Insights: six months at a glance, a category opens its payments, and rent is
+  // recognised as something paid every month.
+  await page.goto('/finance/insights?month=2026-09');
+  const trend = page.getByRole('region', { name: 'Last 6 months' });
+  await expect(
+    trend.getByRole('link', { name: /September 2026: ₹16,320\.00 spent/ }),
+  ).toHaveAttribute('aria-current', 'page');
+  await page
+    .getByRole('region', { name: 'By category' })
+    .getByRole('link', { name: 'Food' })
+    .click();
+  await expect(page).toHaveURL(/\/finance\/transactions\?month=2026-09&category=.+&direction=out$/);
+  await expect(page.getByText('Hotel Sagar')).toBeVisible();
+
+  await page.goto('/finance/insights?month=2026-09');
+  const monthly = page.getByRole('region', { name: 'Paid every month' });
+  await expect(monthly).toContainText('Ramesh Babu');
+  await monthly.getByRole('button', { name: 'Track Ramesh Babu as a monthly bill' }).click();
+  await expect(page.getByText('Ramesh Babu is now a bill, with a reminder')).toBeVisible();
+  await expect(monthly).toContainText('Everything that repeats monthly is tracked as a bill.');
+
+  await page.goto('/finance');
+  const bills = page.getByRole('region', { name: 'Recurring bills' });
+  await expect(bills).toContainText('Ramesh Babu');
+  await expect(bills).toContainText('₹15,000.00');
+});

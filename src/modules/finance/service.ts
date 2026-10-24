@@ -11,6 +11,7 @@ import { daysUntil, dueLabel, monthStart, nextDue, type Cadence } from './recurr
 import type { Budget, Category, Subscription, Transaction } from './schema';
 import * as repo from './repository';
 import { merchantKey, samePlace } from './categorize';
+import { detectMonthly, type MonthlyCandidate } from './detect-monthly';
 import { importKeys, type ImportRowStatus } from './statement';
 import type {
   StatementImportInput,
@@ -434,6 +435,97 @@ export async function categorisePayee(
   const category = await ensureExpenseCategory(userId, categoryName);
   const changed = await repo.categoriseTransactions(userId, ids, category.id);
   return ok({ changed, category: category.name });
+}
+
+/**
+ * Move one payment to a category, by name (made if the person has none by
+ * that name), or out of any category with null. Only money out is filed.
+ */
+export async function setTransactionCategory(
+  userId: string,
+  id: string,
+  categoryName: string | null,
+): Promise<Result<Transaction>> {
+  const existing = await repo.findTransaction(userId, id);
+  if (!existing) return notFound();
+  if (existing.kind !== 'expense') return invalid('category', 'Only spending has a category');
+
+  const categoryId = categoryName ? (await ensureExpenseCategory(userId, categoryName)).id : null;
+  if (categoryId === existing.categoryId) return ok(existing);
+
+  const updated = await repo.updateTransaction(userId, id, { categoryId });
+  if (!updated) return notFound();
+  await repo.insertRevision({
+    userId,
+    entityType: 'transaction',
+    entityId: id,
+    action: 'updated',
+    before: snapshot(existing),
+    after: snapshot(updated),
+  });
+  return ok(updated);
+}
+
+/* -------------------------------------------------------- monthly bills --- */
+
+/** Payments in the last six months that come round monthly and are not yet bills. */
+export async function monthlyCandidates(
+  userId: string,
+  today: string,
+): Promise<MonthlyCandidate[]> {
+  const [y, m] = today.split('-').map(Number) as [number, number];
+  const from = new Date(Date.UTC(y, m - 7, 1)).toISOString().slice(0, 10);
+  const [payments, bills, categories] = await Promise.all([
+    repo.paymentsSince(userId, from),
+    repo.listSubscriptions(userId),
+    repo.listCategories(userId),
+  ]);
+  // Everyday spending is never a bill, however regular the visits.
+  const everyday = new Set(
+    categories.filter((c) => EVERYDAY.has(c.name.toLowerCase())).map((c) => c.id),
+  );
+  return detectMonthly(payments, {
+    today,
+    trackedNames: bills.filter((b) => b.status === 'active').map((b) => b.name),
+  }).filter((c) => !c.categoryId || !everyday.has(c.categoryId));
+}
+
+const EVERYDAY = new Set([
+  'food',
+  'groceries',
+  'fuel',
+  'shopping',
+  'transport',
+  'entertainment',
+  'cash',
+  'travel',
+]);
+
+/**
+ * Track a payment found by `monthlyCandidates` as a monthly bill: its usual
+ * amount, its account and category, due when it next comes round. Looked
+ * up again here rather than trusted from the page.
+ */
+export async function trackMonthly(
+  userId: string,
+  key: string,
+  today: string,
+  baseCurrency: Currency,
+): Promise<Result<Subscription>> {
+  const found = (await monthlyCandidates(userId, today)).find((c) => c.key === key);
+  if (!found) return notFound('That payment is already tracked, or no longer looks monthly.');
+  return addRecurring(
+    userId,
+    {
+      name: found.name.slice(0, 120),
+      amount: toDecimalString(found.amountMinor, found.currency as Currency),
+      cadence: 'monthly',
+      nextDueOn: found.nextDueOn,
+      accountId: found.accountId,
+      categoryId: found.categoryId ?? '',
+    },
+    baseCurrency,
+  );
 }
 
 /* ------------------------------------------------------------- budgets --- */

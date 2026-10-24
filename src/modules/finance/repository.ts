@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { newId } from '@/lib/db/id';
 import {
@@ -17,6 +17,7 @@ import {
   type Subscription,
   type Transaction,
 } from './schema';
+import type { LedgerFilter } from './ledger';
 
 /**
  * Every function takes `userId` first and filters on it. That is the entire
@@ -377,6 +378,128 @@ export async function spendByCategory(
     .groupBy(transactions.categoryId);
 
   return rows.map((r) => ({ categoryId: r.categoryId, spentMinor: BigInt(r.spent) }));
+}
+
+/* -------------------------------------------------------------- ledger --- */
+
+function ledgerWhere(userId: string, f: LedgerFilter) {
+  const conditions = [eq(transactions.userId, userId)];
+  if (f.from) conditions.push(gte(transactions.occurredOn, f.from));
+  if (f.to) conditions.push(lte(transactions.occurredOn, f.to));
+  if (f.accountId) conditions.push(eq(transactions.accountId, f.accountId));
+  if (f.categoryId === 'none') {
+    conditions.push(isNull(transactions.categoryId), eq(transactions.kind, 'expense'));
+  } else if (f.categoryId) {
+    conditions.push(eq(transactions.categoryId, f.categoryId));
+  }
+  if (f.direction === 'out') conditions.push(eq(transactions.kind, 'expense'));
+  if (f.direction === 'in') conditions.push(eq(transactions.kind, 'income'));
+  if (f.search) {
+    // The words are data, not a pattern: % and _ match only themselves.
+    const pattern = `%${f.search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    conditions.push(
+      or(
+        ilike(transactions.description, pattern),
+        ilike(transactions.merchant, pattern),
+        ilike(transactions.notes, pattern),
+      )!,
+    );
+  }
+  return and(...conditions);
+}
+
+/** Transactions matching the ledger's filters, newest first, a page at a time. */
+export async function searchLedger(
+  userId: string,
+  filter: LedgerFilter,
+  limit: number,
+  offset = 0,
+): Promise<Transaction[]> {
+  return db
+    .select()
+    .from(transactions)
+    .where(ledgerWhere(userId, filter))
+    .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
+    .limit(Math.min(limit, 5000))
+    .offset(offset);
+}
+
+/** How many match, and money out and in, per currency: never added across currencies. */
+export async function ledgerTotals(
+  userId: string,
+  filter: LedgerFilter,
+): Promise<{ count: number; totals: { currency: string; outMinor: bigint; inMinor: bigint }[] }> {
+  const rows = await db
+    .select({
+      currency: transactions.currency,
+      count: sql<number>`count(*)::int`,
+      out: sql<string>`coalesce(-sum(${transactions.amountMinor}) filter (where ${transactions.kind} = 'expense'), 0)::text`,
+      in: sql<string>`coalesce(sum(${transactions.amountMinor}) filter (where ${transactions.kind} = 'income'), 0)::text`,
+    })
+    .from(transactions)
+    .where(ledgerWhere(userId, filter))
+    .groupBy(transactions.currency);
+  return {
+    count: rows.reduce((n, r) => n + r.count, 0),
+    totals: rows.map((r) => ({
+      currency: r.currency,
+      outMinor: BigInt(r.out),
+      inMinor: BigInt(r.in),
+    })),
+  };
+}
+
+/** Money out since a day, oldest first: what the monthly-payment finder reads. */
+export async function paymentsSince(
+  userId: string,
+  from: string,
+  limit = 5000,
+): Promise<
+  {
+    occurredOn: string;
+    amountMinor: bigint;
+    currency: string;
+    description: string;
+    accountId: string;
+    categoryId: string | null;
+  }[]
+> {
+  return db
+    .select({
+      occurredOn: transactions.occurredOn,
+      amountMinor: transactions.amountMinor,
+      currency: transactions.currency,
+      description: transactions.description,
+      accountId: transactions.accountId,
+      categoryId: transactions.categoryId,
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.kind, 'expense'),
+        gte(transactions.occurredOn, from),
+      ),
+    )
+    .orderBy(asc(transactions.occurredOn))
+    .limit(Math.min(limit, 10_000));
+}
+
+/** Spending per month in one currency, for the trend. */
+export async function monthlySpending(
+  userId: string,
+  from: string,
+  to: string,
+  currency: string,
+): Promise<{ month: string; spentMinor: bigint }[]> {
+  const month = sql<string>`to_char(${transactions.occurredOn}, 'YYYY-MM')`;
+  const rows = await db
+    .select({ month, spent: sql<string>`(-sum(${transactions.amountMinor}))::text` })
+    .from(transactions)
+    .where(spendingIn(userId, from, to, currency))
+    .groupBy(month)
+    .orderBy(month);
+  return rows.map((r) => ({ month: r.month, spentMinor: BigInt(r.spent) }));
 }
 
 /* ------------------------------------------------------------- sorting --- */

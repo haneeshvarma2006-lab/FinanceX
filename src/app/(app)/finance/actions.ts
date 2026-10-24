@@ -128,6 +128,8 @@ export async function deleteTransaction(_prev: FormState, formData: FormData): P
   if (!result.ok) return toFormState(result.error);
 
   revalidatePath('/finance');
+  revalidatePath('/finance/transactions');
+  revalidatePath('/finance/insights');
   return { message: 'Deleted', tone: 'success' };
 }
 

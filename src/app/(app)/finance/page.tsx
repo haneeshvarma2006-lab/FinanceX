@@ -10,7 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { requireUser } from '@/lib/auth/current-user';
-import { Card, CardBody, CardHeader } from '@/components/ui/card';
+import { Card, CardAction, CardBody, CardHeader } from '@/components/ui/card';
 import { ExpandableStats } from '@/components/ui/expandable-stats';
 import { EmptyState } from '@/components/ui/states';
 import { Badge, Money, PageHeader, Progress } from '@/components/ui/money';
@@ -430,7 +430,15 @@ export default async function FinancePage({
       </Card>
 
       <Card accent="finance" labelledBy="finance-recent">
-        <CardHeader id="finance-recent" title="Recent transactions" />
+        <CardHeader
+          id="finance-recent"
+          title="Recent transactions"
+          action={
+            transactions.length > 0 ? (
+              <CardAction href="/finance/transactions">See all</CardAction>
+            ) : undefined
+          }
+        />
         <CardBody className="p-0">
           {transactions.length === 0 ? (
             <EmptyState

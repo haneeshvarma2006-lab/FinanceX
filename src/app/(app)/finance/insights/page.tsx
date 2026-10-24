@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
+  BarChart3,
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
   FileUp,
@@ -32,6 +34,9 @@ import { todayFor } from '@/modules/dashboard/service';
 import { AUTO_CATEGORIES, canonicalKeys, merchantKey } from '@/modules/finance/categorize';
 import { SUGGESTED_CATEGORIES } from '@/modules/finance/recurring';
 import { SortPayees, type UnsortedPayee } from './sort-payees';
+import { MonthlyBills, type MonthlyView } from './monthly-bills';
+import * as finance from '@/modules/finance/service';
+import { toDecimalString } from '@nestedflow/domain/money';
 
 export const metadata: Metadata = { title: 'Spending insights' };
 
@@ -51,22 +56,38 @@ export default async function InsightsPage({
   const currency = user.baseCurrency as Currency;
   const locale = user.locale || 'en-IN';
 
-  const [totals, lastTotals, byCategory, lastByCategory, payees, largest, categories, unsorted] =
-    await Promise.all([
-      repo.totalsIn(user.id, from, to, currency),
-      repo.totalsIn(user.id, before.from, before.to, currency),
-      repo.spendingByCategoryIn(user.id, from, to, currency),
-      repo.spendingByCategoryIn(user.id, before.from, before.to, currency),
-      repo.topPayees(user.id, from, to, currency, 8),
-      repo.largestExpenses(user.id, from, to, currency, 5),
-      repo.listCategories(user.id),
-      repo.uncategorisedPayeesIn(user.id, from, to, currency),
-    ]);
+  const trendFrom = monthRange(shiftMonth(month, -5)).from;
+  const [
+    totals,
+    lastTotals,
+    byCategory,
+    lastByCategory,
+    payees,
+    largest,
+    categories,
+    unsorted,
+    trend,
+    monthly,
+    bills,
+  ] = await Promise.all([
+    repo.totalsIn(user.id, from, to, currency),
+    repo.totalsIn(user.id, before.from, before.to, currency),
+    repo.spendingByCategoryIn(user.id, from, to, currency),
+    repo.spendingByCategoryIn(user.id, before.from, before.to, currency),
+    repo.topPayees(user.id, from, to, currency, 8),
+    repo.largestExpenses(user.id, from, to, currency, 5),
+    repo.listCategories(user.id),
+    repo.uncategorisedPayeesIn(user.id, from, to, currency),
+    repo.monthlySpending(user.id, trendFrom, to, currency),
+    finance.monthlyCandidates(user.id, today),
+    repo.listSubscriptions(user.id),
+  ]);
 
   const name = new Map(categories.map((c) => [c.id, c.name]));
   const lastBy = new Map(lastByCategory.map((r) => [r.categoryId, r.spentMinor]));
   const rows: CategorySpend[] = byCategory
     .map((r) => ({
+      id: r.categoryId,
       name: r.categoryId ? (name.get(r.categoryId) ?? 'Category') : 'Not sorted',
       sorted: r.categoryId !== null,
       spentMinor: r.spentMinor,
@@ -112,6 +133,33 @@ export default async function InsightsPage({
     money,
   });
   const overall = percentChange(spent, lastTotals.expenseMinor);
+
+  // Six months up to this one, every month present even when nothing was spent.
+  const spentIn = new Map(trend.map((t) => [t.month, t.spentMinor]));
+  const sixMonths = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5)).map((m) => ({
+    month: m,
+    spentMinor: spentIn.get(m) ?? 0n,
+  }));
+  const trendMax = sixMonths.reduce((a, t) => (t.spentMinor > a ? t.spentMinor : a), 0n);
+  const compact = new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
+  const short = (minor: bigint) => compact.format(Number(toDecimalString(minor, currency)));
+
+  const monthlyItems: MonthlyView[] = monthly
+    .filter((c) => c.currency === currency)
+    .map((c) => ({
+      key: c.key,
+      name: c.name,
+      amount: money(c.amountMinor),
+      count: c.count,
+      next: `next around ${new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${c.nextDueOn}T00:00:00Z`))}`,
+    }));
+  const hasBills = bills.some((b) => b.status === 'active');
   const biggest = rows[0]?.spentMinor ?? 0n;
 
   return (
@@ -187,6 +235,58 @@ export default async function InsightsPage({
             />
           </section>
 
+          <Card accent="finance" labelledBy="insights-trend">
+            <CardHeader
+              id="insights-trend"
+              title="Last 6 months"
+              accent="finance"
+              icon={<BarChart3 className="size-4" />}
+            />
+            <CardBody>
+              <ol className="flex h-40 items-end gap-2 sm:gap-4">
+                {sixMonths.map((t) => {
+                  const pct = trendMax > 0n ? share(t.spentMinor, trendMax) : 0;
+                  const current = t.month === month;
+                  return (
+                    <li key={t.month} className="flex h-full min-w-0 flex-1 flex-col">
+                      <Link
+                        href={`/finance/insights?month=${t.month}`}
+                        aria-label={`${monthLabel(t.month, locale)}: ${money(t.spentMinor)} spent`}
+                        aria-current={current ? 'page' : undefined}
+                        className="group flex h-full flex-col items-center justify-end gap-1.5"
+                      >
+                        <span
+                          className={cn(
+                            'numeric text-2xs whitespace-nowrap',
+                            current ? 'font-semibold text-text-primary' : 'text-text-muted',
+                          )}
+                        >
+                          {t.spentMinor > 0n ? short(t.spentMinor) : '—'}
+                        </span>
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'w-full max-w-12 rounded-t-lg transition-colors',
+                            current ? 'bg-finance' : 'bg-finance/30 group-hover:bg-finance/50',
+                          )}
+                          style={{ height: `${Math.max(3, pct * 0.75)}%` }}
+                        />
+                        <span
+                          className={cn(
+                            'text-xs',
+                            current ? 'font-semibold text-text-primary' : 'text-text-muted',
+                          )}
+                        >
+                          {monthLabel(t.month, locale, true).split(' ')[0]}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </CardBody>
+          </Card>
+
           {notes.length > 0 && (
             <Card accent="finance">
               <CardHeader
@@ -231,7 +331,12 @@ export default async function InsightsPage({
                             row.sorted ? 'text-text-primary' : 'text-text-muted',
                           )}
                         >
-                          <span>{row.name}</span>
+                          <Link
+                            href={`/finance/transactions?month=${month}&category=${row.id ?? 'none'}&direction=out`}
+                            className="hover:underline"
+                          >
+                            {row.name}
+                          </Link>
                           <span className="ml-2 text-xs font-normal text-text-muted">
                             {row.count} payment{row.count === 1 ? '' : 's'}
                           </span>
@@ -270,7 +375,9 @@ export default async function InsightsPage({
                             ? row.previousMinor === 0n && lastTotals.expenseMinor > 0n
                               ? `New since ${previousLabel}`
                               : ''
-                            : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change))}% vs ${previousLabel}`}
+                            : Math.round(change) === 0
+                              ? `Same as ${previousLabel}`
+                              : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change))}% vs ${previousLabel}`}
                         </span>
                       </p>
                     </li>
@@ -291,6 +398,19 @@ export default async function InsightsPage({
                 description="One choice files every payment to that place, in every month, and is remembered for your next statement."
               />
               <SortPayees payees={toSort} categories={categoryOptions} />
+            </Card>
+          )}
+
+          {(monthlyItems.length > 0 || hasBills) && (
+            <Card accent="finance" labelledBy="insights-monthly">
+              <CardHeader
+                id="insights-monthly"
+                title="Paid every month"
+                accent="finance"
+                icon={<CalendarClock className="size-4" />}
+                description="Found in your last six months. Track one as a bill and you get a reminder three days before it is due."
+              />
+              <MonthlyBills items={monthlyItems} />
             </Card>
           )}
 

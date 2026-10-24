@@ -47,6 +47,8 @@ export function share(part: bigint, total: bigint): number {
 }
 
 export type CategorySpend = {
+  /** The category's id; null for spending with none. */
+  id?: string | null;
   name: string;
   /** False for spending that has no category yet. */
   sorted: boolean;
