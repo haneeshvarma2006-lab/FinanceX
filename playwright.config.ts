@@ -66,6 +66,13 @@ export default defineConfig({
       AUTH_SECRET: 'e2e-secret-at-least-32-characters-long-for-playwright',
       APP_URL: baseURL,
       TRUST_PROXY_HEADERS: 'false',
+      // Push turned on with a key pair made for these tests alone, and sends
+      // written to the log: there is no push service to reach from here.
+      VAPID_PUBLIC_KEY:
+        'BOcgEqvuYzMMFWcNHSfeCDahR3Db67b23boJ5N-5qEl_2VEM4m8IAUZHNCkkrRkNS_IGKlKukZh3sFPM5-lXTk4',
+      VAPID_PRIVATE_KEY: 'iTE699G6uRjC-o1cINr5m9masRiL6szDkTohEby-4-g',
+      VAPID_SUBJECT: 'mailto:e2e@example.com',
+      PUSH_TRANSPORT: 'log',
     },
   },
 });

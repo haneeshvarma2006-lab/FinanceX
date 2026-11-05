@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: brand.description,
   applicationName: brand.name,
   robots: { index: false, follow: false },
+  // iPhones read their home-screen icon and full-screen mode from these.
+  icons: { apple: '/icons/apple-touch-icon.png' },
+  appleWebApp: { capable: true, title: brand.shortName, statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {

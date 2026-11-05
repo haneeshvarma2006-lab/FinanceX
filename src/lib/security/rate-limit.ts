@@ -55,6 +55,10 @@ export const RULES = {
   marketQuotesPerHour: { limit: 600, windowSeconds: 3600 },
   /** The alert watcher checks about once a minute from each open tab. */
   alertChecksPerHour: { limit: 300, windowSeconds: 3600 },
+  // Turning push on and off, and test notifications: a person does this a few
+  // times, a script would do it thousands.
+  pushSubscribePerHour: { limit: 30, windowSeconds: 3600 },
+  pushTestPerTenMinutes: { limit: 5, windowSeconds: 600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 const NETWORK_RULES = {

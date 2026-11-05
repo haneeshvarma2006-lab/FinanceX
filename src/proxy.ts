@@ -67,7 +67,8 @@ export default function proxy(request: NextRequest): NextResponse {
 export const config = {
   matcher: [
     // Everything except static assets, which need no dynamic headers.
-    // /ocr and /pdf are the bill and statement readers; they carry their own headers.
-    '/((?!_next/static|_next/image|favicon.ico|ocr/|pdf/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // /ocr and /pdf are the bill and statement readers, and /sw.js the service
+    // worker; they carry their own headers.
+    '/((?!_next/static|_next/image|favicon.ico|ocr/|pdf/|sw\\.js$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

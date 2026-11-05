@@ -420,7 +420,7 @@ export async function searchLedger(
     .from(transactions)
     .where(ledgerWhere(userId, filter))
     .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
-    .limit(Math.min(limit, 5000))
+    .limit(Math.min(limit, 20_000))
     .offset(offset);
 }
 

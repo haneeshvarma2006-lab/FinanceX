@@ -99,6 +99,36 @@ const schema = z
     BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
 
     /**
+     * Web Push (notifications on a phone with the app closed). A VAPID key
+     * pair identifies this server to the browsers' push services: generate
+     * one with `npx web-push generate-vapid-keys`. The subject is a contact
+     * address the push services can reach the operator at (mailto: or https:).
+     * All three set and well formed, push is on; otherwise it is simply off —
+     * a malformed value never stops the app from starting. The private key is
+     * a credential: never logged, never sent to a browser.
+     */
+    VAPID_PUBLIC_KEY: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{80,100}$/)
+      .optional()
+      .catch(undefined),
+    VAPID_PRIVATE_KEY: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{40,50}$/)
+      .optional()
+      .catch(undefined),
+    /**
+     * "webpush" sends through the browsers' push services. "log" writes each
+     * push to the server log and counts it delivered — for tests, where no
+     * push service can be reached; never for real people.
+     */
+    PUSH_TRANSPORT: z.enum(['webpush', 'log']).default('webpush').catch('webpush'),
+    VAPID_SUBJECT: z
+      .string()
+      .regex(/^(mailto:\S+@\S+|https:\/\/\S+)$/)
+      .optional()
+      .catch(undefined),
+    /**
      * The shared secret Vercel Cron sends as "Authorization: Bearer …" to
      * the daily reminders job. Unset, the job refuses every call. A
      * credential: never logged.

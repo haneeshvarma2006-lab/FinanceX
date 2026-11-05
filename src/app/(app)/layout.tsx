@@ -13,6 +13,7 @@ import { requireUser } from '@/lib/auth/current-user';
 import { countUnreadNotifications } from '@/modules/productivity/repository';
 import { listActiveAlerts } from '@/modules/markets/repository';
 import { AlertWatcher } from './alert-watcher';
+import { ServiceWorker } from '@/components/pwa/service-worker';
 import { NotificationBell } from '@/components/ui/notification-bell';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MainNav, type NavItem } from '@/components/ui/nav';
@@ -146,6 +147,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
+      <ServiceWorker />
       <AlertWatcher
         alerts={alerts.map((a) => ({
           id: a.id,

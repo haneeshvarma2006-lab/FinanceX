@@ -343,10 +343,12 @@ test('scans a bill photo on the device and adds it as an expense once', async ({
   await expect(page.getByText('This looks already recorded')).toBeVisible({ timeout: 90_000 });
   await expect(page.getByRole('button', { name: 'Add expense' })).toBeDisabled();
 
-  // The kept photo hangs off the expense and lives in the Bills gallery.
-  await page.goto('/finance');
-  await page.getByRole('button', { name: 'Show what you spent this month' }).click();
+  // The kept photo hangs off the expense and lives in the Bills gallery. The
+  // bill is dated 11 October, so it is looked up by name rather than under
+  // "this month", which moves on.
+  await page.goto('/finance/transactions?q=spice');
   await expect(page.getByRole('link', { name: /bill photo for spice garden/i })).toBeVisible();
+  await page.goto('/finance');
   await page.getByRole('link', { name: 'Bills', exact: true }).click();
   await page.getByRole('link', { name: /bill from spice garden/i }).click();
   await expect(page).toHaveURL(/\/finance\/bills\/[\w-]+$/);

@@ -1,3 +1,4 @@
+import { pushToUser } from '@/modules/push/service';
 import * as repo from './repository';
 
 /**
@@ -89,16 +90,35 @@ export type NotifyInput = {
 export async function notify(userId: string, input: NotifyInput): Promise<boolean> {
   if (!(await repo.isNotificationKindEnabled(userId, input.kind))) return false;
 
-  return repo.insertNotification({
+  const href = safeHref(input.href);
+  const created = await repo.insertNotification({
     userId,
     kind: input.kind,
     title: input.title.slice(0, 200),
     body: input.body?.slice(0, 1000) ?? null,
-    href: safeHref(input.href),
+    href,
     entityType: input.entityType ?? null,
     entityId: input.entityId ?? null,
     dedupeKey: input.dedupeKey ?? null,
   });
+
+  // A new notification also goes to the person's phones, if they turned that
+  // on. Only new ones: deduplication keeps a reminder from buzzing twice.
+  if (created) {
+    try {
+      await pushToUser(userId, {
+        title: input.title,
+        body: input.body,
+        href: href ?? '/notifications',
+        tag: input.entityId ? `${input.kind}:${input.entityId}` : input.kind,
+        urgency: input.kind === 'price_alert' ? 'high' : 'normal',
+      });
+    } catch (error) {
+      // The notification is saved either way; a push failure costs only the buzz.
+      console.error('push failed', error instanceof Error ? error.name : 'unknown');
+    }
+  }
+  return created;
 }
 
 /** Defaults for a new account: everything on, since all of it is user-initiated. */

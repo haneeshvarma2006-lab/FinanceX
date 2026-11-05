@@ -30,6 +30,18 @@ const config: NextConfig = {
         ],
       },
       {
+        // The service worker: served fresh every time, so an update reaches
+        // phones on the next visit, and allowed to control the whole site.
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'text/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Content-Security-Policy', value: "default-src 'self'" },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
+      {
         // The statement PDF reader's worker and character maps: it may fetch
         // the maps from this origin and nothing else.
         source: '/pdf/:path*',

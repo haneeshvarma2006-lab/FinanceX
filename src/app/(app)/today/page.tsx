@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import {
   AlertTriangle,
+  BellRing,
   CalendarClock,
   Check,
   CheckSquare,
@@ -38,7 +39,9 @@ import { formatMoney, type Currency } from '@nestedflow/domain/money';
 import { buildWealth } from '@/modules/dashboard/wealth';
 import { WealthPanel } from './wealth-panel';
 import { brand } from '@/lib/brand';
-import { hideSetupGuide } from './actions';
+import { hidePushNudge, hideSetupGuide } from './actions';
+import * as push from '@/modules/push/service';
+import * as marketsRepo from '@/modules/markets/repository';
 
 export const metadata: Metadata = { title: 'Today' };
 
@@ -64,14 +67,17 @@ export default async function TodayPage() {
   await runAutomationRules(user.id, snapshot);
   // The notification is raised now; the email goes after the page is sent.
   await remindDueBills(user.id, snapshot.today, after);
-  const [dueDecisions, wealth, recurring, accounts, budgets, jar] = await Promise.all([
-    decisionsRepo.listDueDecisions(user.id, snapshot.today),
-    buildWealth(user, snapshot.today),
-    financeRepo.listSubscriptions(user.id),
-    financeRepo.listAccounts(user.id),
-    financeRepo.listBudgets(user.id),
-    cookies(),
-  ]);
+  const [dueDecisions, wealth, recurring, accounts, budgets, jar, devices, alerts] =
+    await Promise.all([
+      decisionsRepo.listDueDecisions(user.id, snapshot.today),
+      buildWealth(user, snapshot.today),
+      financeRepo.listSubscriptions(user.id),
+      financeRepo.listAccounts(user.id),
+      financeRepo.listBudgets(user.id),
+      cookies(),
+      push.devices(user.id),
+      marketsRepo.countActiveAlerts(user.id),
+    ]);
   const setup = {
     account: accounts.length > 0,
     budget: budgets.length > 0,
@@ -80,6 +86,13 @@ export default async function TodayPage() {
   const showGuide =
     !(setup.account && setup.budget && setup.bill) &&
     !jar.has(`nf-setup-hidden-${user.id.slice(0, 8)}`);
+  // Worth suggesting only when there is something to be reminded of, push can
+  // be sent, and no device has it on yet.
+  const showPushNudge =
+    push.pushConfigured() &&
+    devices.length === 0 &&
+    (recurring.some((b) => b.status === 'active') || alerts > 0) &&
+    !jar.has(`nf-push-nudge-hidden-${user.id.slice(0, 8)}`);
   // Bills due within three days, or already late.
   const dueBills = recurring.filter(
     (b) => b.status === 'active' && daysUntil(b.nextDueOn, snapshot.today) <= 3,
@@ -104,6 +117,43 @@ export default async function TodayPage() {
 
       {showGuide ? <SetupGuide done={setup} fresh={nothingYet} /> : nothingYet && <FirstRun />}
       {!nothingYet && <WealthPanel wealth={wealth} locale={user.locale || 'en-IN'} />}
+
+      {showPushNudge && (
+        <Card accent="finance" labelledBy="push-nudge">
+          <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
+            <span
+              aria-hidden
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-finance/15 text-finance ring-1 ring-finance/30 ring-inset"
+            >
+              <BellRing className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 id="push-nudge" className="text-sm font-semibold text-text-primary">
+                Get reminders on your lock screen
+              </h2>
+              <p className="mt-0.5 text-xs text-pretty text-text-secondary">
+                Bill reminders and price alerts, on your phone even when NestedFlow is closed.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href="/settings/notifications"
+                className="inline-flex h-9 items-center rounded-full bg-text-primary px-4 text-sm font-medium text-surface-sunken"
+              >
+                Set up
+              </Link>
+              <form action={hidePushNudge}>
+                <button
+                  type="submit"
+                  className="h-9 rounded-full px-3 text-sm text-text-secondary hover:text-text-primary"
+                >
+                  Not now
+                </button>
+              </form>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {(snapshot.tasks.overdue > 0 ||
         snapshot.goals.offTrack.length > 0 ||

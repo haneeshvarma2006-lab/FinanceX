@@ -7,6 +7,8 @@ import * as tradingRepo from '@/modules/trading/repository';
 import * as productivityRepo from '@/modules/productivity/repository';
 import * as notesRepo from '@/modules/notes/repository';
 import * as decisionsRepo from '@/modules/decisions/repository';
+import * as marketsRepo from '@/modules/markets/repository';
+import * as pushRepo from '@/modules/push/repository';
 import { brand } from '@/lib/brand';
 
 /**
@@ -40,10 +42,14 @@ export async function GET(): Promise<NextResponse> {
     notes,
     decisions,
     bills,
+    priceAlerts,
+    holdings,
+    devices,
   ] = await Promise.all([
     financeRepo.listAccounts(user.id, true),
     financeRepo.listCategories(user.id),
-    financeRepo.listTransactions(user.id, { limit: 500 }),
+    // Every transaction: one imported statement can hold hundreds.
+    financeRepo.searchLedger(user.id, {}, 20_000),
     financeRepo.listBudgets(user.id),
     financeRepo.listSubscriptions(user.id),
     financeRepo.listNetWorthSnapshots(user.id),
@@ -60,6 +66,9 @@ export async function GET(): Promise<NextResponse> {
     notesRepo.listNotesForExport(user.id),
     decisionsRepo.listDecisions(user.id, 5000),
     financeRepo.listBills(user.id, 100_000),
+    marketsRepo.listAlerts(user.id),
+    marketsRepo.listHoldings(user.id),
+    pushRepo.listForUser(user.id),
   ]);
 
   const payload = {
@@ -90,6 +99,14 @@ export async function GET(): Promise<NextResponse> {
       bills: bills.map(({ storageKey: _key, ...bill }) => bill),
     },
     trading: { tradingAccounts, strategies, trades },
+    markets: { priceAlerts, holdings },
+    // Which devices get push notifications. Their push addresses and keys are
+    // left out: they are what lets anyone send to the device.
+    notificationDevices: devices.map((d) => ({
+      label: d.label,
+      createdAt: d.createdAt,
+      lastSentAt: d.lastSentAt,
+    })),
     emailPreferences: preferences,
     notificationPreferences,
     consents,
